@@ -17,7 +17,7 @@ Sujith Battu, Saiteja Poluka, Emerson Liu, Jack McKinstry, Kushal Sai Ravindra, 
 ## Project Structure
 This is a monorepo containing both the frontend and backend:
 * `/backend`: The FastAPI Python application, handling API aggregation, data cleaning, and Redis caching.
-* `/frontend`: The React.js user interface.
+* `/frontend`: The React(NextJs) user interface.
 
 ---
 
