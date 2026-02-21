@@ -4,7 +4,7 @@
 A centralized, Big Data-driven travel planning application that aggregates data from multiple publicly available APIs. This project serves as an itinerary generator and cost estimator for trips, focusing on intelligent data aggregation, high-performance caching, and clean user experience.
 
 ## Team Members
-Sujith Battu, Saiteja Poluka, Emerson Liu, Jack McKinstry, Kushal Sai Ravindra, Sarthak Paithankar
+Sujith Battu(PI), Saiteja Poluka, Emerson Liu, Jack McKinstry, Kushal Sai Ravindra, Sarthak Paithankar
 
 ## Tech Stack
 * **Backend:** Python, FastAPI
