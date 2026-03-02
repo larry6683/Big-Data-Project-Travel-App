@@ -1,22 +1,45 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List
 from app.services.hotel_service import hotel_service
-from app.schemas.hotel import HotelOffer
+from app.schemas.hotel import Hotel, HotelOffer
 
 router = APIRouter()
 
-@router.get("/offers", response_model=List[HotelOffer])
-async def get_hotel_offers(
-    city_code: str = Query(..., description="Destination IATA city code (e.g., JFK, PAR)"),
+@router.get("/nearby", response_model=List[Hotel])
+async def get_nearby_hotels(
+    lat: float = Query(..., description="Destination Latitude from global state"),
+    lon: float = Query(..., description="Destination Longitude from global state"),
+    check_in_date: str = Query(..., description="Arrival Date YYYY-MM-DD"),
+    check_out_date: str = Query(..., description="Departure Date YYYY-MM-DD"),
+    adults: int = Query(..., description="Number of adults"),
+    radius: int = Query(50, description="Search radius in KM")
+):
+    """
+    Step 1: Fetches a list of hotels near the destination that ACTUALLY have rooms available.
+    """
+    result = await hotel_service.get_available_hotels_by_geocode(
+        lat=lat, lon=lon, 
+        check_in_date=check_in_date, check_out_date=check_out_date, 
+        adults=adults, radius=radius
+    )
+    
+    if isinstance(result, dict) and "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+        
+    return result
+
+@router.get("/offer", response_model=HotelOffer)
+async def get_hotel_price(
+    hotel_id: str = Query(..., description="The Amadeus Hotel ID from the clicked checkbox"),
     check_in_date: str = Query(..., description="Arrival Date YYYY-MM-DD"),
     check_out_date: str = Query(..., description="Departure Date YYYY-MM-DD"),
     adults: int = Query(..., description="Number of adults")
 ):
     """
-    Get live 4 and 5 Star hotel pricing (within 50km) for specific dates.
+    Step 2: Returns the price when the checkbox is clicked (Instantly pulled from cache).
     """
-    result = await hotel_service.get_hotel_offers(
-        city_code=city_code, 
+    result = await hotel_service.get_specific_hotel_offer(
+        hotel_id=hotel_id, 
         check_in_date=check_in_date, 
         check_out_date=check_out_date, 
         adults=adults

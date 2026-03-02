@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List
 from app.services.flight_service import flight_service
 from app.schemas.flight import FlightOffer
+from app.core.cache import increment_trending
 
 router = APIRouter()
 
@@ -18,6 +19,10 @@ async def search_flights(
     """
     Search for round-trip flights.
     """
+    
+    increment_trending("top_destinations", destination.lower())
+    increment_trending("top_routes", f"{origin.lower()}_to_{destination.lower()}")
+
     result = await flight_service.search_flights(
         origin=origin,
         destination=destination,
