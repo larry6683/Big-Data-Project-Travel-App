@@ -1,95 +1,171 @@
-'use client'
+"use client";
 
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet'
-import L from 'leaflet'
-
-// Fix for default Leaflet icon issues in Next.js
-const defaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-
-// Custom icon for Stays (simulated with a different color/shape in a real app)
-const stayIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
+import React, { useEffect, useRef, useState } from 'react';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import * as pmtiles from 'pmtiles';
+import Cookies from 'js-cookie';
+import { fetchOsmInterests } from '../../services/api';
 
 interface TripMapProps {
-  mapData?: { lat: number; lng: number; radiusMiles: number; cityName: string };
-  attractions?: Array<{ id: string; name: string; lat: number; lng: number }>;
-  stays?: Array<{ id: string; name: string; price: number; lat: number; lng: number }>;
+  mapData?: any; 
+  attractions?: any[];
+  stays?: any[];
 }
 
-export default function TripMap({ mapData, attractions, stays }: TripMapProps) {
-  // Default to center of US if no data
-  const center: [number, number] = mapData ? [mapData.lat, mapData.lng] : [39.8283, -98.5795];
-  const zoom = mapData ? 12 : 4;
-  
-  // Convert miles to meters for Leaflet Circle
-  const radiusMeters = mapData ? mapData.radiusMiles * 1609.34 : 0;
+// Maps Sidebar UI selection IDs to exact OSM tag search strings
+const CATEGORY_TAG_MAP: Record<string, string[]> = {
+  amenity: ['amenity=restaurant', 'amenity=cafe', 'amenity=pub', 'amenity=bank', 'amenity=hospital', 'amenity=school', 'amenity=fuel', 'amenity=parking'],
+  aviation: ['aeroway=aerodrome', 'aeroway=heliport', 'aeroway=gate', 'aeroway=terminal', 'aeroway=runway'],
+  tourism: ['tourism=hotel', 'tourism=museum', 'tourism=attraction', 'tourism=viewpoint', 'tourism=artwork', 'tourism=zoo'],
+  leisure: ['leisure=park', 'leisure=swimming_pool', 'leisure=stadium', 'leisure=playground', 'leisure=golf_course'],
+  shop: ['shop=supermarket', 'shop=convenience', 'shop=clothes', 'shop=bicycle', 'shop=electronics'],
+  historic: ['historic=monument', 'historic=memorial', 'historic=castle', 'historic=ruins', 'historic=archaeological_site'],
+  transit: ['highway=bus_stop', 'highway=cycleway', 'highway=footway']
+};
 
-  return (
-    <div className="h-full w-full relative z-0">
-      <MapContainer center={center} zoom={zoom} className="h-full w-full rounded-lg">
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+export default function TripMap({ mapData }: TripMapProps) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [pois, setPois] = useState<any[]>([]);
+
+  // 1. Initialize MapLibre with PMTiles support
+  useEffect(() => {
+    if (!mapContainer.current || mapRef.current) return;
+
+    // Register the PMTiles protocol
+    const protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol('pmtiles', protocol.tile);
+
+    const protomapsKey = process.env.NEXT_PUBLIC_PROTOMAPS_KEY || 'YOUR_PROTOMAPS_KEY';
+    const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY || 'YOUR_MAPTILER_KEY';
+    const tomtom_api_key = process.env.NEXT_PUBLIC_TOMTOM_KEY || 'YOUR_TOMTOM_KEY';
+
+    // =========================================================================
+    // 🌍 THE ULTIMATE MAP THEME DICTIONARY
+    // =========================================================================
+    const STYLES: any = {
+      // --- PROTOMAPS (New Build Integrated) ---
+      protomapsBuild: {
+        version: 8,
+        sources: {
+          protomaps: {
+            type: 'vector',
+            url: 'pmtiles://https://build.protomaps.com/20260303.pmtiles', // Your new build
+            attribution: '© OpenStreetMap'
+          }
+        },
+        layers: [] // Requires a full style layers definition to render
+      },
+      protomapsLight: `https://api.protomaps.com/styles/v2/light.json?key=${protomapsKey}`,
+
+      // --- CARTO (Active) ---
+      cartoVoyager: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', 
+
+      // --- ENTERPRISE & OTHERS ---
+      tomtomBasic: `https://api.tomtom.com/map/1/style/22/basic_main.json?key=${tomtom_api_key}`,
+      mapTilerOsmVector: `https://api.maptiler.com/maps/openstreetmap/style.json?key=${maptilerKey}`,
+    };
+
+    // ⬇️ ACTIVE TILE ⬇️
+    const ACTIVE_STYLE = STYLES.protomapsLight;
+    // ⬆️ =======================================================================
+
+    mapRef.current = new maplibregl.Map({
+      container: mapContainer.current,
+      style: ACTIVE_STYLE,
+      center: [-105.2705, 40.0150], // Default Boulder coords
+      zoom: 12,
+      attributionControl: false
+    });
+
+    mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    return () => {
+      maplibregl.removeProtocol('pmtiles');
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // 2. Fly to Location & Fetch POIs based on search_state cookie
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const syncWithSearchState = async () => {
+      const cookieData = Cookies.get("search_state");
+      if (!cookieData) return;
+
+      try {
+        const { destination, radius, interests } = JSON.parse(cookieData);
         
-        {mapData && (
-          <>
-            {/* Center Marker */}
-            <Marker position={center} icon={defaultIcon}>
-              <Popup className="font-bold">{mapData.cityName}</Popup>
-            </Marker>
+        if (destination?.lat && destination?.lon) {
+          // Smoothly fly to the destination
+          mapRef.current!.flyTo({
+            center: [destination.lon, destination.lat],
+            zoom: radius > 15 ? 11 : 13,
+            essential: true,
+            duration: 2000 
+          });
 
-            {/* Radius Circle */}
-            <Circle 
-              center={center} 
-              radius={radiusMeters} 
-              pathOptions={{ color: 'blue', fillColor: 'blue', fillOpacity: 0.1 }} 
-            />
-          </>
-        )}
+          // Fetch POIs around that geocode
+          if (interests && interests.length > 0) {
+            const tagsToQuery = interests.flatMap((id: string) => CATEGORY_TAG_MAP[id] || []);
+            const elements = await fetchOsmInterests(tagsToQuery, destination.lat, destination.lon, radius);
+            setPois(elements);
+          } else {
+            setPois([]);
+          }
+        }
+      } catch (err) {
+        console.error("Map sync error:", err);
+      }
+    };
 
-        {/* Attractions Markers */}
-        {attractions?.map((place) => (
-          <Marker key={place.id} position={[place.lat, place.lng]} icon={defaultIcon}>
-            <Popup>{place.name}</Popup>
-          </Marker>
-        ))}
+    syncWithSearchState();
+  }, [mapData]); 
 
-        {/* Stay Markers */}
-        {stays?.map((stay) => (
-          <Marker key={stay.id} position={[stay.lat, stay.lng]} icon={stayIcon}>
-            <Popup>
-              <strong>{stay.name}</strong><br/>
-              ${stay.price} / night
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+  // 3. Render Custom Category Markers
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    pois.forEach((poi) => {
+      const lat = poi.lat || poi.center?.lat;
+      const lon = poi.lon || poi.center?.lon;
+      if (!lat || !lon) return;
+
+      const name = poi.tags?.name || 'Interesting Place';
+      const cat = poi.tags?.amenity || poi.tags?.tourism || poi.tags?.leisure || 'place';
       
-      {/* Legend Overlay */}
-      <div className="absolute top-4 right-4 bg-white p-3 rounded-md shadow-md z-[400]">
-        <div className="flex items-center space-x-2 mb-2">
-          <span className="w-4 h-4 rounded-full border border-blue-500 bg-blue-100 block"></span>
-          <span className="text-sm">{mapData?.radiusMiles || 5} mil radius</span>
+      const popupHtml = `
+        <div style="padding: 10px; font-family: sans-serif;">
+          <strong style="display: block; margin-bottom: 4px;">${name}</strong>
+          <span style="font-size: 11px; color: #666; text-transform: capitalize;">${cat.replace(/_/g, ' ')}</span>
         </div>
-        <div className="flex items-center space-x-2 mb-1">
-          <span className="text-blue-500 font-bold">📍</span>
-          <span className="text-sm">Places of Interest</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-blue-700 font-bold">🛏️</span>
-          <span className="text-sm">Stay Options</span>
-        </div>
-      </div>
-    </div>
-  );
+      `;
+
+      const markerEl = document.createElement('div');
+      markerEl.style.cssText = `
+        width: 24px; height: 24px; background: #fff; 
+        border: 2px solid #2563eb; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
+      `;
+      markerEl.innerHTML = poi.tags?.amenity ? '☕' : poi.tags?.tourism ? '📸' : '📍';
+
+      const marker = new maplibregl.Marker({ element: markerEl })
+        .setLngLat([lon, lat])
+        .setPopup(new maplibregl.Popup({ offset: 10 }).setHTML(popupHtml))
+        .addTo(mapRef.current!);
+
+      markersRef.current.push(marker);
+    });
+  }, [pois]);
+
+  return <div ref={mapContainer} style={{ width: '100%', height: '100%', borderRadius: '12px' }} />;
 }

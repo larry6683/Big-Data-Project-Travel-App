@@ -12,15 +12,49 @@ interface SidebarProps {
   loading?: boolean;
 }
 
+// Map the categories to OSM Overpass query definitions
+const INTEREST_CATEGORIES = [
+  { 
+    id: 'dining', 
+    label: '🍽️ Dining', 
+    query: 'nwr["amenity"~"^(restaurant|cafe|pub)$"]' 
+  },
+  { 
+    id: 'tourism', 
+    label: '📸 Tourism', 
+    query: 'nwr["tourism"~"^(hotel|museum|attraction|viewpoint|artwork|zoo)$"]' 
+  },
+  { 
+    id: 'leisure', 
+    label: '🌳 Leisure', 
+    query: 'nwr["leisure"~"^(park|swimming_pool|stadium|playground|golf_course)$"]' 
+  },
+  { 
+    id: 'shopping', 
+    label: '🛍️ Shopping', 
+    query: 'nwr["shop"="clothes"]' 
+  },
+  { 
+    id: 'historic', 
+    label: '🏛️ Historic', 
+    query: 'nwr["historic"~"^(monument|memorial|castle|ruins|archaeological_site)$"]' 
+  },
+  { 
+    id: 'transit_infrastructure', 
+    label: '🛣️ Transit', 
+    query: 'nwr["highway"~"^(residential|motorway|bus_stop|cycleway|footway)$"]; nwr["aeroway"="aerodrome"]' 
+  }
+];
+
 export default function Sidebar({ onSearch, loading }: SidebarProps) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [dates, setDates] = useState({ start: "", end: "" });
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
-  const [budget, setBudget] = useState<"mid-range" | "luxury">("mid-range");
-  const [travelClass, setTravelClass] = useState("ECONOMY");
+  const [budget, setBudget] = useState<"budget" | "luxury">("budget");
   const [radius, setRadius] = useState(30);
+  const [interests, setInterests] = useState<string[]>([]);
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   useEffect(() => {
@@ -33,9 +67,9 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
         setDates({ start: parsed.startDate || "", end: parsed.endDate || "" });
         setAdults(parsed.adults || 2);
         setChildren(parsed.children || 0);
-        setBudget(parsed.budget || "mid-range");
-        setTravelClass(parsed.travelClass || "ECONOMY");
+        setBudget(parsed.budget || "budget");
         setRadius(parsed.radius || 30);
+        setInterests(parsed.interests || []);
       } catch (e) {
         console.error("Failed to parse existing search cookie", e);
       }
@@ -44,13 +78,20 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
 
   const getCoordinates = async (locationName: string) => {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`);
+      const nominatimUrl = process.env.NEXT_PUBLIC_NOMINATIM_URL || "https://nominatim.openstreetmap.org/search";
+      const res = await fetch(`${nominatimUrl}?q=${encodeURIComponent(locationName)}&format=json&limit=1`);
       const data = await res.json();
       if (data?.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
     } catch (err) {
       console.error(`Failed to fetch coordinates for ${locationName}:`, err);
     }
     return null;
+  };
+
+  const handleInterestToggle = (query: string) => {
+    setInterests(prev => 
+      prev.includes(query) ? prev.filter(item => item !== query) : [...prev, query]
+    );
   };
 
   const handleSearchSubmit = async () => {
@@ -80,12 +121,15 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
       adults,
       children,
       budget,
-      travelClass,
       radius,
+      interests, 
       timestamp: new Date().toISOString(),
     };
     Cookies.set("search_state", JSON.stringify(searchState), { expires: 7 });
-    fetch("http://localhost:8000/api/v1/locations/trending", { method: "GET" }).catch(() => {});
+    
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    fetch(`${apiUrl}/locations/trending`, { method: "GET" }).catch(() => {});
+    
     setIsGeocoding(false);
     onSearch(searchState);
   };
@@ -110,18 +154,19 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
         .sb-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #2563eb; cursor: pointer; border: none; }
         .sb-toggle-btn { transition: all 0.15s; }
         .sb-toggle-btn:hover { opacity: 0.85; }
+        .sb-interest-btn { transition: all 0.2s; }
       `}</style>
 
       <div className="w-80" style={{
         minHeight: "100vh",
-        background: "#0f172a", // Updated background color
+        background: "#0f172a",
         borderRight: "1px solid #e8edf4",
         padding: "24px 18px",
         boxSizing: "border-box",
         display: "flex", flexDirection: "column", gap: "20px",
         fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
         overflowY: "auto",
-        color: "#ffffff" // Updated text color for light background
+        color: "#ffffff"
       }}>
 
         {/* Logo */}
@@ -140,7 +185,7 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
             placeholder="eg. NEW YORK, NY"
             value={source}
             onChange={setSource}
-            isDark={false} // Updated to light mode
+            isDark={false}
             showGPS={true}
           />
         </div>
@@ -152,7 +197,7 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
             placeholder="eg. LOS ANGELES, CA"
             value={destination}
             onChange={setDestination}
-            isDark={false} // Updated to light mode
+            isDark={false}
             showGPS={false}
           />
         </div>
@@ -204,7 +249,7 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
         <div>
           <SbLabel>Budget Category</SbLabel>
           <div style={{ display: "flex", background: "#e8edf4", borderRadius: "10px", padding: "3px", gap: "3px" }}>
-            {(["mid-range", "luxury"] as const).map((opt) => {
+            {(["budget", "luxury"] as const).map((opt) => {
               const active = budget === opt;
               return (
                 <button key={opt} className="sb-toggle-btn" onClick={() => setBudget(opt)} style={{
@@ -216,30 +261,11 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
                   cursor: "pointer",
                   boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
                 }}>
-                  {opt === "mid-range" ? "💰 Mid-Range" : "✨ Luxury"}
+                  {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {/* Travel Class */}
-        <div>
-          <SbLabel>Travel Class</SbLabel>
-          <select value={travelClass} onChange={(e) => setTravelClass(e.target.value)} className="sb-select" style={{
-            width: "100%", padding: "10px 12px",
-            fontFamily: "inherit", fontSize: "13px",
-            background: "#fff", color: "#1a202c",
-            border: "1.5px solid #e2e8f0", borderRadius: "10px",
-            cursor: "pointer", outline: "none",
-            appearance: "auto",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          }}>
-            <option value="ECONOMY">Economy</option>
-            <option value="PREMIUM_ECONOMY">Premium Economy</option>
-            <option value="BUSINESS">Business</option>
-            <option value="FIRST">First Class</option>
-          </select>
         </div>
 
         {/* Search Radius */}
@@ -257,6 +283,34 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
           />
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10.5px", color: "#64748b" }}>
             <span>5 mi</span><span>100 mi</span>
+          </div>
+        </div>
+
+        {/* Interests (OSM Categories) */}
+        <div>
+          <SbLabel>Interests</SbLabel>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {INTEREST_CATEGORIES.map((category) => {
+              const active = interests.includes(category.query);
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => handleInterestToggle(category.query)}
+                  className="sb-interest-btn"
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: "16px",
+                    border: active ? "1.5px solid #3b82f6" : "1.5px solid #334155",
+                    background: active ? "rgba(59, 130, 246, 0.15)" : "transparent",
+                    color: active ? "#60a5fa" : "#94a3b8",
+                    fontSize: "12px",
+                    cursor: "pointer"
+                  }}
+                >
+                  {category.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 

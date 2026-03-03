@@ -52,7 +52,8 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
       }
     };
     
-    const timer = setTimeout(fetchLocations, 100);
+    // Updated refresh time to 200ms debounce
+    const timer = setTimeout(fetchLocations, 200);
     return () => clearTimeout(timer);
   }, [query, value]);
 
