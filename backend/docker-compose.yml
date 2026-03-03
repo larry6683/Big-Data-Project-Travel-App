@@ -14,8 +14,10 @@ services:
     networks:
       - travel-app-network
     depends_on:
-      - redis
-      - elasticsearch
+      redis:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
 
   redis:
     image: redis:alpine
@@ -33,9 +35,21 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
     networks:
       - travel-app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 networks:
   travel-app-network:
     external: true
+
+volumes:
+  es_data:
+    driver: local

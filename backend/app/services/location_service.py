@@ -9,13 +9,13 @@ class LocationService(BaseAmadeusClient):
         if not token:
             return []
 
-        url = f"{self.base_url}/v1/reference-data/locations"
+        # Updated to the specific City Search endpoint
+        url = f"{self.base_url}/v1/reference-data/locations/cities"
         headers = {"Authorization": f"Bearer {token}"}
         params = {
-            "subType": "CITY", # Strictly cities
             "keyword": keyword,
             "countryCode": "US",
-            "page[limit]": 10
+            "max": 10
         }
 
         async with httpx.AsyncClient() as client:

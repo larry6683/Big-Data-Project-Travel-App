@@ -2,93 +2,312 @@
 
 "use client";
 
-import React, { useState } from "react";
-import { Search, Users, Calendar, Wallet } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 import LocationAutocomplete from "./LocationAutoComplete";
 
-export default function Sidebar() {
+interface SidebarProps {
+  onSearch: (params: any) => void;
+  loading?: boolean;
+}
+
+export default function Sidebar({ onSearch, loading }: SidebarProps) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [dates, setDates] = useState({ start: "", end: "" });
-  const [adults, setAdults] = useState(1);
+  const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
-  const [budget, setBudget] = useState("mid-range");
+  const [budget, setBudget] = useState<"mid-range" | "luxury">("mid-range");
+  const [travelClass, setTravelClass] = useState("ECONOMY");
+  const [radius, setRadius] = useState(30);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const handleSearchSubmit = () => {
+  useEffect(() => {
+    const saved = Cookies.get("search_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setSource(parsed.source?.name || "");
+        setDestination(parsed.destination?.name || "");
+        setDates({ start: parsed.startDate || "", end: parsed.endDate || "" });
+        setAdults(parsed.adults || 2);
+        setChildren(parsed.children || 0);
+        setBudget(parsed.budget || "mid-range");
+        setTravelClass(parsed.travelClass || "ECONOMY");
+        setRadius(parsed.radius || 30);
+      } catch (e) {
+        console.error("Failed to parse existing search cookie", e);
+      }
+    }
+  }, []);
+
+  const getCoordinates = async (locationName: string) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`);
+      const data = await res.json();
+      if (data?.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+    } catch (err) {
+      console.error(`Failed to fetch coordinates for ${locationName}:`, err);
+    }
+    return null;
+  };
+
+  const handleSearchSubmit = async () => {
     if (!source || !destination || !dates.start || !dates.end) {
       alert("Please fill in all location and date fields.");
       return;
     }
+    setIsGeocoding(true);
+    
+    // Geocode both locations before submission
+    const sourceCoords = await getCoordinates(source);
+    const destCoords = await getCoordinates(destination);
+    
+    if (!sourceCoords || !destCoords) {
+      alert("Could not find exact coordinates for one or both locations. Please select a valid city from the dropdown.");
+      setIsGeocoding(false);
+      return;
+    }
 
-    const startDate = new Date(dates.start);
-    const endDate = new Date(dates.end);
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-    const numNights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+    const numNights = Math.ceil(Math.abs(new Date(dates.end).getTime() - new Date(dates.start).getTime()) / 86400000);
     const searchState = {
-      source, destination, dates, numNights, adults, children, budget,
-      timestamp: new Date().toISOString()
+      source: { name: source, ...sourceCoords },
+      destination: { name: destination, ...destCoords },
+      startDate: dates.start,
+      endDate: dates.end,
+      numNights,
+      adults,
+      children,
+      budget,
+      travelClass,
+      radius,
+      timestamp: new Date().toISOString(),
     };
-
     Cookies.set("search_state", JSON.stringify(searchState), { expires: 7 });
     fetch("http://localhost:8000/api/v1/locations/trending", { method: "GET" }).catch(() => {});
+    setIsGeocoding(false);
+    onSearch(searchState);
   };
 
+  const isWorking = loading || isGeocoding;
+  const nightCount = dates.start && dates.end
+    ? Math.max(0, Math.ceil((new Date(dates.end).getTime() - new Date(dates.start).getTime()) / 86400000))
+    : 0;
+
   return (
-    <div className="w-80 h-screen bg-black text-white p-6 flex flex-col gap-6 border-r border-zinc-800 shadow-2xl overflow-y-auto">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="bg-blue-600 p-2 rounded-lg"><Search size={20} className="text-white" /></div>
-        <h2 className="text-xl font-bold tracking-tight">Plan Your Trip</h2>
-      </div>
+    <>
+      <style>{`
+        @keyframes sbSpin { to { transform: rotate(360deg); } }
+        .sb-input-date { transition: border-color 0.15s, box-shadow 0.15s; }
+        .sb-input-date:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important; outline: none; }
+        .sb-select:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important; outline: none; }
+        .sb-count-btn:hover { background: #f1f5f9 !important; }
+        .sb-submit:hover:not(:disabled) { background: #1d4ed8 !important; }
+        .sb-submit:active:not(:disabled) { transform: scale(0.98); }
+        .sb-range { accent-color: #2563eb; }
+        .sb-range::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #2563eb; cursor: pointer; box-shadow: 0 1px 4px rgba(37,99,235,0.4); }
+        .sb-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #2563eb; cursor: pointer; border: none; }
+        .sb-toggle-btn { transition: all 0.15s; }
+        .sb-toggle-btn:hover { opacity: 0.85; }
+      `}</style>
 
-      <div className="space-y-1">
-        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest ml-1">Departure From</label>
-        <LocationAutocomplete placeholder="from?" value={source} onChange={setSource} isDark={true} showGPS={true} />
-      </div>
+      <div className="w-80" style={{
+        minHeight: "100vh",
+        background: "#0f172a", // Updated background color
+        borderRight: "1px solid #e8edf4",
+        padding: "24px 18px",
+        boxSizing: "border-box",
+        display: "flex", flexDirection: "column", gap: "20px",
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        overflowY: "auto",
+        color: "#ffffff" // Updated text color for light background
+      }}>
 
-      <div className="space-y-1">
-        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest ml-1">Destination To</label>
-        <LocationAutocomplete placeholder="where to?" value={destination} onChange={setDestination} isDark={true} showGPS={false} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest ml-1">Start</label>
-          <input type="date" className="bg-zinc-900 w-full p-2.5 rounded-lg text-xs border border-zinc-800 text-white outline-none focus:border-blue-500" onChange={(e) => setDates({...dates, start: e.target.value})} />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest ml-1">End</label>
-          <input type="date" className="bg-zinc-900 w-full p-2.5 rounded-lg text-xs border border-zinc-800 text-white outline-none focus:border-blue-500" onChange={(e) => setDates({...dates, end: e.target.value})} />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest ml-1 flex items-center gap-1"><Users size={12} /> Travelers</label>
-        <div className="flex justify-between items-center bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-          <div className="flex flex-col items-center flex-1 border-r border-zinc-800">
-            <input type="number" value={adults} min={1} onChange={(e) => setAdults(parseInt(e.target.value) || 1)} className="bg-transparent w-full text-center text-sm outline-none font-bold text-white" />
-            <span className="text-[9px] text-zinc-500 uppercase">Adults</span>
+        {/* Logo */}
+        <div style={{ paddingBottom: "10px", borderBottom: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: "18px", fontWeight: 800, color: "#ffffff", letterSpacing: "-0.3px", display: "flex", alignItems:"center", gap:"8px" }}>
+            <div className="bg-blue-100 p-1.5 rounded-lg border border-blue-200"><Search size={16} className="text-blue-600" /></div>
+            WanderPlan <span style={{ color: "#2563eb" }}>US</span>
           </div>
-          <div className="flex flex-col items-center flex-1">
-            <input type="number" value={children} min={0} onChange={(e) => setChildren(parseInt(e.target.value) || 0)} className="bg-transparent w-full text-center text-sm outline-none font-bold text-white" />
-            <span className="text-[9px] text-zinc-500 uppercase">Children</span>
+          <div style={{ fontSize: "11px", color: "#c2c2c2", marginTop: "4px" }}>Plan Your Trip</div>
+        </div>
+
+        {/* Source City */}
+        <div>
+          <SbLabel>Departure From</SbLabel>
+          <LocationAutocomplete
+            placeholder="eg. NEW YORK, NY"
+            value={source}
+            onChange={setSource}
+            isDark={false} // Updated to light mode
+            showGPS={true}
+          />
+        </div>
+
+        {/* Destination City */}
+        <div>
+          <SbLabel>Destination To</SbLabel>
+          <LocationAutocomplete
+            placeholder="eg. LOS ANGELES, CA"
+            value={destination}
+            onChange={setDestination}
+            isDark={false} // Updated to light mode
+            showGPS={false}
+          />
+        </div>
+
+        {/* Travel Dates */}
+        <div>
+          <SbLabel>
+            Travel Dates{" "}
+            {nightCount > 0 && <span style={{ fontWeight: 400, color: "#94a3b8", fontSize: "10.5px" }}>· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
+          </SbLabel>
+          <div style={{ display: "flex", gap: "7px" }}>
+            {[
+              { val: dates.start, key: "start" },
+              { val: dates.end, key: "end" },
+            ].map(({ val, key }) => (
+              <input
+                key={key}
+                type="date"
+                value={val}
+                onChange={(e) => setDates({ ...dates, [key]: e.target.value })}
+                className="sb-input-date"
+                style={{
+                  width: "100%", padding: "10px 12px",
+                  fontFamily: "inherit", fontSize: "13px",
+                  background: "#fff", color: "#1a202c",
+                  border: "1.5px solid #e2e8f0", borderRadius: "10px",
+                  boxSizing: "border-box",
+                  cursor: "pointer",
+                }}
+              />
+            ))}
           </div>
         </div>
-      </div>
 
-      <div className="space-y-1">
-        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest ml-1 flex items-center gap-1"><Wallet size={12}/> Budget Category</label>
-        <select value={budget} onChange={(e) => setBudget(e.target.value)} className="bg-zinc-900 w-full p-2.5 rounded-lg text-xs outline-none border border-zinc-800 text-white focus:border-blue-500 appearance-none">
-          <option value="economy">Economy</option>
-          <option value="mid-range">Mid-Range</option>
-          <option value="luxury">Luxury</option>
-        </select>
-      </div>
+        <div style={{ display: "flex", gap: "10px" }}>
+           {/* Adults */}
+          <div style={{ flex: 1}}>
+            <SbLabel>Adults</SbLabel>
+            <SbCounter value={adults} min={1} max={9} onChange={setAdults} />
+          </div>
+           {/* Children */}
+          <div style={{ flex: 1}}>
+            <SbLabel>Children</SbLabel>
+            <SbCounter value={children} min={0} max={9} onChange={setChildren} />
+          </div>
+        </div>
 
-      <button onClick={handleSearchSubmit} className="mt-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 group">
-        <Search size={18} /> Generate Itinerary
-      </button>
+        {/* Budget / Luxury */}
+        <div>
+          <SbLabel>Budget Category</SbLabel>
+          <div style={{ display: "flex", background: "#e8edf4", borderRadius: "10px", padding: "3px", gap: "3px" }}>
+            {(["mid-range", "luxury"] as const).map((opt) => {
+              const active = budget === opt;
+              return (
+                <button key={opt} className="sb-toggle-btn" onClick={() => setBudget(opt)} style={{
+                  flex: 1, padding: "7px 0", borderRadius: "8px", border: "none",
+                  background: active ? "#fff" : "transparent",
+                  fontFamily: "inherit", fontSize: "12.5px",
+                  fontWeight: active ? 700 : 400,
+                  color: active ? "#1a202c" : "#64748b",
+                  cursor: "pointer",
+                  boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
+                }}>
+                  {opt === "mid-range" ? "💰 Mid-Range" : "✨ Luxury"}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Travel Class */}
+        <div>
+          <SbLabel>Travel Class</SbLabel>
+          <select value={travelClass} onChange={(e) => setTravelClass(e.target.value)} className="sb-select" style={{
+            width: "100%", padding: "10px 12px",
+            fontFamily: "inherit", fontSize: "13px",
+            background: "#fff", color: "#1a202c",
+            border: "1.5px solid #e2e8f0", borderRadius: "10px",
+            cursor: "pointer", outline: "none",
+            appearance: "auto",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}>
+            <option value="ECONOMY">Economy</option>
+            <option value="PREMIUM_ECONOMY">Premium Economy</option>
+            <option value="BUSINESS">Business</option>
+            <option value="FIRST">First Class</option>
+          </select>
+        </div>
+
+        {/* Search Radius */}
+        <div>
+          <SbLabel>
+            Search Radius{" "}
+            <span style={{ fontWeight: 400, color: "#64748b" }}>({radius} mi)</span>
+          </SbLabel>
+          <input
+            type="range" min={5} max={100} step={5}
+            value={radius}
+            onChange={(e) => setRadius(parseInt(e.target.value))}
+            className="sb-range"
+            style={{ width: "100%", cursor: "pointer", margin: "4px 0" }}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10.5px", color: "#64748b" }}>
+            <span>5 mi</span><span>100 mi</span>
+          </div>
+        </div>
+
+        {/* Search Button */}
+        <button className="sb-submit mt-auto" onClick={handleSearchSubmit} disabled={isWorking} style={{
+          width: "100%", padding: "16px",
+          background: isWorking ? "#94a3b8" : "#2563eb",
+          color: "#fff", border: "none", borderRadius: "16px",
+          fontFamily: "inherit", fontSize: "14px", fontWeight: 700,
+          cursor: isWorking ? "not-allowed" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+          boxShadow: isWorking ? "none" : "0 4px 15px rgba(37,99,235,0.3)",
+          transition: "background 0.15s, box-shadow 0.15s, transform 0.1s",
+        }}>
+          {isWorking ? (
+            <><Loader2 size={17} style={{ animation: "sbSpin 0.7s linear infinite" }} /> Gathering Details...</>
+          ) : (
+            <><Search size={17} /> Generate Itinerary</>
+          )}
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ─── Shared small components ──────────────────────────────────────────────────
+function SbLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#c6c6c6", marginBottom: "6px", marginLeft: "4px" }}>
+      {children}
     </div>
   );
 }
+
+function SbCounter({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (v: number) => void }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#fff", padding:"4px", borderRadius:"10px", border:"1.5px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+      <button className="sb-count-btn" onClick={() => onChange(Math.max(min, value - 1))} style={countBtnStyle}>−</button>
+      <span style={{ flex: 1, fontWeight: 700, fontSize: "14px", color: "#1a202c", textAlign: "center" }}>{value}</span>
+      <button className="sb-count-btn" onClick={() => onChange(Math.min(max, value + 1))} style={countBtnStyle}>+</button>
+    </div>
+  );
+}
+
+const countBtnStyle: React.CSSProperties = {
+  width: "30px", height: "30px",
+  border: "1.5px solid #e2e8f0", borderRadius: "8px",
+  background: "#fff", color: "#374151",
+  fontSize: "17px", cursor: "pointer",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  fontFamily: "monospace",
+  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+  transition: "background 0.12s",
+};

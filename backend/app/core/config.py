@@ -17,7 +17,6 @@ class Settings(BaseSettings):
         "http://localhost:8000",  
     ]
 
-    ELASTICSEARCH_URL: str = "http://localhost:9200" 
     AMADEUS_CLIENT_ID: str = ""
     AMADEUS_CLIENT_SECRET: str = ""
     WEATHER_API_KEY: str = ""
