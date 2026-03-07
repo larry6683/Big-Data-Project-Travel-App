@@ -18,20 +18,12 @@ export default function Dashboard() {
   const handleSearch = async (params: TripSearchParams) => {
     setLoading(true);
     setError(null);
-    
     try {
       const destinationData = await travelApi.getDestinationData(params);
-      
-      if (!destinationData) {
-        setError("Could not retrieve map coordinates for this destination. Showing default map.");
-      }
-
-      // 1. Determine which transport API to call based on the Fly/Drive toggle
       const transportPromise = params.travelMode === 'drive' 
         ? travelApi.getDriving(params) 
         : travelApi.getFlights(params);
 
-      // 2. Fetch the rest of the microservices concurrently
       const [transportData, stays, weather, attractions] = await Promise.all([
         transportPromise,
         travelApi.getStays(params),
@@ -39,80 +31,54 @@ export default function Dashboard() {
         travelApi.getAttractions(params.destination, params.radius)
       ]);
 
-      // 3. Update state with unified transport data and the travelMode
-      setTripData({ 
-        destinationData, 
-        travelMode: params.travelMode,
-        transportData, 
-        stays, 
-        weather, 
-        attractions 
-      });
+      setTripData({ destinationData, travelMode: params.travelMode, transportData, stays, weather, attractions });
     } catch (err) {
-      console.error("Failed to fetch trip data:", err);
-      setError("An error occurred while fetching your trip details from the server.");
+      setError("Failed to fetch data.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!tripData) return;
-    
-    const blob = await travelApi.exportPdf(tripData);
-    if (blob) {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'WanderPlan_Itinerary.pdf';
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } else {
-      alert("Failed to generate PDF document.");
-    }
-  };
-
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen w-screen bg-white overflow-hidden">
       <Sidebar onSearch={handleSearch} loading={loading} />
 
-      <main className="flex-1 flex flex-col p-6 overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">Destination Overview & Nearby Places</h1>
-          <button 
-            onClick={handleExportPDF}
-            disabled={!tripData || loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Export as PDF
-          </button>
+      <main className="flex-1 flex overflow-hidden">
+        
+        {/* LEFT PANE: Results Area */}
+        <div className="flex-1 h-full overflow-y-auto custom-scrollbar bg-gray-50/30">
+          <div className="p-6 w-full"> 
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Trip Planner</h1>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-700 p-4 border border-red-100 mb-6 text-sm font-bold">
+                {error}
+              </div>
+            )}
+
+            {tripData ? (
+              <TripResults data={tripData} loading={loading} />
+            ) : (
+              // Empty state with no rounded corners
+              <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-gray-200 bg-white w-full">
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">
+                  {loading ? "Searching..." : "Enter a destination to start planning"}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r-md shadow-sm">
-            <p className="text-sm font-medium">{error}</p>
+        {/* RIGHT PANE: Fixed Map - Radius Removed */}
+        <div className="hidden lg:block w-[40%] h-full border-l border-gray-100 bg-white">
+          <div className="w-full h-full relative">
+            {/* The DynamicMap inside will now be sharp and edge-to-edge */}
+            <DynamicMap mapData={tripData?.destinationData} />
           </div>
-        )}
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6 h-[400px] relative z-0">
-          <DynamicMap 
-            mapData={tripData?.destinationData} 
-            attractions={tripData?.attractions} 
-            stays={tripData?.stays} 
-          />
         </div>
 
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Trip Results</h2>
-        {tripData ? (
-          <TripResults data={tripData} />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
-            <div className="text-4xl mb-3">🌍</div>
-            <p className="text-gray-500 font-medium">
-              {loading ? "Searching across multiple services..." : "Enter your trip details to generate an itinerary."}
-            </p>
-          </div>
-        )}
       </main>
     </div>
   );

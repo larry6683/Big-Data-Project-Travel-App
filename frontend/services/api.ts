@@ -29,12 +29,6 @@ export interface TripSearchParams {
   interests: string[];
 }
 
-// Helper to extract a 3-letter IATA code from the location name for the Amadeus Flights API
-const extractIATA = (locationName: string) => {
-  const match = locationName.match(/\b[A-Z]{3}\b/);
-  return match ? match[0] : locationName.substring(0, 3).toUpperCase();
-};
-
 export const travelApi = {
   searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<LocationResult[]> => {
     try {
@@ -61,18 +55,36 @@ export const travelApi = {
 
   getDestinationData: async (params: any) => ({ lat: params?.destination?.lat, lon: params?.destination?.lon }),
 
-  // 1. Fetch Flights (Amadeus)
+// 1. Fetch Flights (Amadeus)
   getFlights: async (params: TripSearchParams) => {
     try {
+      let originIata = params.source.iata;
+      let destIata = params.destination.iata;
+
+      if (!originIata && params.source.lat && params.source.lon) {
+         const { data } = await axios.get(`${API_BASE_URL}/locations/airport/nearest`, { params: { lat: params.source.lat, lon: params.source.lon } });
+         originIata = data.iata;
+      }
+      
+      if (!destIata && params.destination.lat && params.destination.lon) {
+         const { data } = await axios.get(`${API_BASE_URL}/locations/airport/nearest`, { params: { lat: params.destination.lat, lon: params.destination.lon } });
+         destIata = data.iata;
+      }
+
+      // Map budget to dual travel classes
+      const travelClasses = params.budget === 'luxury' 
+        ? 'BUSINESS,FIRST' 
+        : 'ECONOMY,PREMIUM_ECONOMY';
+
       const response = await axios.get(`${API_BASE_URL}/flights/search`, {
         params: {
-          origin: params.source.iata || extractIATA(params.source.name),
-          destination: params.destination.iata || extractIATA(params.destination.name),
+          origin: originIata || 'JFK',
+          destination: destIata || 'LAX',
           date: params.startDate,
           return_date: params.endDate,
           adults: params.adults,
           children: params.children,
-          travel_class: params.budget === 'luxury' ? 'BUSINESS' : 'ECONOMY'
+          travel_class: travelClasses // Sends the comma-separated string
         }
       });
       return response.data;
@@ -103,7 +115,6 @@ export const travelApi = {
   // 3. Fetch Stays (Amadeus)
   getStays: async (params: TripSearchParams) => {
     try {
-      // Convert miles to kilometers for the hotel radius parameter
       const radiusKm = Math.round(params.radius * 1.60934); 
       const response = await axios.get(`${API_BASE_URL}/hotels/nearby`, {
         params: {

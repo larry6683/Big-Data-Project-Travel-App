@@ -144,25 +144,25 @@ export default function TripMap({ mapData }: TripMapProps) {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '12px', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '0px', overflow: 'hidden' }}>
       
       {/* Floating Radius Controller */}
       <div style={{
         position: 'absolute',
-        top: '16px',
-        left: '50%',
+        bottom: '12px',
+        left: '100px',
         transform: 'translateX(-50%)',
         zIndex: 10,
         background: 'white',
-        padding: '5px 10px',
+        padding: '1px 3px',
         borderRadius: '30px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        gap: '10px',
         border: '1px solid #e5e7eb'
       }}>
-        <label style={{ fontSize: '10px', fontWeight: 600, color: '#374151', minWidth: '85px' }}>
+        <label style={{ fontSize: '10px', fontWeight: 600, color: '#374151', paddingLeft: '6px' }}>
           Radius: {radiusValue} mi
         </label>
         <input 
@@ -174,7 +174,7 @@ export default function TripMap({ mapData }: TripMapProps) {
           onChange={handleRadiusSlider}
           onMouseUp={handleRadiusDrop}
           onTouchEnd={handleRadiusDrop}
-          style={{ width: '150px', cursor: 'pointer', accentColor: '#2563eb' }}
+          style={{ width: '100px', cursor: 'pointer', accentColor: '#2563eb' }}
         />
       </div>
 

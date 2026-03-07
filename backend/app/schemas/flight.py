@@ -1,5 +1,7 @@
+# larry6683/big-data-project-travel-app/backend/app/schemas/flight.py
+
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class FlightSegment(BaseModel):
     departure_airport: str
@@ -9,6 +11,7 @@ class FlightSegment(BaseModel):
     carrier_code: str
     carrier_name: str
     flight_number: str
+    checked_bags: Optional[int] = 0  
 
 class FlightItinerary(BaseModel):
     duration: str
@@ -22,4 +25,4 @@ class FlightOffer(BaseModel):
     airline_code: str
     airline_name: str
     cabin_class: str
-    itineraries: List[FlightItinerary]  
+    itineraries: List[FlightItinerary]

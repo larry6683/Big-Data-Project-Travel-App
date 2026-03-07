@@ -1,3 +1,5 @@
+# larry6683/big-data-project-travel-app/backend/app/api/v1/endpoints/flights.py
+
 from fastapi import APIRouter, HTTPException, Query
 from typing import List
 from app.services.flight_service import flight_service
@@ -13,11 +15,11 @@ async def search_flights(
     date: str = Query(..., description="Departure date YYYY-MM-DD"),
     return_date: str = Query(..., description="Return date YYYY-MM-DD"),
     adults: int = Query(..., description="Number of adult passengers"),
-    travel_class: str = Query("ECONOMY", description="Cabin class: ECONOMY, PREMIUM_ECONOMY, BUSINESS, FIRST"),
+    travel_class: str = Query("ECONOMY,PREMIUM_ECONOMY", description="Comma-separated cabin classes"),
     children: int = Query(0, description="Number of children (Optional)")
 ):
     """
-    Search for round-trip flights.
+    Search for round-trip flights supporting multiple cabin classes concurrently.
     """
     
     increment_trending("top_destinations", destination.lower())
