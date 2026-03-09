@@ -289,7 +289,7 @@ const getCoordinates = async (locationName: string) => {
           {isWorking ? (
             <><Loader2 size={17} style={{ animation: "sbSpin 0.7s linear infinite" }} /> Gathering Details...</>
           ) : (
-            <><Search size={17} /> Generate Itinerary</>
+            <><Search size={17} /> SUBMIT</>
           )}
         </button>
       </div>

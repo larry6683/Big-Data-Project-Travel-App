@@ -1,5 +1,3 @@
-// larry6683/big-data-project-travel-app/frontend/components/results/TripResults.tsx
-
 import React, { useState, useEffect } from 'react';
 import FlightCard from './FlightCard';
 import StaysCard from './StayCard';
@@ -14,22 +12,26 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
 
   // Safely check the travel mode passed directly from page.tsx
   const showFlights = data?.travelMode === 'fly';
+  
+  // Check if we actually have flight results returned from the API
+  const hasFlights = data?.transportData && data.transportData.length > 0;
 
-  // Reset the active tab whenever a new search completes
+  // Reset or auto-switch the active tab whenever a new search completes
   useEffect(() => {
     if (data && !loading) {
-      if (showFlights && activeTab === 'drive') {
+      if (showFlights && hasFlights) {
         setActiveTab('flights');
-      } else if (!showFlights && activeTab === 'flights') {
+      } else {
+        // Automatically switch to drive if they chose drive OR if no flights exist
         setActiveTab('drive');
       }
     }
-  }, [data, loading, showFlights]);
+  }, [data, loading, showFlights, hasFlights]);
 
   if (!data && !loading) return null;
 
-  // Conditionally set the first transport tab
-  const transportTab = showFlights 
+  // Build the 5 tabs dynamically. The first tab is EITHER flights OR drive.
+  const transportTab = (showFlights && hasFlights) 
     ? { id: 'flights', label: 'Flights', icon: '✈️' }
     : { id: 'drive', label: 'Drive', icon: '🚗' };
 
@@ -78,7 +80,18 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
         )}
 
         {activeTab === 'drive' && (
-          <DrivingCard drivingData={data?.drivingData || {}} />
+          <div className="flex flex-col gap-4">
+            {/* If they wanted flights but none existed, show a helpful alert message */}
+            {showFlights && !hasFlights && (
+              <div className="p-4 bg-blue-50 text-blue-800 rounded-xl border border-blue-200 flex items-center gap-3">
+                <span className="text-xl">ℹ️</span>
+                <p className="text-sm font-medium">
+                  We couldn't find any flights for this route, so we're showing you the best driving route instead!
+                </p>
+              </div>
+            )}
+            <DrivingCard drivingData={data?.drivingData || {}} />
+          </div>
         )}
         
         {activeTab === 'stays' && (
@@ -90,7 +103,7 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
         )}
 
         {activeTab === 'tours' && (
-          <div className="p-12 text-center bg-white border border-dashed border-gray-200 rounded-2xl">
+          <div className="p-12 text-center bg-white border border-dashed border-gray-200 rounded-2xl mt-4">
             <span className="text-4xl block mb-4">🗺️</span>
             <h3 className="text-lg font-black text-gray-800">Local Tours & Experiences</h3>
             <p className="text-gray-500 text-sm mt-1">Guided tours coming soon for {data?.destinationData?.name || 'this destination'}.</p>

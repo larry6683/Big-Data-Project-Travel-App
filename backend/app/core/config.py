@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     AMADEUS_CLIENT_ID: str = ""
     AMADEUS_CLIENT_SECRET: str = ""
     WEATHER_API_KEY: str = ""
-    OPENSTREETMAP_URL: str = "https://nominatim.openstreetmap.org"
+    BDC_API_KEY: str = "" 
 
     POSTGRES_URL: str = "postgresql://user:password@localhost:5432/traveldb"
 
