@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import TripResults from '@/components/results/TripResults';
 import dynamic from 'next/dynamic';
@@ -17,76 +17,82 @@ export default function Dashboard() {
   const [tripData, setTripData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = async (params: TripSearchParams) => {
+  useEffect(() => {
+    sessionStorage.removeItem('current_trip_data');
+    sessionStorage.removeItem('route_data_Origin_Destination');
+    
+    const cachedTrip = sessionStorage.getItem('current_trip_results');
+    if (cachedTrip) {
+      try {
+        setTripData(JSON.parse(cachedTrip));
+      } catch (err) {
+        console.error("Failed to parse cached trip data", err);
+      }
+    }
+  }, []);
+
+const handleSearch = async (params: TripSearchParams) => {
     setLoading(true);
     setError(null);
+    
+    // 🧹 PRE-CLEANUP: Clear any selected flights/drives from previous searches
+    const tripStateStr = localStorage.getItem('trip_state');
+    if (tripStateStr) {
+      try {
+        const tripState = JSON.parse(tripStateStr);
+        tripState.flights = [];
+        tripState.drive = null;
+        localStorage.setItem('trip_state', JSON.stringify(tripState));
+      } catch (e) {
+        console.error("Failed to clear trip_state", e);
+      }
+    }
+
     try {
-      const destinationData = await travelApi.getDestinationData(params);
-      
       const isDrive = params.travelMode === 'drive';
       const transportPromise = isDrive 
         ? travelApi.getDriving(params) 
         : travelApi.getFlights(params);
 
-      const [transportResponse, stays, weather, attractions] = await Promise.all([
+      let [transportResponse, stays, weather, attractions, toursData] = await Promise.all([
         transportPromise,
         travelApi.getStays(params),
         travelApi.getWeather(params.destination, { start: params.startDate, end: params.endDate }),
-        travelApi.getAttractions(params.destination, params.radius)
+        travelApi.getAttractions(params.destination, params.radius),
+        travelApi.getTours(params.destination, params.radius) 
       ]);
 
-      setTripData({ 
-        destinationData, 
-        travelMode: params.travelMode, 
-        transportData: !isDrive ? transportResponse : null, // Store flights here
-        drivingData: isDrive ? transportResponse : null,    // Store driving here
-        stays, 
-        weather, 
-        attractions,
-        rawParams: params // Keep original params for the PDF generator
-      });
+      let finalFlightData = null;
+      let finalDriveData = null;
+
+      if (isDrive) {
+        finalDriveData = transportResponse;
+      } else {
+        if (transportResponse && transportResponse.length > 0) {
+          finalFlightData = transportResponse;
+        } else {
+          finalDriveData = await travelApi.getDriving(params);
+        }
+      }
+
+      // ✨ EXPLICIT NULL CHECKS: Force empty arrays/objects to be saved as null
+      const newTripData: any = { 
+        rawParams: params, 
+        flightData: finalFlightData, 
+        drivingData: finalDriveData,
+        stays: stays && stays.length > 0 ? stays : null, 
+        weather: weather && Object.keys(weather).length > 0 ? weather : null, 
+        attractions: attractions && attractions.length > 0 ? attractions : null,
+        toursData: toursData && toursData.length > 0 ? toursData : null 
+      };
+
+      setTripData(newTripData);
+      sessionStorage.setItem('current_trip_results', JSON.stringify(newTripData));
+
     } catch (err) {
       setError("Failed to fetch data.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleExportPdf = async () => {
-    if (!tripData || !tripData.rawParams) return;
-    setIsExporting(true);
-    
-    try {
-      // Build the payload matching your backend TripGenerateRequest schema
-      const payload = {
-        username: "Traveler", // You can update this if you add user accounts later
-        destination: tripData.rawParams.destination.city || tripData.rawParams.destination.name || "Destination",
-        check_in_date: tripData.rawParams.startDate,
-        check_out_date: tripData.rawParams.endDate,
-        flight: tripData.transportData?.[0] || null, // Pass the first flight option if available
-        hotel: tripData.stays?.[0] || null           // Pass the first hotel option if available
-      };
-
-      const blob = await travelApi.exportPdf(payload);
-      
-      if (blob) {
-        // Create a temporary URL for the downloaded blob and force a click
-        const url = window.URL.createObjectURL(new Blob([blob]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${payload.destination.replace(/\s+/g, '_')}_Itinerary.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        alert("Failed to generate PDF. Please try again.");
-      }
-    } catch (err) {
-      console.error("PDF Export Error:", err);
-      alert("An error occurred while generating the PDF.");
-    } finally {
-      setIsExporting(false);
     }
   };
 
@@ -105,12 +111,9 @@ export default function Dashboard() {
               {/* PDF EXPORT BUTTON */}
               {tripData && (
                 <button 
-                  onClick={handleExportPdf}
-                  disabled={isExporting}
                   className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                  {isExporting ? "Generating..." : "Export PDF"}
+Generate Itenirary
                 </button>
               )}
             </div>
@@ -121,12 +124,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {tripData ? (
+            {tripData || loading ? (
               <TripResults data={tripData} loading={loading} />
             ) : (
               <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-gray-200 bg-white w-full rounded-2xl">
                 <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">
-                  {loading ? "Searching..." : "Enter a destination to start planning"}
+                  Enter a destination to start planning
                 </p>
               </div>
             )}
@@ -134,9 +137,9 @@ export default function Dashboard() {
         </div>
 
         {/* RIGHT PANE: Fixed Map */}
-        <div className="hidden lg:block w-[40%] h-full border-l border-gray-100 bg-white">
+        <div className="hidden lg:block w-[30vw] h-full border-l border-gray-100 bg-white">
           <div className="w-full h-full relative">
-            <DynamicMap mapData={tripData?.destinationData} />
+            <DynamicMap mapData={tripData?.rawParams?.destination} />
           </div>
         </div>
 

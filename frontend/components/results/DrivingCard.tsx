@@ -1,3 +1,5 @@
+// larry6683/big-data-project-travel-app/frontend/components/results/DrivingCard.tsx
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -26,8 +28,6 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
   };
 
   useEffect(() => {
-    setPassedCities([]);
-    
     const loadRouteData = async () => {
       setLoading(true);
       setError(null);
@@ -44,33 +44,57 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
           dName = searchState.destination?.name || "Destination";
         }
 
+        const cachedTripStr = sessionStorage.getItem('current_trip_results');
+        let cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : null;
+
         if (drivingData && Object.keys(drivingData).length > 0) {
           setRouteData({
             ...drivingData,
             sourceName: sName,
             destinationName: dName
           });
+          
+          if (cachedTrip?.drivingData?.passedCities) {
+            setPassedCities(cachedTrip.drivingData.passedCities);
+          }
+          
           setLoading(false);
           return;
         }
 
         if (!searchState) throw new Error("No search state found.");
 
+        if (cachedTrip?.drivingData) {
+          setRouteData(cachedTrip.drivingData);
+          if (cachedTrip.drivingData.passedCities) {
+            setPassedCities(cachedTrip.drivingData.passedCities);
+          }
+          setLoading(false);
+          return;
+        }
+
         const { source, destination } = searchState;
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
         const response = await fetch(
-          `${baseUrl.replace('/api/v1', '')}/driving/route?origin_lat=${source.lat}&origin_lon=${source.lon}&dest_lat=${destination.lat}&dest_lon=${destination.lon}`
+          `${baseUrl}/driving/route?origin_lat=${source.lat}&origin_lon=${source.lon}&dest_lat=${destination.lat}&dest_lon=${destination.lon}`
         );
 
         if (!response.ok) throw new Error("Failed to fetch driving route.");
 
         const data = await response.json();
-        setRouteData({
+        const finalRouteData = {
           ...data,
           sourceName: sName,
           destinationName: dName
-        });
+        };
+
+        if (cachedTrip) {
+          cachedTrip.drivingData = finalRouteData;
+          sessionStorage.setItem('current_trip_results', JSON.stringify(cachedTrip));
+        }
+        
+        setRouteData(finalRouteData);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -83,30 +107,43 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
 
   useEffect(() => {
     if (routeData?.geometry?.coordinates && passedCities.length === 0 && !citiesLoading) {
-      // CACHE CHECK: Look in sessionStorage first so we don't re-fetch on tab switches
-      const cacheKey = `route_cities_${routeData.sourceName}_${routeData.destinationName}`;
-      const cached = sessionStorage.getItem(cacheKey);
+      const cachedTripStr = sessionStorage.getItem('current_trip_results');
+      const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : null;
 
-      if (cached) {
-        setPassedCities(JSON.parse(cached));
+      if (cachedTrip?.drivingData?.passedCities) {
+         setPassedCities(cachedTrip.drivingData.passedCities);
       } else {
-        fetchIntermediates();
+         fetchIntermediates();
       }
     }
   }, [routeData]);
 
-  const fetchIntermediates = async () => {
+const fetchIntermediates = async () => {
     if (citiesLoading || !routeData?.geometry?.coordinates) return;
 
     setCitiesLoading(true);
     const coords = routeData.geometry.coordinates;
     const citiesFound: string[] = [];
 
-    const step = Math.max(1, Math.floor(coords.length / 20));
+    // INCREASED SAMPLE RATE: Now checking up to 40 points along the route instead of 20
+    const step = Math.max(1, Math.floor(coords.length / 40));
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
-    for (let i = step; i < coords.length; i += step) {
+    const startCoord = coords[0];
+    const endCoord = coords[coords.length - 1];
+
+    for (let i = step; i < coords.length - step; i += step) {
       const [lon, lat] = coords[i];
+
+      const distToStart = Math.sqrt(Math.pow(lon - startCoord[0], 2) + Math.pow(lat - startCoord[1], 2));
+      const distToEnd = Math.sqrt(Math.pow(lon - endCoord[0], 2) + Math.pow(lat - endCoord[1], 2));
+
+      // SHRUNK BUBBLE: Reduced from 0.25 (~17 miles) to 0.08 (~5.5 miles)
+      // This allows close-by cities like Longmont to easily show up on shorter road trips!
+      if (distToStart < 0.08 || distToEnd < 0.08) {
+        continue; 
+      }
+
       try {
         const res = await fetch(`${baseUrl}/locations/nearest?lat=${lat}&lon=${lon}`);
         if (res.ok) {
@@ -117,9 +154,11 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
           const stateDisplay = stateName ? (stateAbbr[stateName] || stateName) : "";
           const fullLabel = stateDisplay ? `${cityName}, ${stateDisplay}` : cityName;
 
-          const isSourceOrDest = 
-            fullLabel.toLowerCase() === routeData.sourceName?.toLowerCase() || 
-            fullLabel.toLowerCase() === routeData.destinationName?.toLowerCase();
+          const sNameLower = (routeData.sourceName || "").toLowerCase().split(',')[0].trim();
+          const dNameLower = (routeData.destinationName || "").toLowerCase().split(',')[0].trim();
+          const cityLower = (cityName || "").toLowerCase().trim();
+
+          const isSourceOrDest = sNameLower === cityLower || dNameLower === cityLower;
 
           if (cityName && cityName !== "Unknown" && !citiesFound.includes(fullLabel) && !isSourceOrDest) {
             citiesFound.push(fullLabel);
@@ -132,9 +171,15 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
 
     setPassedCities(citiesFound);
     
-    // CACHE SAVE: Save the cities to memory so they survive tab switches
-    const cacheKey = `route_cities_${routeData.sourceName}_${routeData.destinationName}`;
-    sessionStorage.setItem(cacheKey, JSON.stringify(citiesFound));
+    const cachedTripStr = sessionStorage.getItem('current_trip_results');
+    if (cachedTripStr) {
+      const cachedTrip = JSON.parse(cachedTripStr);
+      if (!cachedTrip.drivingData) {
+        cachedTrip.drivingData = routeData || {};
+      }
+      cachedTrip.drivingData.passedCities = citiesFound;
+      sessionStorage.setItem('current_trip_results', JSON.stringify(cachedTrip));
+    }
     
     setCitiesLoading(false);
   };
@@ -171,9 +216,9 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
         <div className="mb-6">
           <div className="flex justify-between items-start mb-3">
             <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none">Road Trip Journey</h3>
-            <label className="flex items-center gap-2 cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors shadow-md shrink-0">
+            <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-full hover:bg-blue-700 transition-colors shadow-md shrink-0">
               <input type="checkbox" checked={isSelected} onChange={toggleDriveSelection} className="w-4 h-4 accent-white" />
-              <span className="text-xs font-black uppercase tracking-widest select-none">Save Route</span>
+              <span className="text-xs uppercase tracking-widest select-none">Select</span>
             </label>
           </div>
           

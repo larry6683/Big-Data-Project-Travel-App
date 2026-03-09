@@ -151,7 +151,7 @@ searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<Lo
     }
   },
 
-  // 5. Fetch Attractions (OSM / Amadeus)
+// 5. Fetch Attractions (OSM)
   getAttractions: async (dest: any, radiusMiles: number) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/attractions/nearby`, {
@@ -164,6 +164,23 @@ searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<Lo
       return response.data;
     } catch (error) {
       console.error("Failed to fetch attractions:", error);
+      return [];
+    }
+  },
+
+  // 🌟 NEW: Fetch Tours/Activities (Amadeus)
+  getTours: async (dest: any, radiusMiles: number) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/activities/nearby`, {
+        params: {
+          lat: dest.lat,
+          lon: dest.lon,
+          radius_miles: radiusMiles
+        }
+      });
+      return response.data;
+    } catch (error) {
+      // Amadeus activities often fail or return 400 if no data exists, so fail silently
       return [];
     }
   },

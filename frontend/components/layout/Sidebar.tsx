@@ -140,7 +140,7 @@ const getCoordinates = async (locationName: string) => {
         .sb-interest-btn { transition: all 0.2s; }
       `}</style>
 
-      <div className="w-80" style={{
+<div className="w-full lg:w-[18vw]" style={{
         minHeight: "100vh",
         background: "#0f172a",
         borderRight: "1px solid #e8edf4",

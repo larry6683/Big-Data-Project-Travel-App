@@ -1,3 +1,5 @@
+// larry6683/big-data-project-travel-app/frontend/components/results/TripResults.tsx
+
 import React, { useState, useEffect } from 'react';
 import FlightCard from './FlightCard';
 import StaysCard from './StayCard';
@@ -7,30 +9,67 @@ import DrivingCard from './DrivingCard';
 
 type TabOption = 'flights' | 'drive' | 'stays' | 'weather' | 'attractions' | 'tours';
 
+const TripSkeleton = () => {
+  return (
+    <div className="w-full animate-in fade-in duration-500">
+      <div className="flex flex-col items-center justify-center py-10 mb-2">
+         <div className="relative w-16 h-16 mb-5">
+            <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">✈️</div>
+         </div>
+         <h3 className="text-xl font-black text-gray-800 tracking-tight">Crafting your perfect trip...</h3>
+         <p className="text-sm font-bold text-gray-400 mt-1 animate-pulse">Analyzing routes, stays, and local weather</p>
+      </div>
+
+      <div className="flex w-full border-b border-gray-200 mb-6">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex-1 flex flex-col items-center py-4 gap-2 opacity-40">
+            <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+            <div className="w-16 h-2 bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="w-full bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex gap-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg animate-pulse shrink-0"></div>
+            <div className="flex flex-col gap-3 flex-1 justify-center">
+              <div className="w-1/3 h-4 bg-gray-100 rounded-full animate-pulse"></div>
+              <div className="w-1/2 h-3 bg-gray-50 rounded-full animate-pulse"></div>
+            </div>
+            <div className="flex flex-col gap-2 items-end justify-center shrink-0">
+              <div className="w-20 h-6 bg-gray-100 rounded-full animate-pulse"></div>
+              <div className="w-12 h-3 bg-gray-50 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function TripResults({ data, loading }: { data: any, loading: boolean }) {
   const [activeTab, setActiveTab] = useState<TabOption>('flights');
 
-  // Safely check the travel mode passed directly from page.tsx
-  const showFlights = data?.travelMode === 'fly';
-  
-  // Check if we actually have flight results returned from the API
-  const hasFlights = data?.transportData && data.transportData.length > 0;
+  const showFlights = data?.rawParams?.travelMode === 'fly';
+  // ✨ RENAMED: Reading from flightData instead of transportData
+  const hasFlights = data?.flightData && data.flightData.length > 0;
 
-  // Reset or auto-switch the active tab whenever a new search completes
   useEffect(() => {
     if (data && !loading) {
       if (showFlights && hasFlights) {
         setActiveTab('flights');
       } else {
-        // Automatically switch to drive if they chose drive OR if no flights exist
         setActiveTab('drive');
       }
     }
   }, [data, loading, showFlights, hasFlights]);
 
+  if (loading) return <TripSkeleton />;
   if (!data && !loading) return null;
 
-  // Build the 5 tabs dynamically. The first tab is EITHER flights OR drive.
   const transportTab = (showFlights && hasFlights) 
     ? { id: 'flights', label: 'Flights', icon: '✈️' }
     : { id: 'drive', label: 'Drive', icon: '🚗' };
@@ -45,7 +84,6 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
 
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* MODERN FULL-WIDTH TABS */}
       <div className="relative mb-4">
         <div className="flex w-full border-b border-gray-200">
           {tabs.map((tab) => {
@@ -63,7 +101,6 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
                   {tab.label}
                 </span>
                 
-                {/* THE ACTIVE UNDERLINE */}
                 {isActive && (
                   <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full shadow-[0_-4px_10px_rgba(37,99,235,0.3)]" />
                 )}
@@ -73,15 +110,14 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
         </div>
       </div>
 
-      {/* CONTENT AREA */}
       <div className="w-full min-h-[400px]">
         {activeTab === 'flights' && (
-          <FlightCard flights={data?.transportData || []}/>
+          // ✨ RENAMED: Passing flightData instead of transportData
+          <FlightCard flights={data?.flightData || []}/>
         )}
 
         {activeTab === 'drive' && (
           <div className="flex flex-col gap-4">
-            {/* If they wanted flights but none existed, show a helpful alert message */}
             {showFlights && !hasFlights && (
               <div className="p-4 bg-blue-50 text-blue-800 rounded-xl border border-blue-200 flex items-center gap-3">
                 <span className="text-xl">ℹ️</span>
@@ -106,7 +142,7 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
           <div className="p-12 text-center bg-white border border-dashed border-gray-200 rounded-2xl mt-4">
             <span className="text-4xl block mb-4">🗺️</span>
             <h3 className="text-lg font-black text-gray-800">Local Tours & Experiences</h3>
-            <p className="text-gray-500 text-sm mt-1">Guided tours coming soon for {data?.destinationData?.name || 'this destination'}.</p>
+            <p className="text-gray-500 text-sm mt-1">Guided tours coming soon for {data?.rawParams?.destination?.name || 'this destination'}.</p>
           </div>
         )}
         
