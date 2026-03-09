@@ -22,7 +22,6 @@ class Settings(BaseSettings):
     WEATHER_API_KEY: str = ""
     OPENSTREETMAP_URL: str = "https://nominatim.openstreetmap.org"
 
-    REDIS_URL: str = "redis://localhost:6379/0"
     POSTGRES_URL: str = "postgresql://user:password@localhost:5432/traveldb"
 
     class Config:

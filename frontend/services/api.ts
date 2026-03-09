@@ -30,7 +30,7 @@ export interface TripSearchParams {
 }
 
 export const travelApi = {
-  searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<LocationResult[]> => {
+searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<LocationResult[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/locations/search`, {
         params: { keyword, lat, lon }
@@ -55,7 +55,7 @@ export const travelApi = {
 
   getDestinationData: async (params: any) => ({ lat: params?.destination?.lat, lon: params?.destination?.lon }),
 
-// 1. Fetch Flights (Amadeus)
+  // 1. Fetch Flights (Amadeus)
   getFlights: async (params: TripSearchParams) => {
     try {
       let originIata = params.source.iata;
@@ -84,7 +84,7 @@ export const travelApi = {
           return_date: params.endDate,
           adults: params.adults,
           children: params.children,
-          travel_class: travelClasses // Sends the comma-separated string
+          travel_class: travelClasses
         }
       });
       return response.data;
@@ -168,5 +168,19 @@ export const travelApi = {
     }
   },
 
-  exportPdf: async (data: any) => new Blob()
+  // 6. Generate PDF Itinerary
+  exportPdf: async (data: any) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/trips/generate-pdf`, data, {
+        responseType: 'blob', // Crucial: Tells Axios to handle the response as binary file data
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+      return null;
+    }
+  }
 };

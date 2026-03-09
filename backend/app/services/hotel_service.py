@@ -1,17 +1,11 @@
 import httpx
 from app.services.base_client import BaseAmadeusClient
 from app.schemas.hotel import Hotel, HotelOffer
-from app.core.cache import get_cache, set_cache
 
 class HotelService(BaseAmadeusClient):
     
     async def get_available_hotels_by_geocode(self, lat: float, lon: float, check_in_date: str, check_out_date: str, adults: int, radius: int = 50):
-        """Fetches nearby hotels, checks availability in bulk, and only returns available ones."""
-        cache_key = f"available_hotels:{round(lat, 2)}:{round(lon, 2)}:{check_in_date}:{check_out_date}:{adults}:{radius}"
-        cached_data = get_cache(cache_key)
-        if cached_data:
-            return cached_data
-
+        """Fetches nearby hotels, checks availability in bulk, and returns available ones directly."""
         token = await self.get_token()
         if not token:
             return {"error": "Authentication Failed"}
@@ -38,8 +32,6 @@ class HotelService(BaseAmadeusClient):
                 hotel_ids = [h.get("hotelId") for h in closest_50_hotels]
                 hotel_ids_string = ",".join(hotel_ids)
 
-                address_map = {h.get("hotelId"): h.get("address") for h in closest_50_hotels}
-
                 offer_url = f"{self.base_url}/v3/shopping/hotel-offers"
                 offer_params = {
                     "hotelIds": hotel_ids_string,
@@ -60,21 +52,6 @@ class HotelService(BaseAmadeusClient):
                         if "offers" in item and item["offers"]:
                             h_id = item["hotel"]["hotelId"]
                             available_hotel_ids.add(h_id)
-                            
-                            best_offer = item["offers"][0]
-                            offer_obj = HotelOffer(
-                                hotel_id=h_id,
-                                name=item["hotel"].get("name"),
-                                check_in_date=best_offer.get("checkInDate"),
-                                check_out_date=best_offer.get("checkOutDate"),
-                                guests=adults,
-                                price=float(best_offer["price"]["total"]),
-                                currency=best_offer["price"]["currency"],
-                                latitude=item["hotel"].get("latitude"),
-                                longitude=item["hotel"].get("longitude"),
-                                address=address_map.get(h_id)  
-                            )
-                            set_cache(f"hotel_offer:{h_id}:{check_in_date}:{check_out_date}:{adults}", offer_obj.model_dump(), expire_seconds=1800)
 
                 clean_available_hotels = []
                 for hotel in closest_50_hotels:
@@ -90,22 +67,52 @@ class HotelService(BaseAmadeusClient):
                             address=hotel.get("address")
                         ))
 
-                if clean_available_hotels:
-                    set_cache(cache_key, [h.model_dump() for h in clean_available_hotels], expire_seconds=1800)
-                
                 return clean_available_hotels
             except Exception as e:
                 return {"error": str(e)}
 
     async def get_specific_hotel_offer(self, hotel_id: str, check_in_date: str, check_out_date: str, adults: int):
-        """Fetches the exact price. Since we pre-fetched in Step 1, this will almost always be an instant cache hit!"""
-        cache_key = f"hotel_offer:{hotel_id}:{check_in_date}:{check_out_date}:{adults}"
-        cached_data = get_cache(cache_key)
-        
-        if cached_data:
-            print(f"⚡ INSTANT CACHE HIT for Hotel Checkbox Click: {hotel_id}")
-            return cached_data
-            
+        """Actively fetches the exact price for a specific hotel."""
+        token = await self.get_token()
+        if not token:
+            return {"error": "Authentication Failed"}
+
+        offer_url = f"{self.base_url}/v3/shopping/hotel-offers"
+        offer_params = {
+            "hotelIds": hotel_id,
+            "checkInDate": check_in_date,
+            "checkOutDate": check_out_date,
+            "adults": adults,
+            "currency": "USD"
+        }
+        headers = {"Authorization": f"Bearer {token}"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                print(f"🔄 Fetching specific offer for hotel {hotel_id}...")
+                offer_response = await client.get(offer_url, headers=headers, params=offer_params, timeout=30.0)
+                if offer_response.status_code == 200:
+                    offers_data = offer_response.json().get("data", [])
+                    if offers_data and "offers" in offers_data[0] and offers_data[0]["offers"]:
+                        item = offers_data[0]
+                        best_offer = item["offers"][0]
+                        
+                        offer_obj = HotelOffer(
+                            hotel_id=hotel_id,
+                            name=item["hotel"].get("name"),
+                            check_in_date=best_offer.get("checkInDate"),
+                            check_out_date=best_offer.get("checkOutDate"),
+                            guests=adults,
+                            price=float(best_offer["price"]["total"]),
+                            currency=best_offer["price"]["currency"],
+                            latitude=item["hotel"].get("latitude"),
+                            longitude=item["hotel"].get("longitude"),
+                            address=None
+                        )
+                        return offer_obj.model_dump()
+            except Exception as e:
+                return {"error": str(e)}
+
         return {"error": "Offer expired or not available. Please refresh the hotel list."}
 
 hotel_service = HotelService()

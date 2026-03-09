@@ -1,16 +1,15 @@
 // larry6683/big-data-project-travel-app/frontend/components/results/StayCard.tsx
 
 import React, { useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
 
 export default function StayCard({ stays }: { stays: any[] }) {
   const [selectedStayKeys, setSelectedStayKeys] = useState<string[]>([]);
   const [loadingStayId, setLoadingStayId] = useState<string | null>(null);
   const [stayDetails, setStayDetails] = useState<Record<string, any>>({});
 
-  // 1. Initialize from cookie (if returning to tab) OR clear on new search
+  // 1. Initialize from localStorage (if returning to tab) OR clear on new search
   useEffect(() => {
-    const tripStateStr = Cookies.get('trip_state');
+    const tripStateStr = localStorage.getItem('trip_state');
     if (tripStateStr) {
       try {
         const tripState = JSON.parse(tripStateStr);
@@ -30,21 +29,21 @@ export default function StayCard({ stays }: { stays: any[] }) {
           setStayDetails({});
         }
       } catch (e) {
-        console.error("Error parsing trip_state cookie:", e);
+        console.error("Error parsing trip_state localStorage:", e);
       }
     }
   }, [stays]);
 
   // 2. Handle Checkbox Toggle & Fetch Detailed Offers
   const toggleStaySelection = async (stay: any, uniqueKey: string) => {
-    const tripStateStr = Cookies.get('trip_state');
+    const tripStateStr = localStorage.getItem('trip_state');
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
     if (!tripState.stays) tripState.stays = [];
 
     const isSelected = selectedStayKeys.includes(uniqueKey);
 
     if (isSelected) {
-      // DESELECT: Remove from state and cookie
+      // DESELECT: Remove from state and localStorage
       tripState.stays = tripState.stays.filter((s: any) => s._selectionKey !== uniqueKey);
       setSelectedStayKeys((prev) => prev.filter((k) => k !== uniqueKey));
       
@@ -52,14 +51,14 @@ export default function StayCard({ stays }: { stays: any[] }) {
       delete newDetails[uniqueKey];
       setStayDetails(newDetails);
 
-      Cookies.set('trip_state', JSON.stringify(tripState), { expires: 7 });
+      localStorage.setItem('trip_state', JSON.stringify(tripState));
     } else {
       // SELECT: Fetch details before saving
       try {
         setLoadingStayId(uniqueKey);
         
-        // Use the exact hotelId provided from the local state/cookie
-        const targetHotelId = stay.hoteld || (stay.hotel && stay.hotel.hotelId) || stay.id || uniqueKey; 
+        // Use the exact hotelId provided from the local state/localStorage
+        const targetHotelId = stay.hotelId || (stay.hotel && stay.hotel.hotelId) || stay.id || uniqueKey; 
 
         // 🚨 Request via backend to avoid CORS and Auth issues with Amadeus
         // Make sure this path matches your Python backend's router setup!
@@ -76,11 +75,11 @@ export default function StayCard({ stays }: { stays: any[] }) {
            setStayDetails(prev => ({ ...prev, [uniqueKey]: { data: enrichedData.detailedOffers } }));
         }
 
-        // Save the combined base info + deep offers to the cookie
+        // Save the combined base info + deep offers to the localStorage
         const stayToSave = { ...stay, ...enrichedData, _selectionKey: uniqueKey };
         tripState.stays.push(stayToSave);
         setSelectedStayKeys((prev) => [...prev, uniqueKey]);
-        Cookies.set('trip_state', JSON.stringify(tripState), { expires: 7 });
+        localStorage.setItem('trip_state', JSON.stringify(tripState));
 
       } catch (error) {
         console.error("Failed to fetch detailed hotel offers", error);
@@ -89,7 +88,7 @@ export default function StayCard({ stays }: { stays: any[] }) {
         const stayToSave = { ...stay, _selectionKey: uniqueKey };
         tripState.stays.push(stayToSave);
         setSelectedStayKeys((prev) => [...prev, uniqueKey]);
-        Cookies.set('trip_state', JSON.stringify(tripState), { expires: 7 });
+        localStorage.setItem('trip_state', JSON.stringify(tripState));
       } finally {
         setLoadingStayId(null);
       }

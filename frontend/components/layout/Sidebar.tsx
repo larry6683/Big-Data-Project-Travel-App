@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
-import Cookies from "js-cookie";
 import LocationAutocomplete from "./LocationAutoComplete";
 
 interface SidebarProps {
@@ -25,7 +24,7 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [dates, setDates] = useState({ start: "", end: "" });
-  const [adults, setAdults] = useState(2);
+  const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [travelMode, setTravelMode] = useState<"fly" | "drive">("fly");
   const [budget, setBudget] = useState<"budget" | "luxury">("budget");
@@ -34,31 +33,39 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   useEffect(() => {
-    const saved = Cookies.get("search_state");
+    // Swapped Cookies.get for localStorage.getItem
+    const saved = localStorage.getItem("search_state");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         setSource(parsed.source?.name || "");
         setDestination(parsed.destination?.name || "");
         setDates({ start: parsed.startDate || "", end: parsed.endDate || "" });
-        setAdults(parsed.adults || 2);
+        setAdults(parsed.adults || 1);
         setChildren(parsed.children || 0);
         setTravelMode(parsed.travelMode || "fly");
         setBudget(parsed.budget || "budget");
         setRadius(parsed.radius || 10);
         setInterests(parsed.interests || []);
       } catch (e) {
-        console.error("Failed to parse existing search cookie", e);
+        console.error("Failed to parse existing search state from localStorage", e);
       }
     }
   }, []);
 
-  const getCoordinates = async (locationName: string) => {
+const getCoordinates = async (locationName: string) => {
     try {
-      const nominatimUrl = process.env.NEXT_PUBLIC_NOMINATIM_URL || "https://nominatim.openstreetmap.org/search";
-      const res = await fetch(`${nominatimUrl}?q=${encodeURIComponent(locationName)}&format=json&limit=1`);
-      const data = await res.json();
-      if (data?.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      // Pointing to the new safe backend proxy route that uses Open-Meteo
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const res = await fetch(`${baseUrl}/locations/geocode?keyword=${encodeURIComponent(locationName)}`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        // Return coordinates if found by the backend
+        if (data.lat && data.lon) {
+          return { lat: parseFloat(data.lat), lon: parseFloat(data.lon) };
+        }
+      }
     } catch (err) {
       console.error(`Failed to fetch coordinates for ${locationName}:`, err);
     }
@@ -102,7 +109,9 @@ export default function Sidebar({ onSearch, loading }: SidebarProps) {
       interests, 
       timestamp: new Date().toISOString(),
     };
-    Cookies.set("search_state", JSON.stringify(searchState), { expires: 7 });
+    
+    // Swapped Cookies.set for localStorage.setItem
+    localStorage.setItem("search_state", JSON.stringify(searchState));
     
     setIsGeocoding(false);
     onSearch(searchState);

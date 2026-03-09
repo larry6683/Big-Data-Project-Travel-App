@@ -1,7 +1,6 @@
 // larry6683/big-data-project-travel-app/frontend/components/results/FlightCard.tsx
 
 import React, { useState, useMemo, useEffect } from 'react';
-import Cookies from 'js-cookie';
 
 type SortOption = 'price_asc' | 'price_desc' | 'duration_asc' | 'duration_desc';
 
@@ -13,21 +12,21 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
   useEffect(() => {
     setSelectedFlightKeys([]);
 
-    const tripStateStr = Cookies.get('trip_state');
+    const tripStateStr = localStorage.getItem('trip_state');
     if (tripStateStr) {
       try {
         const tripState = JSON.parse(tripStateStr);
         tripState.flights = []; 
-        Cookies.set('trip_state', JSON.stringify(tripState), { expires: 7 });
+        localStorage.setItem('trip_state', JSON.stringify(tripState));
       } catch (e) {
-        console.error("Error parsing trip_state cookie:", e);
+        console.error("Error parsing trip_state localStorage:", e);
       }
     }
   }, [flights]);
 
   // 2. Handle Checkbox Toggle
   const toggleFlightSelection = (flight: any, uniqueKey: string) => {
-    const tripStateStr = Cookies.get('trip_state');
+    const tripStateStr = localStorage.getItem('trip_state');
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
     if (!tripState.flights) tripState.flights = [];
 
@@ -42,7 +41,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
       setSelectedFlightKeys((prev) => [...prev, uniqueKey]);
     }
 
-    Cookies.set('trip_state', JSON.stringify(tripState), { expires: 7 }); 
+    localStorage.setItem('trip_state', JSON.stringify(tripState)); 
   };
 
   // --- FORMATTING HELPERS (Moved above useMemo) ---
@@ -114,7 +113,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm mt-4">
-Loading...
+        Loading...
         <h3 className="text-xl font-black text-gray-800 mt-4 animate-pulse">Fetching Best Options...</h3>
         <p className="text-gray-500 text-sm mt-1">Scanning hundreds of routes for you ✈️</p>
       </div>

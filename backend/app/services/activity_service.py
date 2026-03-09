@@ -2,11 +2,9 @@ import httpx
 import math
 from app.services.base_client import BaseAmadeusClient
 from app.schemas.activity import Activity
-from app.core.cache import get_cache, set_cache
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Helper function to calculate distance in KM between two coordinates (Haversine formula)."""
-    R = 6371.0 # Earth radius in kilometers
+    R = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
@@ -16,13 +14,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 class ActivityService(BaseAmadeusClient):
     
     async def get_activities_nearby(self, lat: float, lon: float, radius_miles: int = 30):
-        # Convert miles to KM for the Amadeus API (30 miles ≈ 48 km)
         radius_km = int(radius_miles * 1.60934)
-        
-        cache_key = f"activities_nearby:{round(lat, 2)}:{round(lon, 2)}:{radius_km}"
-        cached_data = get_cache(cache_key)
-        if cached_data:
-            return cached_data
 
         token = await self.get_token()
         if not token:
@@ -73,13 +65,8 @@ class ActivityService(BaseAmadeusClient):
                         distance_km=round(dist, 2)
                     )
                     clean_activities.append(activity_obj)
-                    
-                    set_cache(f"activity_info:{activity_obj.id}", activity_obj.model_dump(), expire_seconds=None)
 
                 clean_activities.sort(key=lambda x: x.distance_km)
-
-                if clean_activities:
-                    set_cache(cache_key, [a.model_dump() for a in clean_activities], expire_seconds=86400)
                 
                 return clean_activities
             except Exception as e:

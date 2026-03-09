@@ -5,20 +5,17 @@ import FlightCard from './FlightCard';
 import StaysCard from './StayCard';
 import WeatherCard from './WeatherCard';
 import AttractionsCard from './AttractionsCard';
-import DrivingCard from './DrivingCard'; // Added DrivingCard import
+import DrivingCard from './DrivingCard';
 
-// Update type to include 'drive'
 type TabOption = 'flights' | 'drive' | 'stays' | 'weather' | 'attractions' | 'tours';
 
 export default function TripResults({ data, loading }: { data: any, loading: boolean }) {
   const [activeTab, setActiveTab] = useState<TabOption>('flights');
 
-  // Logic: Show flights ONLY if transportData has flights AND drivingData isn't explicitly present.
-  // Otherwise, default to showing the Drive tab.
-  const hasFlights = data?.transportData && Array.isArray(data.transportData) && data.transportData.length > 0;
-  const showFlights = hasFlights && !data?.drivingData;
+  // Safely check the travel mode passed directly from page.tsx
+  const showFlights = data?.travelMode === 'fly';
 
-  // Whenever the data changes (new search), ensure the active tab resets to the correct transport mode
+  // Reset the active tab whenever a new search completes
   useEffect(() => {
     if (data && !loading) {
       if (showFlights && activeTab === 'drive') {
@@ -31,7 +28,7 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
 
   if (!data && !loading) return null;
 
-  // Conditionally set the first tab based on our logic
+  // Conditionally set the first transport tab
   const transportTab = showFlights 
     ? { id: 'flights', label: 'Flights', icon: '✈️' }
     : { id: 'drive', label: 'Drive', icon: '🚗' };
@@ -80,7 +77,6 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
           <FlightCard flights={data?.transportData || []}/>
         )}
 
-        {/* Added Driving Tab Render */}
         {activeTab === 'drive' && (
           <DrivingCard drivingData={data?.drivingData || {}} />
         )}
@@ -93,9 +89,8 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
           <AttractionsCard attractions={data?.attractions || []} />
         )}
 
-        {/* Placeholder for the 5th Tab */}
         {activeTab === 'tours' && (
-          <div className="p-12 text-center bg-white border border-dashed border-gray-200">
+          <div className="p-12 text-center bg-white border border-dashed border-gray-200 rounded-2xl">
             <span className="text-4xl block mb-4">🗺️</span>
             <h3 className="text-lg font-black text-gray-800">Local Tours & Experiences</h3>
             <p className="text-gray-500 text-sm mt-1">Guided tours coming soon for {data?.destinationData?.name || 'this destination'}.</p>

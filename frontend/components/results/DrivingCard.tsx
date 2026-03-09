@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
 
 export default function DrivingCard({ drivingData, loading: parentLoading }: { drivingData?: any, loading?: boolean }) {
   const [routeData, setRouteData] = useState<any>(drivingData || null);
@@ -9,12 +8,10 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
   const [error, setError] = useState<string | null>(null);
   const [isSelected, setIsSelected] = useState<boolean>(false);
   
-  // 1. Default showIntermediates to true
   const [passedCities, setPassedCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState<boolean>(false);
   const [showIntermediates, setShowIntermediates] = useState<boolean>(true);
 
-  // US State Abbreviation Helper
   const stateAbbr: Record<string, string> = {
     "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR", "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE", "Florida": "FL", "Georgia": "GA", "Hawaii": "HI", "Idaho": "ID", "Illinois": "IL", "Indiana": "IN", "Iowa": "IA", "Kansas": "KS", "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME", "Maryland": "MD", "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN", "Mississippi": "MS", "Missouri": "MO", "Montana": "MT", "Nebraska": "NE", "Nevada": "NV", "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY", "North Carolina": "NC", "North Dakota": "ND", "Ohio": "OH", "Oklahoma": "OK", "Oregon": "OR", "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC", "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT", "Vermont": "VT", "Virginia": "VA", "Washington": "WA", "West Virginia": "WV", "Wisconsin": "WI", "Wyoming": "WY"
   };
@@ -30,15 +27,17 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
       setError(null);
 
       try {
-        const searchStateStr = Cookies.get('search_state');
+        const searchStateStr = localStorage.getItem('search_state');
         if (!searchStateStr) throw new Error("No search state found.");
 
         const searchState = JSON.parse(searchStateStr);
         const { source, destination } = searchState;
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+        
+        // Ensure this endpoint path matches your Python setup
         const response = await fetch(
-          `${baseUrl}/driving/route?origin_lat=${source.lat}&origin_lon=${source.lon}&dest_lat=${destination.lat}&dest_lon=${destination.lon}`
+          `${baseUrl.replace('/api/v1', '')}/driving/route?origin_lat=${source.lat}&origin_lon=${source.lon}&dest_lat=${destination.lat}&dest_lon=${destination.lon}`
         );
 
         if (!response.ok) throw new Error("Failed to fetch driving route.");
@@ -59,41 +58,44 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
     fetchRoute();
   }, [drivingData]);
 
-  // 2. Automatically trigger intermediate city fetching
   useEffect(() => {
     if (routeData?.geometry?.coordinates && passedCities.length === 0 && !citiesLoading) {
       fetchIntermediates();
     }
   }, [routeData]);
 
-  const fetchIntermediates = async () => {
+const fetchIntermediates = async () => {
     if (citiesLoading || !routeData?.geometry?.coordinates) return;
 
     setCitiesLoading(true);
     const coords = routeData.geometry.coordinates;
     const citiesFound: string[] = [];
     
-    // Scans points to identify passing cities comprehensively
+    // Scan points to identify passing cities
     const step = Math.max(1, Math.floor(coords.length / 20)); 
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
     for (let i = step; i < coords.length; i += step) {
       const [lon, lat] = coords[i];
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`);
+        // Now calling our safe Python backend instead of Nominatim directly
+        const res = await fetch(`${baseUrl}/locations/nearest?lat=${lat}&lon=${lon}`);
         if (res.ok) {
           const data = await res.json();
-          const addr = data.address;
-          const cityName = addr?.city || addr?.town || addr?.village || addr?.county;
-          const stateName = addr?.state;
+          
+          const cityName = data.city;
+          const stateName = data.state;
           const stateDisplay = stateName ? (stateAbbr[stateName] || stateName) : "";
           
           const fullLabel = stateDisplay ? `${cityName}, ${stateDisplay}` : cityName;
           
-          if (fullLabel && !citiesFound.includes(fullLabel)) {
+          // Filter out "Unknown" results from the reverse geocoder
+          if (cityName && cityName !== "Unknown" && !citiesFound.includes(fullLabel)) {
             citiesFound.push(fullLabel);
           }
         }
-        await new Promise(r => setTimeout(r, 1100)); // Respect rate limits
+        // Slight delay to respect backend processing
+        await new Promise(r => setTimeout(r, 800)); 
       } catch (e) {
         console.error("Geocoding error", e);
       }
@@ -113,13 +115,13 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
   };
 
   const toggleDriveSelection = () => {
-    const tripStateStr = Cookies.get('trip_state');
+    const tripStateStr = localStorage.getItem('trip_state');
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
     const newSelected = !isSelected;
     setIsSelected(newSelected);
 
     tripState.drive = newSelected ? { selected: true, data: routeData } : null;
-    Cookies.set('trip_state', JSON.stringify(tripState), { expires: 7 });
+    localStorage.setItem('trip_state', JSON.stringify(tripState));
   };
 
   if (loading) return <div className="p-10 text-center animate-pulse font-bold text-gray-400">Loading Route...</div>;
@@ -144,7 +146,6 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
           </label>
         </div>
 
-        {/* Stats Grid with Secondary Values */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col justify-center">
             <span className="text-[10px] uppercase font-black text-gray-400 block mb-1">Distance</span>

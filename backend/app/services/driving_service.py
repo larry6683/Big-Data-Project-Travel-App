@@ -1,13 +1,7 @@
 import httpx
-from app.core.cache import get_cache, set_cache
 
 class DrivingService:
     async def get_route(self, origin_lat: float, origin_lon: float, dest_lat: float, dest_lon: float):
-        cache_key = f"driving_route:{round(origin_lat,4)},{round(origin_lon,4)}:{round(dest_lat,4)},{round(dest_lon,4)}"
-        cached_data = get_cache(cache_key)
-        if cached_data:
-            return cached_data
-
         url = f"http://router.project-osrm.org/route/v1/driving/{origin_lon},{origin_lat};{dest_lon},{dest_lat}"
         params = {"overview": "full", "geometries": "geojson"}
 
@@ -32,7 +26,6 @@ class DrivingService:
                     "geometry": route["geometry"] 
                 }
                 
-                set_cache(cache_key, result, expire_seconds=2592000) 
                 return result
             except Exception as e:
                 return {"error": f"Driving API Error: {str(e)}"}

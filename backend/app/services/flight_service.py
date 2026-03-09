@@ -1,10 +1,7 @@
-# larry6683/big-data-project-travel-app/backend/app/services/flight_service.py
-
 import httpx
 import asyncio
 from app.services.base_client import BaseAmadeusClient
 from app.schemas.flight import FlightOffer, FlightSegment, FlightItinerary
-from app.core.cache import get_cache, set_cache
 
 class FlightService(BaseAmadeusClient):
     
@@ -27,7 +24,6 @@ class FlightService(BaseAmadeusClient):
                 cabin_class = "ECONOMY"
                 traveler_pricings = offer.get("travelerPricings", [])
                 
-                # --- ADVANCED BAGGAGE EXTRACTION ---
                 bags_by_seg = {}
                 if traveler_pricings:
                     fare_details = traveler_pricings[0].get("fareDetailsBySegment", [])
@@ -38,9 +34,8 @@ class FlightService(BaseAmadeusClient):
                             
                             checked = 0
                             cabin = 0
-                            personal = 1 # Almost all flights include 1 personal item
+                            personal = 1
                             
-                            # Extract explicit checked bags
                             if "includedCheckedBags" in fd:
                                 bags_info = fd["includedCheckedBags"]
                                 if "quantity" in bags_info:
@@ -48,7 +43,6 @@ class FlightService(BaseAmadeusClient):
                                 elif "weight" in bags_info:
                                     checked = 1 
                                     
-                            # Parse amenities for cabin/carry-on allowances
                             amenities = fd.get("amenities", [])
                             for am in amenities:
                                 desc = am.get("description", "").upper()
@@ -113,13 +107,6 @@ class FlightService(BaseAmadeusClient):
         return clean_results
 
     async def search_flights(self, origin: str, destination: str, date: str, return_date: str, adults: int, travel_class: str = "ECONOMY", children: int = 0):
-        
-        cache_key = f"flight_search:{origin}:{destination}:{date}:{return_date}:{adults}:{travel_class}:{children}"
-        
-        cached_data = get_cache(cache_key)
-        if cached_data:
-            return cached_data
-
         token = await self.get_token()
         if not token:
             return {"error": "Authentication Failed"}
@@ -170,9 +157,6 @@ class FlightService(BaseAmadeusClient):
                         seen_signatures.add(signature)
                         flight.id = f"flight_{len(seen_signatures)}"
                         clean_data.append(flight)
-
-        if clean_data:
-            set_cache(cache_key, clean_data, expire_seconds=1800)
         
         return clean_data
 

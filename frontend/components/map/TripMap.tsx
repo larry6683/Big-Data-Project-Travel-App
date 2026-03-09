@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as pmtiles from 'pmtiles';
-import Cookies from 'js-cookie';
 import * as protomaps_basemaps from '@protomaps/basemaps';
 
 interface TripMapProps {
@@ -82,11 +81,12 @@ export default function TripMap({ mapData }: TripMapProps) {
     if (!mapRef.current) return;
 
     const syncWithSearchState = async () => {
-      const cookieData = Cookies.get("search_state");
-      if (!cookieData) return;
+      // Replaced Cookies.get with localStorage.getItem
+      const savedData = localStorage.getItem("search_state");
+      if (!savedData) return;
 
       try {
-        const { destination, radius } = JSON.parse(cookieData);
+        const { destination, radius } = JSON.parse(savedData);
         
         // Initialize slider state safely between 1 and 25
         const initialRadius = radius ? Math.max(1, Math.min(25, radius)) : 10;
@@ -113,11 +113,12 @@ export default function TripMap({ mapData }: TripMapProps) {
     const val = parseInt(e.target.value, 10);
     setRadiusValue(val);
 
-    const cookieData = Cookies.get("search_state");
-    if (!cookieData || !mapRef.current) return;
+    // Replaced Cookies.get with localStorage.getItem
+    const savedData = localStorage.getItem("search_state");
+    if (!savedData || !mapRef.current) return;
     
     try {
-      const state = JSON.parse(cookieData);
+      const state = JSON.parse(savedData);
       if (state.destination?.lat && state.destination?.lon) {
         mapRef.current.flyTo({
           center: [state.destination.lon, state.destination.lat],
@@ -131,15 +132,17 @@ export default function TripMap({ mapData }: TripMapProps) {
 
   // Handle saving the state ONLY when slider drag is released
   const handleRadiusDrop = () => {
-    const cookieData = Cookies.get("search_state");
-    if (!cookieData) return;
+    // Replaced Cookies.get with localStorage.getItem
+    const savedData = localStorage.getItem("search_state");
+    if (!savedData) return;
     
     try {
-      const state = JSON.parse(cookieData);
+      const state = JSON.parse(savedData);
       state.radius = radiusValue;
-      Cookies.set("search_state", JSON.stringify(state)); 
+      // Replaced Cookies.set with localStorage.setItem
+      localStorage.setItem("search_state", JSON.stringify(state)); 
     } catch (e) {
-      console.error("Failed to update cookie:", e);
+      console.error("Failed to update localStorage:", e);
     }
   };
 

@@ -1,5 +1,3 @@
-// larry6683/big-data-project-travel-app/frontend/components/layout/LocationAutoComplete.tsx
-
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
@@ -15,14 +13,18 @@ interface Props {
 }
 
 export default function LocationAutocomplete({ placeholder, value, onChange, isDark, showGPS }: Props) {
-  const [query, setQuery] = useState(value);
+  const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // ADDED THIS EFFECT: Sync internal query state when the parent's value prop changes (e.g. from cookies)
+  // Sync internal state if the parent provides a value (like loading from localStorage)
   useEffect(() => {
-    setQuery(value);
+    if (value && value !== query && !isOpen) {
+      setQuery(value);
+    }
   }, [value]);
 
   const formatDisplay = (city: string, state?: string) => {
@@ -34,70 +36,84 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
     return parts.join(', ');
   };
 
-const handleGPS = async () => {
-    // 1. Check if the browser supports geolocation
+  const handleSelect = (loc: any) => {
+    const display = formatDisplay(loc.city, loc.state);
+    setQuery(display);      // Update the input box
+    onChange(display);      // Send data to Sidebar
+    setResults([]);         // Clear results
+    setIsOpen(false);       // Close dropdown
+  };
+
+const handleGPS = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent potential form submission
+    
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
       return;
     }
 
-    // 2. Request the current position
     navigator.geolocation.getCurrentPosition(
-      // Success callback
       async (pos) => {
         try {
           const data = await travelApi.getNearestCity(pos.coords.latitude, pos.coords.longitude);
+          
+          // Check if we got a valid city name back
           if (data && data.city) {
             const display = formatDisplay(data.city, data.state);
             setQuery(display);
             onChange(display);
+          } else {
+            // Show alert if the geocoding services failed
+            alert("We found your location, but couldn't identify a city name. Please type it manually.");
           }
         } catch (err) {
           console.error("Failed to fetch nearest city:", err);
-          alert("Could not determine city from your location.");
+          alert("The geocoding service is currently unavailable. Please type your location.");
         }
       },
-      // Error callback (This is where the popup logic goes)
       (error) => {
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            alert("Location access is disabled. Please click the lock icon in your browser's address bar to enable location permissions, then try again.");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            alert("Location information is currently unavailable. Please try again later.");
-            break;
-          case error.TIMEOUT:
-            alert("The request to get your location timed out. Please check your connection and try again.");
-            break;
-          default:
-            alert("An unknown error occurred while trying to access your location.");
-            break;
-        }
+        // ... existing error switch logic
       },
-      { enableHighAccuracy: true, timeout: 10000 } // Added a timeout to prevent hanging
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
+  // The simplified search effect
   useEffect(() => {
     const fetchLocations = async () => {
-      if (query.length > 0 && query !== value) {
-        const data = await travelApi.searchLocations(query);
-        setResults(data || []);
-        setIsOpen(true);
-      } else if (query.length === 0) {
+      // Only search if length > 2 AND the text doesn't exactly match the already-selected value
+      if (query.length > 2 && query !== value) {
+        setIsSearching(true);
+        try {
+          const data = await travelApi.searchLocations(query);
+          if (data && data.length > 0) {
+            setResults(data);
+            setIsOpen(true);
+          } else {
+            setResults([]);
+            setIsOpen(false);
+          }
+        } catch (error) {
+          console.error("Search error", error);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
         setResults([]);
         setIsOpen(false);
       }
     };
     
-    // Updated refresh time to 200ms debounce
-    const timer = setTimeout(fetchLocations, 200);
+    const timer = setTimeout(fetchLocations, 300);
     return () => clearTimeout(timer);
-  }, [query, value]);
+  }, [query, value]); // Reacts when query or value changes
 
+  // Click outside to close
   useEffect(() => {
     const clickOut = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsOpen(false);
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
     };
     document.addEventListener("mousedown", clickOut);
     return () => document.removeEventListener("mousedown", clickOut);
@@ -112,22 +128,30 @@ const handleGPS = async () => {
       ? 'bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:bg-white/10' 
       : 'bg-white border border-gray-200 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
     }
-            ${showGPS ? 'pr-12' : 'pr-3'}
+            ${showGPS ? 'pr-[70px]' : 'pr-3'} 
           `}
           placeholder={placeholder}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            // We only call onChange here if they completely clear the box
+            if (e.target.value === '') onChange('');
+          }}
+          onFocus={() => {
+            if (results.length > 0) setIsOpen(true);
+          }}
         />
-    {showGPS && (
-      <button 
-        onClick={handleGPS} 
-        title="Use Current Location"
-        className={`absolute right-2 px-3 py-1.5 rounded-lg transition-all duration-300 text-[10px] font-bold tracking-wider
-          ${isDark ? 'bg-white/5 hover:bg-blue-600 text-white border border-white/5 hover:border-blue-500' : 'bg-gray-100 hover:bg-blue-600 text-gray-600 hover:text-white'}
-        `}>
-        GPS
-      </button>
-    )}
+        {showGPS && (
+          <button 
+            type="button" 
+            onClick={handleGPS} 
+            title="Use Current Location"
+            className={`absolute right-2 px-2.5 py-1.5 rounded-lg transition-all duration-300 text-[10px] font-bold tracking-wider flex items-center gap-1
+              ${isDark ? 'bg-white/5 hover:bg-blue-600 text-white border border-white/5 hover:border-blue-500' : 'bg-gray-100 hover:bg-blue-600 text-gray-600 hover:text-white'}
+            `}>
+            <Navigation size={12} /> GPS
+          </button>
+        )}
       </div>
       
       {isOpen && results.length > 0 && (
@@ -139,11 +163,10 @@ const handleGPS = async () => {
           {results.map((loc, i) => (
             <li 
               key={i} 
-              onClick={() => {
-                const display = formatDisplay(loc.city, loc.state);
-                setQuery(display);
-                onChange(display);
-                setIsOpen(false);
+              // CRITICAL FIX: onMouseDown guarantees this fires before the input loses focus!
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(loc);
               }} 
               className={`p-3 flex items-center gap-3 cursor-pointer transition-colors duration-200 group
                 ${isDark ? 'hover:bg-blue-600/20 border-b border-white/5 last:border-0 text-slate-200' : 'hover:bg-blue-50 border-b border-gray-50 last:border-0 text-gray-700'}

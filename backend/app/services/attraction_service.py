@@ -1,17 +1,9 @@
 import httpx
 from app.schemas.attraction import Attraction
-from app.core.cache import get_cache, set_cache  
 
 class AttractionService:
     
     async def get_attractions(self, lat: float, lon: float, radius_miles: int = 30):
-        cache_key = f"attractions:{round(lat, 2)}:{round(lon, 2)}:{radius_miles}"
-        
-        cached_data = get_cache(cache_key)
-        if cached_data:
-            print(f"⚡ INSTANT CACHE HIT for Attractions near {lat}, {lon}")
-            return cached_data
-
         radius_meters = int(radius_miles * 1609.34)
         url = "https://overpass-api.de/api/interpreter"
         
@@ -85,9 +77,6 @@ class AttractionService:
                     ))
                     
                 clean_attractions.sort(key=lambda x: (x.category, x.name))
-                
-                if clean_attractions:
-                    set_cache(cache_key, [a.model_dump() for a in clean_attractions], expire_seconds=86400)
                     
                 return clean_attractions
                 
