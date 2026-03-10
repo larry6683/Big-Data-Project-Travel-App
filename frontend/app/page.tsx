@@ -38,6 +38,10 @@ export default function Dashboard() {
     setError(null);
     setSidebarOpen(false); // close sidebar on mobile after search
 
+    // 🌟 Clear saved tab and intermediates list state so a new search defaults properly
+    sessionStorage.removeItem('active_tab');
+    sessionStorage.removeItem('drive_intermediates_open');
+
     // 🧹 PRE-CLEANUP: Clear any selected flights/drives from previous searches
     const tripStateStr = localStorage.getItem('trip_state');
     if (tripStateStr) {
@@ -145,11 +149,11 @@ export default function Dashboard() {
 
           {/* LEFT PANE: Results */}
           <div className={`flex-1 h-full overflow-y-auto custom-scrollbar bg-gray-50/30 ${mapOpen ? 'hidden sm:block' : ''}`}>
-            <div className="p-4 md:p-6 w-full">
+            <div className="p-4 md:p-6 w-full relative">
               <div className="flex justify-between items-center mb-4 md:mb-6">
                 <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Trip Planner</h1>
                 
-                {/* PDF EXPORT BUTTON */}
+                {/* Generate Itenirary Button */}
                 {tripData && (
                   <button 
                     className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-slate-900 hover:bg-blue-600 text-white text-xs md:text-sm font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
@@ -170,10 +174,7 @@ export default function Dashboard() {
               ) : (
                   <div className="flex flex-col items-center justify-center py-24 md:py-32 border-2 border-dashed border-gray-200 bg-white w-full rounded-2xl">
                     <p className="text-gray-400 font-bold uppercase tracking-widest text-xs text-center px-4">
-                      {/* Shows ONLY on mobile/tablets (<1024px) */}
                       <span className="lg:hidden">Tap the menu icon to start planning</span>
-                      
-                      {/* Shows ONLY on desktop (>=1024px) */}
                       <span className="hidden lg:inline">Enter a destination to start planning</span>
                     </p>
                   </div>

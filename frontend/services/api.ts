@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
 
 export interface LocationResult {
   city?: string;
@@ -30,7 +30,7 @@ export interface TripSearchParams {
 }
 
 export const travelApi = {
-searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<LocationResult[]> => {
+  searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<LocationResult[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/locations/search`, {
         params: { keyword, lat, lon }
@@ -151,24 +151,38 @@ searchLocations: async (keyword: string, lat?: number, lon?: number): Promise<Lo
     }
   },
 
-// 5. Fetch Attractions (OSM)
-  getAttractions: async (dest: any, radiusMiles: number) => {
+// 5. Fetch Attractions (OSM) - FIXED: Handles rate-limiting gracefully without throwing loud Axios errors
+  getAttractions: async (dest: any, radiusMiles: number, retries = 2): Promise<any> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/attractions/nearby`, {
         params: {
           lat: dest.lat,
           lon: dest.lon,
           radius_miles: radiusMiles
-        }
+        },
+        // Tell Axios NOT to throw an error automatically on a 400 status
+        validateStatus: (status) => status < 500 
       });
+
+      // If we got a 400, it means Overpass is busy, throw a silent local error to trigger the catch block
+      if (response.status >= 400) {
+        throw new Error("Overpass API is busy");
+      }
+
       return response.data;
     } catch (error) {
-      console.error("Failed to fetch attractions:", error);
-      return [];
+      if (retries > 0) {
+        console.warn(`Attractions API busy, letting it cool down... (${retries} retries left)`);
+        // Add a 1.5 second delay to let the OSM API cool down before retrying
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        return await travelApi.getAttractions(dest, radiusMiles, retries - 1);
+      }
+      console.warn("Skipping attractions due to Overpass API limits.");
+      return []; // Return empty array so the app doesn't break
     }
   },
 
-  // 🌟 NEW: Fetch Tours/Activities (Amadeus)
+  // 🌟 Fetch Tours/Activities (Amadeus)
   getTours: async (dest: any, radiusMiles: number) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/activities/nearby`, {

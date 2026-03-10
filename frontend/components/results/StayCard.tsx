@@ -7,7 +7,6 @@ export default function StayCard({ stays }: { stays: any[] }) {
   const [loadingStayId, setLoadingStayId] = useState<string | null>(null);
   const [stayDetails, setStayDetails] = useState<Record<string, any>>({});
 
-  // 1. Initialize from localStorage (if returning to tab) OR clear on new search
   useEffect(() => {
     const tripStateStr = localStorage.getItem('trip_state');
     if (tripStateStr) {
@@ -34,35 +33,26 @@ export default function StayCard({ stays }: { stays: any[] }) {
     }
   }, [stays]);
 
-  // 2. Handle Checkbox Toggle & Fetch Detailed Offers
+  // Handle Single Selection Toggle
   const toggleStaySelection = async (stay: any, uniqueKey: string) => {
     const tripStateStr = localStorage.getItem('trip_state');
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
-    if (!tripState.stays) tripState.stays = [];
 
     const isSelected = selectedStayKeys.includes(uniqueKey);
 
     if (isSelected) {
-      // DESELECT: Remove from state and localStorage
-      tripState.stays = tripState.stays.filter((s: any) => s._selectionKey !== uniqueKey);
-      setSelectedStayKeys((prev) => prev.filter((k) => k !== uniqueKey));
-      
-      const newDetails = { ...stayDetails };
-      delete newDetails[uniqueKey];
-      setStayDetails(newDetails);
-
+      // DESELECT
+      tripState.stays = [];
+      setSelectedStayKeys([]);
       localStorage.setItem('trip_state', JSON.stringify(tripState));
     } else {
-      // SELECT: Fetch details before saving
+      // SELECT ONLY THIS ONE (Overwrite)
       try {
         setLoadingStayId(uniqueKey);
         
-        // Use the exact hotelId provided from the local state/localStorage
         const targetHotelId = stay.hotelId || (stay.hotel && stay.hotel.hotelId) || stay.id || uniqueKey; 
-
-        // 🚨 Request via backend to avoid CORS and Auth issues with Amadeus
-        // Make sure this path matches your Python backend's router setup!
-        const response = await fetch(`http://localhost:8000/api/v1/hotels/offers?hotelIds=${targetHotelId}`);
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+        const response = await fetch(`${baseUrl}/hotels/offers?hotelIds=${targetHotelId}`);
         
         let enrichedData: { detailedOffers: any[]; dictionaries: any } = { detailedOffers: [], dictionaries: {} };
         if (response.ok) {
@@ -75,19 +65,18 @@ export default function StayCard({ stays }: { stays: any[] }) {
            setStayDetails(prev => ({ ...prev, [uniqueKey]: { data: enrichedData.detailedOffers } }));
         }
 
-        // Save the combined base info + deep offers to the localStorage
         const stayToSave = { ...stay, ...enrichedData, _selectionKey: uniqueKey };
-        tripState.stays.push(stayToSave);
-        setSelectedStayKeys((prev) => [...prev, uniqueKey]);
+        tripState.stays = [stayToSave];
+        setSelectedStayKeys([uniqueKey]);
         localStorage.setItem('trip_state', JSON.stringify(tripState));
 
       } catch (error) {
         console.error("Failed to fetch detailed hotel offers", error);
         
-        // Fallback: Save basic info if API fails so the user isn't stuck
+        // Fallback: Save basic info if API fails
         const stayToSave = { ...stay, _selectionKey: uniqueKey };
-        tripState.stays.push(stayToSave);
-        setSelectedStayKeys((prev) => [...prev, uniqueKey]);
+        tripState.stays = [stayToSave];
+        setSelectedStayKeys([uniqueKey]);
         localStorage.setItem('trip_state', JSON.stringify(tripState));
       } finally {
         setLoadingStayId(null);
@@ -95,7 +84,6 @@ export default function StayCard({ stays }: { stays: any[] }) {
     }
   };
 
-  // 3. Address Formatting Helper
   const formatAddress = (address: any) => {
     if (!address) return 'Location unavailable';
     if (typeof address === 'string') return address;
@@ -130,7 +118,6 @@ export default function StayCard({ stays }: { stays: any[] }) {
       
       <div className="flex flex-col gap-3">
         {stays.slice(0, 12).map((stay, idx) => {
-          // Identify hotel ID from Amadeus standard object structure
           const uniqueKey = stay.hotelId || (stay.hotel && stay.hotel.hotelId) || stay.id || `stay-${idx}`;
           const isSelected = selectedStayKeys.includes(uniqueKey);
           const isLoading = loadingStayId === uniqueKey;
@@ -144,7 +131,7 @@ export default function StayCard({ stays }: { stays: any[] }) {
               key={uniqueKey} 
               className={`border rounded-xl transition-all duration-200 overflow-hidden ${
                 isSelected 
-                  ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/10 shadow-md' 
+                  ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-50/10 shadow-md' 
                   : 'border-gray-200 hover:shadow-md bg-white'
               }`}
             >
@@ -192,18 +179,19 @@ export default function StayCard({ stays }: { stays: any[] }) {
                     {isLoading ? (
                       <div className="w-6 h-6 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
                     ) : (
-                      <label className="flex items-center gap-2 cursor-pointer bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input 
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleStaySelection(stay, uniqueKey)}
-                          className="w-4 h-4 cursor-pointer accent-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          title="Add to Itinerary"
-                        />
-                        <span className="text-xs font-bold text-gray-700 select-none">
-                          {isSelected ? 'Selected' : 'Select'}
-                        </span>
-                      </label>
+        
+                <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors shadow-sm shrink-0">
+                  <input 
+                    type="checkbox" 
+                    checked={isSelected} 
+                    onChange={() => toggleStaySelection(stay, uniqueKey)} 
+                    className="w-4 h-4 accent-blue-600 cursor-pointer" 
+                  />
+                  <span className="text-xs font-bold text-gray-700 select-none">
+                    {isSelected ? 'Selected' : 'Select'}
+                  </span>
+                </label>
+
                     )}
                   </div>
                 </div>
@@ -216,7 +204,6 @@ export default function StayCard({ stays }: { stays: any[] }) {
                     Available Room Offers
                   </h5>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {/* Map through the offers array of the first hotel */}
                     {(details.data[0]?.offers || details.data)?.map((offer: any, offerIdx: number) => (
                       <div key={offer.id || offerIdx} className="bg-white border border-blue-100 rounded-lg p-3 shadow-sm flex justify-between items-center gap-4 hover:border-blue-300 transition-colors">
                         <div>

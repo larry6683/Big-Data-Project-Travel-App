@@ -8,11 +8,14 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
   const [routeData, setRouteData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(parentLoading || false);
   const [error, setError] = useState<string | null>(null);
+  
   const [isSelected, setIsSelected] = useState<boolean>(false);
-
+  
   const [passedCities, setPassedCities] = useState<string[]>([]);
   const [citiesLoading, setCitiesLoading] = useState<boolean>(false);
-  const [showIntermediates, setShowIntermediates] = useState<boolean>(true);
+  
+  // State for showing the intermediates list
+  const [showIntermediates, setShowIntermediates] = useState<boolean>(false); 
 
   const stateAbbr: Record<string, string> = {
     "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR", "California": "CA",
@@ -26,6 +29,29 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
     "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT", "Vermont": "VT",
     "Virginia": "VA", "Washington": "WA", "West Virginia": "WV", "Wisconsin": "WI", "Wyoming": "WY"
   };
+
+  // 🌟 FIX: Load the saved intermediates state from sessionStorage on mount
+  useEffect(() => {
+    const savedState = sessionStorage.getItem('drive_intermediates_open');
+    if (savedState === 'true') {
+      setShowIntermediates(true);
+    }
+  }, []);
+
+  // Check localStorage on mount to see if the drive route was previously selected
+  useEffect(() => {
+    const tripStateStr = localStorage.getItem('trip_state');
+    if (tripStateStr) {
+      try {
+        const tripState = JSON.parse(tripStateStr);
+        if (tripState.drive && tripState.drive.selected) {
+          setIsSelected(true);
+        }
+      } catch (e) {
+        console.error("Error parsing trip_state localStorage:", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const loadRouteData = async () => {
@@ -125,7 +151,6 @@ const fetchIntermediates = async () => {
     const coords = routeData.geometry.coordinates;
     const citiesFound: string[] = [];
 
-    // INCREASED SAMPLE RATE: Now checking up to 40 points along the route instead of 20
     const step = Math.max(1, Math.floor(coords.length / 40));
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -138,8 +163,6 @@ const fetchIntermediates = async () => {
       const distToStart = Math.sqrt(Math.pow(lon - startCoord[0], 2) + Math.pow(lat - startCoord[1], 2));
       const distToEnd = Math.sqrt(Math.pow(lon - endCoord[0], 2) + Math.pow(lat - endCoord[1], 2));
 
-      // SHRUNK BUBBLE: Reduced from 0.25 (~17 miles) to 0.08 (~5.5 miles)
-      // This allows close-by cities like Longmont to easily show up on shorter road trips!
       if (distToStart < 0.08 || distToEnd < 0.08) {
         continue; 
       }
@@ -204,24 +227,38 @@ const fetchIntermediates = async () => {
     localStorage.setItem('trip_state', JSON.stringify(tripState));
   };
 
-  if (loading) return <div className="p-10 text-center animate-pulse font-bold text-gray-400">Loading Route...</div>;
+  // 🌟 FIX: Toggles the state and saves it directly to sessionStorage
+  const toggleIntermediates = () => {
+    const newState = !showIntermediates;
+    setShowIntermediates(newState);
+    sessionStorage.setItem('drive_intermediates_open', String(newState));
+  };
+
+  if (loading) return null; 
   if (!routeData) return null;
 
   const fuel = calculateFuel(routeData.distance_km);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={`bg-white rounded-xl overflow-hidden border p-5 transition-all ${isSelected ? 'border-blue-500 ring-2 ring-blue-500 shadow-lg' : 'border-gray-200 shadow-sm'}`}>
+      <div className={`bg-white rounded-xl overflow-hidden border p-5 transition-all duration-200 ${isSelected ? 'border-blue-500 ring-2 ring-blue-500 shadow-lg bg-blue-50/10' : 'border-gray-200 shadow-sm'}`}>
 
         <div className="mb-6">
           <div className="flex justify-between items-start mb-3">
             <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none">Road Trip Journey</h3>
-            <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-full hover:bg-blue-700 transition-colors shadow-md shrink-0">
-              <input type="checkbox" checked={isSelected} onChange={toggleDriveSelection} className="w-4 h-4 accent-white" />
-             <span className="text-xs font-bold text-gray-700 select-none">
-                          {isSelected ? 'Selected' : 'Select'}
-                        </span>
-            </label>
+
+                <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors shadow-sm shrink-0">
+                  <input 
+                    type="checkbox" 
+                    checked={isSelected} 
+                    onChange={() => toggleDriveSelection()} 
+                    className="w-4 h-4 accent-blue-600 cursor-pointer" 
+                  />
+                  <span className="text-xs font-bold text-gray-700 select-none">
+                    {isSelected ? 'Selected' : 'Select'}
+                  </span>
+                </label>
+
           </div>
           
           <div className="flex items-center gap-2 text-sm font-bold mt-1">
@@ -256,7 +293,7 @@ const fetchIntermediates = async () => {
 
         <div className="border-t border-gray-100 pt-4">
           <button
-            onClick={() => setShowIntermediates(!showIntermediates)}
+            onClick={toggleIntermediates} // 🌟 UPDATED to use the new toggle function
             className="w-full flex justify-between items-center group mb-2"
           >
             <span className="text-xs font-black text-blue-600 uppercase tracking-widest group-hover:underline">

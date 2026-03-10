@@ -8,43 +8,45 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
   const [sortBy, setSortBy] = useState<SortOption>('price_asc');
   const [selectedFlightKeys, setSelectedFlightKeys] = useState<string[]>([]);
 
-  // 1. Clear selections on refresh or when new search results load
+  // 🌟 FIX: Load the saved flight selection from localStorage instead of clearing it
   useEffect(() => {
-    setSelectedFlightKeys([]);
-
     const tripStateStr = localStorage.getItem('trip_state');
     if (tripStateStr) {
       try {
         const tripState = JSON.parse(tripStateStr);
-        tripState.flights = []; 
-        localStorage.setItem('trip_state', JSON.stringify(tripState));
+        if (tripState.flights && tripState.flights.length > 0) {
+          setSelectedFlightKeys(tripState.flights.map((f: any) => f._selectionKey));
+        } else {
+          setSelectedFlightKeys([]);
+        }
       } catch (e) {
         console.error("Error parsing trip_state localStorage:", e);
       }
     }
   }, [flights]);
 
-  // 2. Handle Checkbox Toggle
+  // Handle Single Selection Toggle
   const toggleFlightSelection = (flight: any, uniqueKey: string) => {
     const tripStateStr = localStorage.getItem('trip_state');
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
-    if (!tripState.flights) tripState.flights = [];
 
     const isSelected = selectedFlightKeys.includes(uniqueKey);
 
     if (isSelected) {
-      tripState.flights = tripState.flights.filter((f: any) => f._selectionKey !== uniqueKey);
-      setSelectedFlightKeys((prev) => prev.filter((k) => k !== uniqueKey));
+      // If already selected, deselect it
+      tripState.flights = [];
+      setSelectedFlightKeys([]);
     } else {
+      // If NOT selected, overwrite the array so ONLY this one is selected
       const flightToSave = { ...flight, _selectionKey: uniqueKey };
-      tripState.flights.push(flightToSave);
-      setSelectedFlightKeys((prev) => [...prev, uniqueKey]);
+      tripState.flights = [flightToSave];
+      setSelectedFlightKeys([uniqueKey]);
     }
 
     localStorage.setItem('trip_state', JSON.stringify(tripState)); 
   };
 
-  // --- FORMATTING HELPERS (Moved above useMemo) ---
+  // --- FORMATTING HELPERS ---
   const formatTime = (timeString: string) => {
     if (!timeString) return 'TBA';
     return new Date(timeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -90,7 +92,6 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     }, 0);
   };
 
-  // 3. HOOKS MUST BE CALLED BEFORE EARLY RETURNS!
   const sortedFlights = useMemo(() => {
     if (!flights || !Array.isArray(flights)) return [];
     
@@ -109,16 +110,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     });
   }, [flights, sortBy]);
 
-  // 4. NOW it's safe to do early returns!
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm mt-4">
-        Loading...
-        <h3 className="text-xl font-black text-gray-800 mt-4 animate-pulse">Fetching Best Options...</h3>
-        <p className="text-gray-500 text-sm mt-1">Scanning hundreds of routes for you ✈️</p>
-      </div>
-    );
-  }
+  if (loading) return null; // Handled globally by TripResults now
 
   if (!flights || !Array.isArray(flights) || flights.length === 0) {
     return (
@@ -169,21 +161,14 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
           <div 
             key={uniqueKey} 
             className={`bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 ${
-              isSelected ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-100'
+              isSelected ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-50/10' : 'border-gray-100'
             }`}
           >
-            <div className="px-3 py-1 border-b border-gray-100 flex justify-between items-center bg-gray-100/40">
+            <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-blue-50 border-blue-100' : 'bg-gray-100/40 border-gray-100'}`}>
               <div className="flex items-center gap-3">
-                <input 
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleFlightSelection(flight, uniqueKey)}
-                  className="w-5 h-5 cursor-pointer accent-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  title="Add to Itinerary"
-                />
+
                 <div className="w-12 h-12 flex items-center justify-center overflow-hidden relative shrink-0">
                   <img src={`https://images.kiwi.com/airlines/64/${flight.airline_code}.png`} alt={flight.airline_code} className="max-w-[80%] max-h-[80%] object-contain" />
-                  <span className="hidden font-black text-gray-700 text-xs">{flight.airline_code}</span>
                 </div>
                 <div>
                   <h4 className="font-extrabold text-gray-900 leading-none mb-0">
@@ -200,14 +185,27 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                   <span className="text-[10px] text-gray-500 font-bold tracking-wider ml-1">{flight.currency}</span>
                 </p>
               </div>
+
+                <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors shadow-sm shrink-0">
+                  <input 
+                    type="checkbox" 
+                    checked={isSelected} 
+                    onChange={() => toggleFlightSelection(flight, uniqueKey)} 
+                    className="w-4 h-4 accent-blue-600 cursor-pointer" 
+                  />
+                  <span className="text-xs font-bold text-gray-700 select-none">
+                    {isSelected ? 'Selected' : 'Select'}
+                  </span>
+                </label>
+
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
               {flight.itineraries?.map((itinerary: any, itinIndex: number) => {
                 const isOutbound = itinIndex === 0;
                 const theme = isOutbound 
-                  ? { bg: 'bg-white', text: 'text-blue-600', badgeBg: 'bg-blue-100', icon: '🛫', label: 'Outbound' }
-                  : { bg: 'bg-white', text: 'text-green-600', badgeBg: 'bg-green-100', icon: '🛬', label: 'Return' };
+                  ? { bg: 'bg-transparent', text: 'text-blue-600', badgeBg: 'bg-blue-100', icon: '🛫', label: 'Outbound' }
+                  : { bg: 'bg-transparent', text: 'text-green-600', badgeBg: 'bg-green-100', icon: '🛬', label: 'Return' };
                 const departureDate = itinerary.segments?.[0]?.departure_time;
 
                 return (

@@ -1,3 +1,5 @@
+# larry6683/big-data-project-travel-app/backend/app/services/weather_service.py
+
 import httpx
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, Counter
@@ -49,7 +51,7 @@ class WeatherService:
 
                 history_url = "https://history.openweathermap.org/data/2.5/history/city"
                 history_params = {
-                    "lat": lat,  # ✨ LOCATION FIX: Use exact lat/lon instead of city ID
+                    "lat": lat,  
                     "lon": lon,
                     "type": "hour",
                     "start": start_unix,
@@ -72,7 +74,6 @@ class WeatherService:
         check_out_dt = datetime.strptime(target_check_out, "%Y-%m-%d").date()
 
         for item in data.get("list", []):
-            # ✨ TIMEZONE FIX: Add the offset and read as UTC to get the true local day
             local_dt = datetime.fromtimestamp(item["dt"] + tz_offset, tz=timezone.utc).date()
             
             if check_in_dt <= local_dt <= check_out_dt:
@@ -88,8 +89,13 @@ class WeatherService:
         if not days:
             return {"error": "Dates not found in 30-day forecast range."}
 
+        # ✨ BUG FIX 2: Calculate the true average for the summary instead of just grabbing Day 0
+        all_weathers = [d.weather.lower() for d in days]
+        most_common_overall = Counter(all_weathers).most_common(1)[0][0]
+        avg_high = sum([d.max_temp for d in days]) / len(days)
+
         return WeatherSummary(
-            overall_summary=f"Forecast for your trip: Expect mostly {days[0].weather.lower()} conditions with highs around {int(days[0].max_temp)}°F.",
+            overall_summary=f"Forecast for your trip: Expect mostly {most_common_overall} conditions with highs around {int(avg_high)}°F.",
             days=days
         )
 
@@ -97,7 +103,6 @@ class WeatherService:
         daily_data = defaultdict(lambda: {"temps": [], "humidity": [], "pressure": [], "weather": []})
 
         for item in data.get("list", []):
-            # ✨ TIMEZONE FIX: Add the offset and read as UTC to correctly group by local day
             local_dt = datetime.fromtimestamp(item["dt"] + tz_offset, tz=timezone.utc)
             future_dt = local_dt + timedelta(days=365)
             date_str = future_dt.strftime("%Y-%m-%d")
@@ -105,7 +110,10 @@ class WeatherService:
             daily_data[date_str]["temps"].append(item["main"]["temp"])
             daily_data[date_str]["humidity"].append(item["main"]["humidity"])
             daily_data[date_str]["pressure"].append(item["main"]["pressure"])
-            daily_data[date_str]["weather"].append(item["weather"][0]["description"])
+            
+            # ✨ BUG FIX 1: Use 'main' instead of 'description'. This groups "scattered clouds", 
+            # "broken clouds", and "clear sky" together so they don't split votes against "rain".
+            daily_data[date_str]["weather"].append(item["weather"][0]["main"])
 
         days = []
         for date_str, metrics in sorted(daily_data.items()):
@@ -124,8 +132,11 @@ class WeatherService:
         if not days:
             return {"error": "Could not calculate historical forecast for these dates."}
 
+        # Calculate a true average for the historical summary too
+        avg_high = sum([d.max_temp for d in days]) / len(days)
+
         return WeatherSummary(
-            overall_summary=f"ℹ️ This is a prediction based on historical data: Expect highs around {int(days[0].max_temp)}°F.",
+            overall_summary=f"ℹ️ Prediction based on historical data: Expect mostly {days[0].weather.split(' ')[0].lower()} conditions with highs around {int(avg_high)}°F.",
             days=days
         )
 
