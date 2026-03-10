@@ -1,4 +1,4 @@
-// larry6683/big-data-project-travel-app/frontend/components/layout/Sidebar.tsx
+// larry6683/big-data-project-travel-app/frontend/components/search/Sidebar.tsx
 
 "use client";
 
@@ -113,44 +113,17 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
 
   return (
     <>
-      <style>{`
-        @keyframes sbSpin { to { transform: rotate(360deg); } }
-        .sb-input-date { transition: border-color 0.15s, box-shadow 0.15s; }
-        .sb-input-date:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important; outline: none; }
-        .sb-select:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important; outline: none; }
-        .sb-count-btn:hover { background: #f1f5f9 !important; }
-        .sb-submit:hover:not(:disabled) { background: #1d4ed8 !important; }
-        .sb-submit:active:not(:disabled) { transform: scale(0.98); }
-        .sb-range { accent-color: #2563eb; }
-        .sb-range::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #2563eb; cursor: pointer; box-shadow: 0 1px 4px rgba(37,99,235,0.4); }
-        .sb-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #2563eb; cursor: pointer; border: none; }
-        .sb-toggle-btn { transition: all 0.15s; }
-        .sb-toggle-btn:hover { opacity: 0.85; }
-        .sb-interest-btn { transition: all 0.2s; }
-      `}</style>
 
 
-      <div
-        className="w-[85vw] max-w-[320px] lg:w-[20vw] lg:max-w-none"
-        style={{
-          height: "100vh",
-          background: "#0f172a",
-          borderRight: "1px solid #e8edf4",
-          padding: "24px 18px",
-          boxSizing: "border-box",
-          display: "flex", flexDirection: "column", gap: "20px",
-          fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-          overflowY: "auto",
-          color: "#ffffff",
-        }}
-      >
+      <div className="w-[80vw] max-w-[320px] lg:w-[20vw] lg:max-w-none h-screen bg-slate-900 border-r border-slate-200/10 px-[18px] py-6 flex flex-col gap-5 font-sans overflow-y-auto text-white">
+        
         {/* Header row */}
-        <div style={{ paddingBottom: "10px", borderBottom: "1px solid #1e293b", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div className="pb-2.5 border-b border-slate-800 flex justify-between items-start">
           <div>
-            <div style={{ fontSize: "24px", fontWeight: 800, color: "#ffffff", letterSpacing: "-0.3px", display: "flex", alignItems: "center", gap: "8px" }}>
-              WanderPlan <span style={{ color: "#2563eb" }}>US</span>
+            <div className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+              WanderPlan <span className="text-indigo-600">US</span>
             </div>
-            <div style={{ fontSize: "11px", color: "#c2c2c2", marginTop: "4px" }}>Plan Your Trip</div>
+            <div className="text-[11px] text-[#c2c2c2] mt-1">Plan Your Trip</div>
           </div>
 
           {/* Close button — only visible on mobile */}
@@ -178,28 +151,30 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
         <div>
           <SbLabel>
             Travel Dates{" "}
-            {nightCount > 0 && <span style={{ fontWeight: 400, color: "#94a3b8", fontSize: "10.5px" }}>· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
+            {nightCount > 0 && <span className="font-normal text-slate-400 text-[10.5px]">· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
           </SbLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="flex flex-col gap-2">
             <input
-              type="date" className="sb-input-date" value={dates.start}
+              type="date" 
+              value={dates.start}
               onChange={e => setDates(d => ({ ...d, start: e.target.value }))}
-              style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontFamily: "inherit", fontSize: "13px", color: "#1a202c", boxSizing: "border-box" }}
+              className="w-full py-[9px] px-3 bg-white border-[1.5px] border-slate-200 rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-600/12 outline-none transition-all duration-150"
             />
             <input
-              type="date" className="sb-input-date" value={dates.end}
+              type="date" 
+              value={dates.end}
               onChange={e => setDates(d => ({ ...d, end: e.target.value }))}
-              style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontFamily: "inherit", fontSize: "13px", color: "#1a202c", boxSizing: "border-box" }}
+              className="w-full py-[9px] px-3 bg-white border-[1.5px] border-slate-200 rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-indigo-600 focus:ring-[3px] focus:ring-indigo-600/12 outline-none transition-all duration-150"
             />
           </div>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-          <div style={{ flex: "1 1 120px" }}>
+        <div className="flex flex-wrap gap-2.5">
+          <div className="flex-1 basis-[120px]">
             <SbLabel>Adults</SbLabel>
             <SbCounter value={adults} min={1} max={9} onChange={setAdults} />
           </div>
-          <div style={{ flex: "1 1 120px" }}>
+          <div className="flex-1 basis-[120px]">
             <SbLabel>Children</SbLabel>
             <SbCounter value={children} min={0} max={9} onChange={setChildren} />
           </div>
@@ -207,17 +182,15 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
 
         <div>
           <SbLabel>Travel Mode</SbLabel>
-          <div style={{ display: "flex", background: "#e8edf4", borderRadius: "10px", padding: "3px", gap: "3px" }}>
+          <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
             {(["fly", "drive"] as const).map((opt) => {
               const active = travelMode === opt;
               return (
-                <button key={opt} className="sb-toggle-btn" onClick={() => setTravelMode(opt)} style={{
-                  flex: 1, padding: "7px 0", borderRadius: "8px", border: "none",
-                  background: active ? "#fff" : "transparent",
-                  fontFamily: "inherit", fontSize: "12.5px", fontWeight: active ? 700 : 400,
-                  color: active ? "#1a202c" : "#64748b", cursor: "pointer",
-                  boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-                }}>
+                <button 
+                  key={opt} 
+                  onClick={() => setTravelMode(opt)} 
+                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${active ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                >
                   {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
                 </button>
               );
@@ -227,17 +200,15 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
 
         <div>
           <SbLabel>Budget Category</SbLabel>
-          <div style={{ display: "flex", background: "#e8edf4", borderRadius: "10px", padding: "3px", gap: "3px" }}>
+          <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
             {(["budget", "luxury"] as const).map((opt) => {
               const active = budget === opt;
               return (
-                <button key={opt} className="sb-toggle-btn" onClick={() => setBudget(opt)} style={{
-                  flex: 1, padding: "7px 0", borderRadius: "8px", border: "none",
-                  background: active ? "#fff" : "transparent",
-                  fontFamily: "inherit", fontSize: "12.5px", fontWeight: active ? 700 : 400,
-                  color: active ? "#1a202c" : "#64748b", cursor: "pointer",
-                  boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-                }}>
+                <button 
+                  key={opt} 
+                  onClick={() => setBudget(opt)} 
+                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${active ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                >
                   {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
                 </button>
               );
@@ -248,32 +219,28 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
         <div>
           <SbLabel>
             Search Radius{" "}
-            <span style={{ fontWeight: 400, color: "#64748b" }}>({radius} mi)</span>
+            <span className="font-normal text-slate-500">({radius} mi)</span>
           </SbLabel>
           <input
             type="range" min={1} max={25} step={1} value={radius}
             onChange={(e) => setRadius(parseInt(e.target.value))}
-            className="sb-range" style={{ width: "100%", cursor: "pointer", margin: "4px 0" }}
+            className="w-full cursor-pointer my-1 accent-indigo-600" 
           />
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10.5px", color: "#64748b" }}>
+          <div className="flex justify-between text-[10.5px] text-slate-500">
             <span>1 mi</span><span>25 mi</span>
           </div>
         </div>
 
         <div>
           <SbLabel>Interests</SbLabel>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+          <div className="flex flex-wrap gap-1.5">
             {INTEREST_CATEGORIES.map((category) => {
               const active = interests.includes(category.id);
               return (
                 <button
-                  key={category.id} onClick={() => handleInterestToggle(category.id)} className="sb-interest-btn"
-                  style={{
-                    padding: "6px 10px", borderRadius: "16px",
-                    border: active ? "1.5px solid #3b82f6" : "1.5px solid #334155",
-                    background: active ? "rgba(59, 130, 246, 0.15)" : "transparent",
-                    color: active ? "#60a5fa" : "#94a3b8", fontSize: "12px", cursor: "pointer"
-                  }}
+                  key={category.id} 
+                  onClick={() => handleInterestToggle(category.id)} 
+                  className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${active ? 'border-indigo-600 bg-indigo-600/15 text-indigo-600' : 'border-slate-700 bg-transparent text-slate-400'}`}
                 >
                   {category.label}
                 </button>
@@ -282,14 +249,13 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
           </div>
         </div>
 
-        <button className="sb-submit mt-auto" onClick={handleSearchSubmit} disabled={isWorking} style={{
-          width: "100%", padding: "16px", background: isWorking ? "#94a3b8" : "#2563eb",
-          color: "#fff", border: "none", borderRadius: "16px", fontFamily: "inherit", fontSize: "14px", fontWeight: 700,
-          cursor: isWorking ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-          boxShadow: isWorking ? "none" : "0 4px 15px rgba(37,99,235,0.3)", transition: "background 0.15s, box-shadow 0.15s, transform 0.1s",
-        }}>
+        <button 
+          className={`w-full p-4 rounded-2xl border-none font-inherit text-sm font-bold flex items-center justify-center gap-2 mt-auto transition-all duration-150 ${isWorking ? 'bg-slate-400 text-white cursor-not-allowed' : 'bg-indigo-600 text-white cursor-pointer shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:bg-indigo-600 active:scale-[0.98]'}`}
+          onClick={handleSearchSubmit} 
+          disabled={isWorking}
+        >
           {isWorking ? (
-            <><Loader2 size={17} style={{ animation: "sbSpin 0.7s linear infinite" }} /> Gathering Details...</>
+            <><Loader2 size={17} className="animate-spin" /> Gathering Details...</>
           ) : (
             <><Search size={17} /> SUBMIT</>
           )}
@@ -301,7 +267,7 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
 
 function SbLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#c6c6c6", marginBottom: "6px", marginLeft: "4px" }}>
+    <div className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#c6c6c6] mb-1.5 ml-1">
       {children}
     </div>
   );
@@ -309,17 +275,16 @@ function SbLabel({ children }: { children: React.ReactNode }) {
 
 function SbCounter({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (v: number) => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#fff", padding: "4px", borderRadius: "10px", border: "1.5px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-      <button className="sb-count-btn" onClick={() => onChange(Math.max(min, value - 1))} style={countBtnStyle}>−</button>
-      <span style={{ flex: 1, fontWeight: 700, fontSize: "14px", color: "#1a202c", textAlign: "center" }}>{value}</span>
-      <button className="sb-count-btn" onClick={() => onChange(Math.min(max, value + 1))} style={countBtnStyle}>+</button>
+    <div className="flex items-center gap-2.5 bg-white p-1 rounded-[10px] border-[1.5px] border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <button 
+        className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer flex items-center justify-center font-mono shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors duration-150 hover:bg-slate-100" 
+        onClick={() => onChange(Math.max(min, value - 1))}
+      >−</button>
+      <span className="flex-1 font-bold text-sm text-slate-900 text-center">{value}</span>
+      <button 
+        className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer flex items-center justify-center font-mono shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors duration-150 hover:bg-slate-100"
+        onClick={() => onChange(Math.min(max, value + 1))}
+      >+</button>
     </div>
   );
 }
-
-const countBtnStyle: React.CSSProperties = {
-  width: "30px", height: "30px", border: "1.5px solid #e2e8f0", borderRadius: "8px",
-  background: "#fff", color: "#374151", fontSize: "17px", cursor: "pointer",
-  display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "monospace",
-  boxShadow: "0 1px 2px rgba(0,0,0,0.05)", transition: "background 0.12s",
-};

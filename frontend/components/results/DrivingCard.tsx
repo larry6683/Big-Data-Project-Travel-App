@@ -15,7 +15,7 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
   const [citiesLoading, setCitiesLoading] = useState<boolean>(false);
   
   // State for showing the intermediates list
-  const [showIntermediates, setShowIntermediates] = useState<boolean>(false); 
+  const [showIntermediates, setShowIntermediates] = useState<boolean>(true); 
 
   const stateAbbr: Record<string, string> = {
     "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR", "California": "CA",
@@ -241,7 +241,7 @@ const fetchIntermediates = async () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={`bg-white rounded-xl overflow-hidden border p-5 transition-all duration-200 ${isSelected ? 'border-blue-600 ring-2 ring-blue-600 shadow-lg bg-blue-50/10' : 'border-gray-200 shadow-sm'}`}>
+      <div className={`bg-white rounded-xl overflow-hidden border p-5 transition-all duration-200 ${isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-50/10' : 'bg-white hover:shadow-md'}`}>
 
         <div className="mb-6">
           <div className="flex justify-between items-start mb-3">
@@ -254,7 +254,7 @@ const fetchIntermediates = async () => {
                     onChange={() => toggleDriveSelection()} 
                     className="w-4 h-4 accent-blue-600 cursor-pointer" 
                   />
-                  <span className="text-xs font-bold text-gray-700 select-none">
+          <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
                     {isSelected ? 'Selected' : 'Select'}
                   </span>
                 </label>

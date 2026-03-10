@@ -134,10 +134,10 @@ export default function Dashboard() {
           >
             <Menu size={20} />
           </button>
-          <span className="text-sm font-black text-gray-900 tracking-tight">WanderPlan <span className="text-blue-600">US</span></span>
+          <span className="text-sm font-black text-gray-900 tracking-tight">WanderPlan <span className="text-indigo-600">US</span></span>
           <button
             onClick={() => setMapOpen(v => !v)}
-            className={`p-2 rounded-xl text-white transition-colors ${mapOpen ? 'bg-blue-600' : 'bg-slate-700'}`}
+            className={`p-2 rounded-xl text-white transition-colors ${mapOpen ? 'bg-indigo-600' : 'bg-slate-700'}`}
             aria-label="Toggle map"
           >
             <Map size={20} />
@@ -156,7 +156,7 @@ export default function Dashboard() {
                 {/* Generate Itenirary Button */}
                 {tripData && (
                   <button 
-                    className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-slate-900 hover:bg-blue-600 text-white text-xs md:text-sm font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     Generate Itinerary
                   </button>

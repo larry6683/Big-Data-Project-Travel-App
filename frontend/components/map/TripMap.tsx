@@ -1,3 +1,5 @@
+// larry6683/big-data-project-travel-app/frontend/components/map/TripMap.tsx
+
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -81,14 +83,12 @@ export default function TripMap({ mapData }: TripMapProps) {
     if (!mapRef.current) return;
 
     const syncWithSearchState = async () => {
-      // Replaced Cookies.get with localStorage.getItem
       const savedData = localStorage.getItem("search_state");
       if (!savedData) return;
 
       try {
         const { destination, radius } = JSON.parse(savedData);
         
-        // Initialize slider state safely between 1 and 25
         const initialRadius = radius ? Math.max(1, Math.min(25, radius)) : 10;
         setRadiusValue(initialRadius);
         
@@ -113,7 +113,6 @@ export default function TripMap({ mapData }: TripMapProps) {
     const val = parseInt(e.target.value, 10);
     setRadiusValue(val);
 
-    // Replaced Cookies.get with localStorage.getItem
     const savedData = localStorage.getItem("search_state");
     if (!savedData || !mapRef.current) return;
     
@@ -123,7 +122,7 @@ export default function TripMap({ mapData }: TripMapProps) {
         mapRef.current.flyTo({
           center: [state.destination.lon, state.destination.lat],
           zoom: calculateZoomFromRadius(val),
-          duration: 300, // Short duration for fast slider tracking
+          duration: 300, 
           essential: true
         });
       }
@@ -132,14 +131,12 @@ export default function TripMap({ mapData }: TripMapProps) {
 
   // Handle saving the state ONLY when slider drag is released
   const handleRadiusDrop = () => {
-    // Replaced Cookies.get with localStorage.getItem
     const savedData = localStorage.getItem("search_state");
     if (!savedData) return;
     
     try {
       const state = JSON.parse(savedData);
       state.radius = radiusValue;
-      // Replaced Cookies.set with localStorage.setItem
       localStorage.setItem("search_state", JSON.stringify(state)); 
     } catch (e) {
       console.error("Failed to update localStorage:", e);
@@ -147,25 +144,11 @@ export default function TripMap({ mapData }: TripMapProps) {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '0px', overflow: 'hidden' }}>
+    <div className="relative w-full h-full rounded-none overflow-hidden">
       
       {/* Floating Radius Controller */}
-      <div style={{
-        position: 'absolute',
-        bottom: '12px',
-        left: '100px',
-        transform: 'translateX(-50%)',
-        zIndex: 10,
-        background: 'white',
-        padding: '1px 3px',
-        borderRadius: '30px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        border: '1px solid #e5e7eb'
-      }}>
-        <label style={{ fontSize: '10px', fontWeight: 600, color: '#374151', paddingLeft: '6px' }}>
+      <div className="absolute bottom-3 left-[100px] -translate-x-1/2 z-10 bg-white px-1 py-[3px] rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center gap-2.5 border border-gray-200">
+        <label className="text-[10px] font-semibold text-gray-700 pl-1.5">
          Zoom: {radiusValue} mi
         </label>
         <input 
@@ -177,12 +160,12 @@ export default function TripMap({ mapData }: TripMapProps) {
           onChange={handleRadiusSlider}
           onMouseUp={handleRadiusDrop}
           onTouchEnd={handleRadiusDrop}
-          style={{ width: '100px', cursor: 'pointer', accentColor: '#2563eb' }}
+          className="w-[100px] cursor-pointer accent-indigo-600"
         />
       </div>
 
       {/* Map Container */}
-      <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+      <div ref={mapContainer} className="w-full h-full" />
     </div>
   );
 }

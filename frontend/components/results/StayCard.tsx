@@ -33,7 +33,6 @@ export default function StayCard({ stays }: { stays: any[] }) {
     }
   }, [stays]);
 
-  // Handle Single Selection Toggle
   const toggleStaySelection = async (stay: any, uniqueKey: string) => {
     const tripStateStr = localStorage.getItem('trip_state');
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
@@ -41,12 +40,10 @@ export default function StayCard({ stays }: { stays: any[] }) {
     const isSelected = selectedStayKeys.includes(uniqueKey);
 
     if (isSelected) {
-      // DESELECT
       tripState.stays = [];
       setSelectedStayKeys([]);
       localStorage.setItem('trip_state', JSON.stringify(tripState));
     } else {
-      // SELECT ONLY THIS ONE (Overwrite)
       try {
         setLoadingStayId(uniqueKey);
         
@@ -73,7 +70,6 @@ export default function StayCard({ stays }: { stays: any[] }) {
       } catch (error) {
         console.error("Failed to fetch detailed hotel offers", error);
         
-        // Fallback: Save basic info if API fails
         const stayToSave = { ...stay, _selectionKey: uniqueKey };
         tripState.stays = [stayToSave];
         setSelectedStayKeys([uniqueKey]);
@@ -129,13 +125,10 @@ export default function StayCard({ stays }: { stays: any[] }) {
           return (
             <div 
               key={uniqueKey} 
-              className={`border rounded-xl transition-all duration-200 overflow-hidden ${
-                isSelected 
-                  ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50/10 shadow-md' 
-                  : 'border-gray-200 hover:shadow-md bg-white'
+              className={`border-[0.5px] border-gray-200 rounded-xl transition-all duration-200 overflow-hidden ${
+                isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'bg-white hover:shadow-md'
               }`}
             >
-              {/* TOP ROW: Main Hotel Info */}
               <div className="p-4 flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
                 <div className="flex flex-col flex-1 w-full">
                   <div className="flex items-center gap-2 mb-1">
@@ -165,7 +158,7 @@ export default function StayCard({ stays }: { stays: any[] }) {
                     {stay.price ? (
                        <>
                           <span className="text-xs font-bold text-gray-500 block mb-1">Starts at</span>
-                          <p className="text-2xl font-black text-blue-600 tracking-tight">
+                          <p className="text-2xl font-black text-indigo-600 tracking-tight">
                             ${stay.price}
                             <span className="text-[10px] text-gray-500 font-bold ml-1 uppercase">/ night</span>
                           </p>
@@ -177,17 +170,17 @@ export default function StayCard({ stays }: { stays: any[] }) {
 
                   <div className="flex items-center gap-2">
                     {isLoading ? (
-                      <div className="w-6 h-6 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
                     ) : (
         
-                <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors shadow-sm shrink-0">
+                <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-50 border-[0.5px] border-gray-200 transition-colors shadow-sm shrink-0">
                   <input 
                     type="checkbox" 
                     checked={isSelected} 
                     onChange={() => toggleStaySelection(stay, uniqueKey)} 
-                    className="w-4 h-4 accent-blue-600 cursor-pointer" 
+                    className="w-4 h-4 accent-indigo-600 cursor-pointer" 
                   />
-                  <span className="text-xs font-bold text-gray-700 select-none">
+          <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
                     {isSelected ? 'Selected' : 'Select'}
                   </span>
                 </label>
@@ -197,15 +190,14 @@ export default function StayCard({ stays }: { stays: any[] }) {
                 </div>
               </div>
 
-              {/* DROPDOWN EXPANDED ROW: Detailed Offers */}
               {isSelected && details && details.data && details.data.length > 0 && (
-                <div className="bg-blue-50/50 border-t border-blue-100 p-4 animate-in slide-in-from-top-2 fade-in duration-300">
-                  <h5 className="text-sm font-black text-blue-900 mb-3 uppercase tracking-wider">
+                <div className="bg-indigo-50/50 border-t-[0.5px] border-gray-200 p-4 animate-in slide-in-from-top-2 fade-in duration-300">
+                  <h5 className="text-sm font-black text-indigo-900 mb-3 uppercase tracking-wider">
                     Available Room Offers
                   </h5>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     {(details.data[0]?.offers || details.data)?.map((offer: any, offerIdx: number) => (
-                      <div key={offer.id || offerIdx} className="bg-white border border-blue-100 rounded-lg p-3 shadow-sm flex justify-between items-center gap-4 hover:border-blue-300 transition-colors">
+                      <div key={offer.id || offerIdx} className="bg-white border-[0.5px] border-gray-200 rounded-lg p-3 shadow-sm flex justify-between items-center gap-4 hover:border-indigo-300 transition-colors">
                         <div>
                           <p className="text-sm font-bold text-gray-800 leading-snug">
                             {offer.room?.description?.text || offer.room?.typeEstimated?.category || 'Standard Room'}
@@ -224,7 +216,7 @@ export default function StayCard({ stays }: { stays: any[] }) {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-lg font-black text-blue-600 leading-none">
+                          <p className="text-lg font-black text-indigo-600 leading-none">
                             {offer.price?.total ? `$${offer.price.total}` : 'N/A'}
                           </p>
                           <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-widest">
@@ -237,9 +229,8 @@ export default function StayCard({ stays }: { stays: any[] }) {
                 </div>
               )}
 
-              {/* Error state if fetch failed or returned empty while selected */}
               {isSelected && !isLoading && (!details || !details.data || details.data.length === 0) && (
-                <div className="bg-gray-50 border-t border-gray-100 p-3 text-center">
+                <div className="bg-gray-50 border-t-[0.5px] border-gray-200 p-3 text-center">
                   <p className="text-xs font-bold text-gray-500">
                     Specific room offers could not be loaded at this time.
                   </p>

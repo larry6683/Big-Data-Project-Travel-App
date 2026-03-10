@@ -27,8 +27,8 @@ const LoadingState = () => {
   return (
     <div className="w-full min-h-[500px] flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-300">
       <div className="relative flex items-center justify-center w-24 h-24 mb-4">
-        <Loader2 className="absolute inset-0 w-full h-full text-blue-600 animate-spin" strokeWidth={1.5} />
-        <div className="text-4xl drop-shadow-sm z-10 transition-opacity" style={{ transform: 'translateY(-2px)' }}>
+        <Loader2 className="absolute inset-0 w-full h-full text-indigo-600 animate-spin" strokeWidth={1.5} />
+        <div className="text-4xl drop-shadow-sm z-10 transition-opacity -translate-y-[2px]">
           {icons[iconIndex]}
         </div>
       </div>
@@ -101,12 +101,12 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
                 <span className={`text-lg mb-1 group-hover:scale-110 transition-transform ${isActive ? 'grayscale-0' : 'grayscale opacity-70'}`}>
                   {tab.icon}
                 </span>
-                <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}>
                   {tab.label}
                 </span>
                 
                 {isActive && (
-                  <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-600 rounded-t-full shadow-[0_-4px_10px_rgba(37,99,235,0.3)]" />
+                  <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-indigo-600 rounded-t-full shadow-[0_-4px_10px_rgba(37,99,235,0.3)]" />
                 )}
               </button>
             );
@@ -122,7 +122,7 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
         {activeTab === 'drive' && (
           <div className="flex flex-col gap-4">
             {showFlights && !hasFlights && (
-              <div className="p-4 bg-blue-50 text-blue-600 rounded-xl border border-blue-200 flex items-center gap-3">
+              <div className="p-4 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-200 flex items-center gap-3">
                 <span className="text-xl">ℹ️</span>
                 <p className="text-sm font-medium">
                   We couldn't find any flights for this route, so we're showing you the best driving route instead!

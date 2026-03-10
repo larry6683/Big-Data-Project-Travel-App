@@ -128,7 +128,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
       <button
         onClick={() => setSortBy(id)}
         className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all border ${
-          isActive ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+          isActive ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
         }`}
       >
         {label}
@@ -161,10 +161,10 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
           <div 
             key={uniqueKey} 
             className={`bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 ${
-              isSelected ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50/10' : 'border-gray-100'
+              isSelected       ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'bg-white hover:shadow-md'
             }`}
           >
-            <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-blue-50 border-blue-100' : 'bg-gray-100/40 border-gray-100'}`}>
+            <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-indigo-50 border-indigo-100' : 'bg-gray-100/40 border-gray-100'}`}>
               <div className="flex items-center gap-3">
 
                 <div className="w-12 h-12 flex items-center justify-center overflow-hidden relative shrink-0">
@@ -180,7 +180,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                 </div>
               </div>
               <div className="text-right leading-none">
-                <p className="text-2xl font-black text-blue-600 tracking-tight">
+                <p className="text-2xl font-black text-indigo-600 tracking-tight">
                   ${getPrice(flight).toFixed(2)} 
                   <span className="text-[10px] text-gray-500 font-bold tracking-wider ml-1">{flight.currency}</span>
                 </p>
@@ -191,9 +191,9 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                     type="checkbox" 
                     checked={isSelected} 
                     onChange={() => toggleFlightSelection(flight, uniqueKey)} 
-                    className="w-4 h-4 accent-blue-600 cursor-pointer" 
+                    className="w-4 h-4 accent-indigo-600 cursor-pointer" 
                   />
-                  <span className="text-xs font-bold text-gray-700 select-none">
+          <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
                     {isSelected ? 'Selected' : 'Select'}
                   </span>
                 </label>
@@ -204,7 +204,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
               {flight.itineraries?.map((itinerary: any, itinIndex: number) => {
                 const isOutbound = itinIndex === 0;
                 const theme = isOutbound 
-                  ? { bg: 'bg-transparent', text: 'text-blue-600', badgeBg: 'bg-blue-100', icon: '🛫', label: 'Outbound' }
+                  ? { bg: 'bg-transparent', text: 'text-indigo-600', badgeBg: 'bg-indigo-100', icon: '🛫', label: 'Outbound' }
                   : { bg: 'bg-transparent', text: 'text-green-600', badgeBg: 'bg-green-100', icon: '🛬', label: 'Return' };
                 const departureDate = itinerary.segments?.[0]?.departure_time;
 
@@ -237,7 +237,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                         return (
                           <div key={segIndex} className={`relative z-10 flex gap-3 ${isLast ? '' : 'mb-3'}`}>
                             <div className="flex flex-col items-center mt-1">
-                              <div className={`w-3 h-3 rounded-full border-2 bg-white relative z-20 ${isOutbound ? 'border-blue-600' : 'border-emerald-500'}`}></div>
+                              <div className={`w-3 h-3 rounded-full border-2 bg-white relative z-20 ${isOutbound ? 'border-indigo-600' : 'border-emerald-500'}`}></div>
                             </div>
 
                             <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm relative">
