@@ -161,7 +161,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
           <div 
             key={uniqueKey} 
             className={`bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 ${
-              isSelected       ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'bg-white hover:shadow-md'
+              isSelected       ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-100/10' : 'bg-white hover:shadow-md'
             }`}
           >
             <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-indigo-50 border-indigo-100' : 'bg-gray-100/40 border-gray-100'}`}>

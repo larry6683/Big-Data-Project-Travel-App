@@ -63,7 +63,7 @@ export default function AttractionsCard({ attractions }: { attractions: any[] })
             <div 
               key={uniqueKey} 
               className={`border rounded-xl p-4 transition-all duration-300 ease-in-out origin-center flex flex-row items-center justify-between gap-4 ${
-                isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'bg-white hover:shadow-md'
+                isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-100/10' : 'bg-white hover:shadow-md'
               }`}
             >
               <div className="flex flex-col gap-1.5">

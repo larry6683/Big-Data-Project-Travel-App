@@ -61,7 +61,7 @@ export default function ToursCard({ tours }) {
           return (
             <div 
               key={uniqueKey} 
-              className={`border rounded-xl p-4 transition-colors shadow-sm flex flex-col sm:flex-row gap-4 ${isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'bg-white hover:shadow-md'}`}
+              className={`border rounded-xl p-4 transition-colors shadow-sm flex flex-col sm:flex-row gap-4 ${isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-100/10' : 'bg-white hover:shadow-md'}`}
             >
               
               {/* Tour Image or Placeholder */}

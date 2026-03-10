@@ -42,18 +42,8 @@ export default function Dashboard() {
     sessionStorage.removeItem('active_tab');
     sessionStorage.removeItem('drive_intermediates_open');
 
-    // 🧹 PRE-CLEANUP: Clear any selected flights/drives from previous searches
-    const tripStateStr = localStorage.getItem('trip_state');
-    if (tripStateStr) {
-      try {
-        const tripState = JSON.parse(tripStateStr);
-        tripState.flights = [];
-        tripState.drive = null;
-        localStorage.setItem('trip_state', JSON.stringify(tripState));
-      } catch (e) {
-        console.error("Failed to clear trip_state", e);
-      }
-    }
+// 🧹 PRE-CLEANUP: Completely clear the saved trip_state in localStorage
+    localStorage.removeItem('trip_state');
 
     try {
       const isDrive = params.travelMode === 'drive';
@@ -119,7 +109,16 @@ export default function Dashboard() {
         lg:relative lg:translate-x-0 lg:z-auto lg:flex-shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <Sidebar onSearch={handleSearch} loading={loading} />
+<Sidebar 
+          onSearch={handleSearch} 
+          onSearchStart={() => {
+            setTripData(null);
+            setLoading(true);
+            setSidebarOpen(false); // Smoothly close mobile drawer instantly
+          }}
+          loading={loading} 
+        />
+        
       </div>
 
       {/* ── Main content ── */}
@@ -154,7 +153,7 @@ export default function Dashboard() {
                 <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Trip Planner</h1>
                 
                 {/* Generate Itenirary Button */}
-                {tripData && (
+                {tripData && !loading && (
                   <button 
                     className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-bold rounded-xl transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                   >

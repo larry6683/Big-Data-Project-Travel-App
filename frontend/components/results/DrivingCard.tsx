@@ -100,7 +100,7 @@ export default function DrivingCard({ drivingData, loading: parentLoading }: { d
         }
 
         const { source, destination } = searchState;
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
         const response = await fetch(
           `${baseUrl}/driving/route?origin_lat=${source.lat}&origin_lon=${source.lon}&dest_lat=${destination.lat}&dest_lon=${destination.lon}`
@@ -152,7 +152,7 @@ const fetchIntermediates = async () => {
     const citiesFound: string[] = [];
 
     const step = Math.max(1, Math.floor(coords.length / 40));
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
     const startCoord = coords[0];
     const endCoord = coords[coords.length - 1];
@@ -241,7 +241,7 @@ const fetchIntermediates = async () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={`bg-white rounded-xl overflow-hidden border p-5 transition-all duration-200 ${isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-50/10' : 'bg-white hover:shadow-md'}`}>
+      <div className={`bg-white rounded-xl overflow-hidden border p-5 transition-all duration-200 ${isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-100/10' : 'bg-white hover:shadow-md'}`}>
 
         <div className="mb-6">
           <div className="flex justify-between items-start mb-3">
@@ -254,7 +254,7 @@ const fetchIntermediates = async () => {
                     onChange={() => toggleDriveSelection()} 
                     className="w-4 h-4 accent-blue-600 cursor-pointer" 
                   />
-          <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
+                  <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
                     {isSelected ? 'Selected' : 'Select'}
                   </span>
                 </label>

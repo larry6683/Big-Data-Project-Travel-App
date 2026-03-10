@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, Loader2, X } from 'lucide-react';
 import { travelApi } from '@/services/api';
 
 interface Props {
@@ -112,20 +112,46 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
+      
+      {/* --- Dynamic Input & Right-Side Action Icons --- */}
       <div className="relative flex items-center">
         <input
           className={`w-full p-3 rounded-xl outline-none transition-all duration-300 text-xs shadow-inner backdrop-blur-sm
             ${isDark
               ? 'bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:bg-white/10'
               : 'bg-white border border-gray-200 text-gray-800 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600'}
-            ${showGPS ? 'pr-[70px]' : 'pr-3'}`}
+            ${!isSearching && query.length === 0 && showGPS ? 'pr-[70px]' : 'pr-10'}`}
           placeholder={placeholder}
           value={query}
           onChange={e => { setQuery(e.target.value); if (!e.target.value) onChange(''); }}
           onFocus={() => { if (results.length) setIsOpen(true); }}
         />
 
-        {showGPS && (
+        {/* 1. Loading Animation (Fetching Results) */}
+        {isSearching ? (
+          <div className="absolute right-3 flex items-center justify-center text-indigo-500">
+            <Loader2 size={16} className="animate-spin" />
+          </div>
+        ) 
+        
+        /* 2. Clear (X) Button (Dropdown Open OR Input Has Text) */
+        : isOpen || query.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery('');
+              onChange('');
+              setIsOpen(false);
+              setResults([]);
+            }}
+            className={`absolute right-2 p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-800 hover:bg-gray-100'}`}
+          >
+            <X size={16} />
+          </button>
+        ) 
+        
+        /* 3. GPS Button (Empty Input + GPS Enabled) */
+        : showGPS ? (
           <button
             type="button"
             onClick={handleGPS}
@@ -141,7 +167,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
               ? <><Loader2 size={12} className="animate-spin" />...</>
               : <><Navigation size={12} />GPS</>}
           </button>
-        )}
+        ) : null}
       </div>
 
       {isOpen && results.length > 0 && (
@@ -158,8 +184,8 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
             >
               <div className={`p-1.5 rounded-lg transition-all duration-300 group-hover:scale-110
                 ${isDark
-                  ? 'bg-indigo-600/10 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white'
-                  : 'bg-indigo-600 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white'}`}>
+                  ? 'bg-slate-800 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white'
+                  : 'bg-gray-100 text-gray-500 group-hover:bg-indigo-600 group-hover:text-white'}`}>
                 <MapPin size={14} />
               </div>
               <div className="flex-1 text-sm overflow-hidden flex flex-col justify-center">

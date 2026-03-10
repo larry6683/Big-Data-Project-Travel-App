@@ -12,17 +12,16 @@ class Settings(BaseSettings):
     
     SECRET_KEY: str
     
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",  
-        "http://localhost:8000",  
-    ]
+    # Removed the hardcoded list! Pydantic will now pull this from .env
+    BACKEND_CORS_ORIGINS: List[str] 
 
-    AMADEUS_CLIENT_ID: str = ""
-    AMADEUS_CLIENT_SECRET: str = ""
-    WEATHER_API_KEY: str = ""
-    BDC_API_KEY: str = "" 
+    AMADEUS_CLIENT_ID: str 
+    AMADEUS_CLIENT_SECRET: str 
+    WEATHER_API_KEY: str 
+    BDC_API_KEY: str  
 
-    POSTGRES_URL: str = "postgresql://user:password@localhost:5432/traveldb"
+    # Removed the hardcoded credentials!
+    POSTGRES_URL: str 
 
     class Config:
         env_file = ".env"

@@ -2,7 +2,8 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
+// The "as string" prevents TypeScript from complaining that it might be undefined
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 export interface LocationResult {
   city?: string;

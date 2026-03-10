@@ -48,7 +48,7 @@ export default function StayCard({ stays }: { stays: any[] }) {
         setLoadingStayId(uniqueKey);
         
         const targetHotelId = stay.hotelId || (stay.hotel && stay.hotel.hotelId) || stay.id || uniqueKey; 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL;
         const response = await fetch(`${baseUrl}/hotels/offers?hotelIds=${targetHotelId}`);
         
         let enrichedData: { detailedOffers: any[]; dictionaries: any } = { detailedOffers: [], dictionaries: {} };
@@ -126,7 +126,7 @@ export default function StayCard({ stays }: { stays: any[] }) {
             <div 
               key={uniqueKey} 
               className={`border-[0.5px] border-gray-200 rounded-xl transition-all duration-200 overflow-hidden ${
-                isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'bg-white hover:shadow-md'
+                isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-100/10' : 'bg-white hover:shadow-md'
               }`}
             >
               <div className="p-4 flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
@@ -180,7 +180,7 @@ export default function StayCard({ stays }: { stays: any[] }) {
                     onChange={() => toggleStaySelection(stay, uniqueKey)} 
                     className="w-4 h-4 accent-indigo-600 cursor-pointer" 
                   />
-          <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
+                   <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
                     {isSelected ? 'Selected' : 'Select'}
                   </span>
                 </label>

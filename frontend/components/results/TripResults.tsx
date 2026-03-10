@@ -17,7 +17,6 @@ const LoadingState = () => {
   const [iconIndex, setIconIndex] = useState(0);
 
   useEffect(() => {
-    // Cycle through the icons every 300 milliseconds
     const interval = setInterval(() => {
       setIconIndex((prev) => (prev + 1) % icons.length);
     }, 300);
@@ -25,16 +24,24 @@ const LoadingState = () => {
   }, []);
 
   return (
-    <div className="w-full min-h-[500px] flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-300">
-      <div className="relative flex items-center justify-center w-24 h-24 mb-4">
-        <Loader2 className="absolute inset-0 w-full h-full text-indigo-600 animate-spin" strokeWidth={1.5} />
-        <div className="text-4xl drop-shadow-sm z-10 transition-opacity -translate-y-[2px]">
+    // 🌟 CHANGED min-h-[500px] to h-[calc(100vh-140px)] to fill the full screen height!
+    <div className="w-full h-[calc(100vh-140px)] flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-300">
+      
+      {/* Spinning line running around a static rounded square */}
+      <div className="relative flex items-center justify-center w-24 h-24 mb-6">
+        <div className="absolute inset-0 rounded-2xl overflow-hidden bg-slate-100">
+          <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[conic-gradient(from_0deg,transparent_75%,#4f46e5_100%)] animate-[spin_1.5s_linear_infinite]"></div>
+        </div>
+        <div className="absolute inset-[3px] bg-white rounded-[13px]"></div>
+        
+        <div className="z-10 text-4xl drop-shadow-sm transition-transform scale-110">
           {icons[iconIndex]}
         </div>
       </div>
+
       <h3 className="text-xl font-black text-gray-800 mt-4 animate-pulse">Crafting your itinerary...</h3>
       <p className="text-gray-500 text-sm mt-2 text-center max-w-sm">
-        Searching routes, checking hotel availability, and gathering the best local attractions.
+        Searching routes, checking hotel availability, and gathering the best  for you...
       </p>
     </div>
   );

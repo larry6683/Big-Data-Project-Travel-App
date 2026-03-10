@@ -59,7 +59,7 @@ export default function WeatherCard({ weather }: { weather: any }) {
   };
 
   return (
-    <div className={`bg-white rounded-xl border transition-all duration-200 shadow-sm p-5 ${isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'bg-white hover:shadow-md'}`}>
+    <div className={`bg-white rounded-xl border transition-all duration-200 shadow-sm p-5 ${isSelected ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-100/10' : 'bg-white hover:shadow-md'}`}>
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-2xl font-black text-gray-900 tracking-tight">Trip Forecast</h3>
         

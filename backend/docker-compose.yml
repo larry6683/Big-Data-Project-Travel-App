@@ -4,6 +4,8 @@ services:
   backend:
     build: .
     container_name: travel-backend
+    env_file:
+      - .env  # 🌟 Tells Docker to load all variables from your .env file
     ports:
       - "8000:8000"
     volumes:

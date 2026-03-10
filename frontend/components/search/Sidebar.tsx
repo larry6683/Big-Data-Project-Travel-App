@@ -8,8 +8,9 @@ import LocationAutocomplete from "./LocationAutoComplete";
 
 interface SidebarProps {
   onSearch: (params: any) => void;
+  onSearchStart?: () => void; 
   loading?: boolean;
-  onClose?: () => void; // called when the mobile ✕ button is pressed
+  onClose?: () => void; 
 }
 
 const INTEREST_CATEGORIES = [
@@ -21,8 +22,7 @@ const INTEREST_CATEGORIES = [
   { id: 'transit', label: '🛣️ Transit' }
 ];
 
-export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
-  const [source, setSource] = useState("");
+export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: SidebarProps) {  const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [dates, setDates] = useState({ start: "", end: "" });
   const [adults, setAdults] = useState(1);
@@ -53,10 +53,11 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
     }
   }, []);
 
-  const getCoordinates = async (locationName: string) => {
+const getCoordinates = async (locationName: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL; 
       const res = await fetch(`${baseUrl}/locations/geocode?keyword=${encodeURIComponent(locationName)}`);
+
       if (res.ok) {
         const data = await res.json();
         if (data.lat && data.lon) {
@@ -75,11 +76,13 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
     );
   };
 
-  const handleSearchSubmit = async () => {
+const handleSearchSubmit = async () => {
     if (!source || !destination || !dates.start || !dates.end) {
       alert("Please fill in all required fields.");
       return;
     }
+    // 🌟 ADD THIS: Instantly trigger the main loading screen
+    if (onSearchStart) onSearchStart(); 
 
     setIsGeocoding(true);
     const [srcCoords, dstCoords] = await Promise.all([
@@ -219,14 +222,14 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
         <div>
           <SbLabel>
             Search Radius{" "}
-            <span className="font-normal text-slate-500">({radius} mi)</span>
+            <span className="font-normal text-slate-400">({radius} mi)</span>
           </SbLabel>
           <input
             type="range" min={1} max={25} step={1} value={radius}
             onChange={(e) => setRadius(parseInt(e.target.value))}
             className="w-full cursor-pointer my-1 accent-indigo-600" 
           />
-          <div className="flex justify-between text-[10.5px] text-slate-500">
+          <div className="flex justify-between text-[10.5px] text-slate-400">
             <span>1 mi</span><span>25 mi</span>
           </div>
         </div>
@@ -240,7 +243,7 @@ export default function Sidebar({ onSearch, loading, onClose }: SidebarProps) {
                 <button
                   key={category.id} 
                   onClick={() => handleInterestToggle(category.id)} 
-                  className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${active ? 'border-indigo-600 bg-indigo-600/15 text-indigo-600' : 'border-slate-700 bg-transparent text-slate-400'}`}
+                  className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${active ? 'border-indigo-600 bg-indigo-600/15 text-white' : 'border-slate-700 bg-transparent text-slate-400'}`}
                 >
                   {category.label}
                 </button>
