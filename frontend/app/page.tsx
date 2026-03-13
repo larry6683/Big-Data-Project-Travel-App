@@ -36,13 +36,13 @@ export default function Dashboard() {
   const handleSearch = async (params: TripSearchParams) => {
     setLoading(true);
     setError(null);
-    setSidebarOpen(false); // close sidebar on mobile after search
+    setSidebarOpen(false); // close sidebar on mobile/tablet after search
 
-    // 🌟 Clear saved tab and intermediates list state so a new search defaults properly
+    // Clear saved tab and intermediates list state so a new search defaults properly
     sessionStorage.removeItem('active_tab');
     sessionStorage.removeItem('drive_intermediates_open');
 
-// 🧹 PRE-CLEANUP: Completely clear the saved trip_state in localStorage
+    // PRE-CLEANUP: Completely clear the saved trip_state in localStorage
     localStorage.removeItem('trip_state');
 
     try {
@@ -95,7 +95,7 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen w-screen bg-white overflow-hidden">
 
-      {/* ── Mobile overlay backdrop ── */}
+      {/* ── Mobile & Tablet overlay backdrop ── */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -103,28 +103,27 @@ export default function Dashboard() {
         />
       )}
 
-      {/* ── Sidebar: always visible on lg+, slide-in drawer on mobile ── */}
+      {/* ── Sidebar: always visible on lg+, slide-in drawer on mobile & tablet ── */}
       <div className={`
         fixed top-0 left-0 h-full z-40 transition-transform duration-300
         lg:relative lg:translate-x-0 lg:z-auto lg:flex-shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-<Sidebar 
+        <Sidebar 
           onSearch={handleSearch} 
           onSearchStart={() => {
             setTripData(null);
             setLoading(true);
-            setSidebarOpen(false); // Smoothly close mobile drawer instantly
+            setSidebarOpen(false); // Smoothly close drawer instantly
           }}
           loading={loading} 
         />
-        
       </div>
 
       {/* ── Main content ── */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
 
-        {/* Mobile top bar */}
+        {/* Mobile / Tablet top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white lg:hidden flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -134,9 +133,11 @@ export default function Dashboard() {
             <Menu size={20} />
           </button>
           <span className="text-sm font-black text-gray-900 tracking-tight">WanderPlan <span className="text-blue-600">US</span></span>
+          
+          {/* Map Toggle Button (Hidden on md+ because map is always visible on Tablets) */}
           <button
             onClick={() => setMapOpen(v => !v)}
-            className={`p-2 rounded-xl text-white transition-colors ${mapOpen ? 'bg-blue-600' : 'bg-slate-700'}`}
+            className={`p-2 rounded-xl text-white transition-colors md:hidden ${mapOpen ? 'bg-blue-600' : 'bg-slate-700'}`}
             aria-label="Toggle map"
           >
             <Map size={20} />
@@ -147,7 +148,8 @@ export default function Dashboard() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* LEFT PANE: Results */}
-          <div className={`flex-1 h-full overflow-y-auto custom-scrollbar bg-gray-50/30 ${mapOpen ? 'hidden sm:block' : ''}`}>
+          {/* On mobile (<md), if map is open, this hides. On tablets (md+), this is always block */}
+          <div className={`flex-1 h-full overflow-y-auto custom-scrollbar bg-gray-50/30 ${mapOpen ? 'hidden md:block' : ''}`}>
             <div className="p-4 md:p-6 w-full relative">
               <div className="flex justify-between items-center mb-4 md:mb-6">
                 <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Trip Planner</h1>
@@ -181,11 +183,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* RIGHT PANE: Map — hidden on mobile unless toggled, always visible on lg */}
+          {/* RIGHT PANE: Map */}
+          {/* Hidden on mobile unless toggled. Always visible side-by-side on tablets (md) and desktops (lg) */}
           <div className={`
             h-full border-l border-gray-100 bg-white
             ${mapOpen ? 'flex-1 w-full' : 'hidden'}
-            lg:flex lg:flex-none lg:w-[30vw]
+            md:flex md:flex-none md:w-[40vw] lg:w-[30vw]
           `}>
             <div className="w-full h-full relative">
               <DynamicMap mapData={tripData?.rawParams?.destination} />

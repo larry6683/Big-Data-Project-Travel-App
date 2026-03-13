@@ -1,5 +1,4 @@
 // larry6683/big-data-project-travel-app/frontend/components/search/Sidebar.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -25,6 +24,10 @@ const INTEREST_CATEGORIES = [
 export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: SidebarProps) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
+  
+  const [sourceValid, setSourceValid] = useState(false);
+  const [destValid, setDestValid] = useState(false);
+
   const [dates, setDates] = useState({ start: "", end: "" });
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
@@ -34,7 +37,6 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
   const [interests, setInterests] = useState<string[]>([]);
   const [isGeocoding, setIsGeocoding] = useState(false);
   
-  // New state to track field-specific validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -43,7 +45,11 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
       try {
         const parsed = JSON.parse(saved);
         setSource(parsed.source?.name || "");
+        if (parsed.source?.name) setSourceValid(true); 
+        
         setDestination(parsed.destination?.name || "");
+        if (parsed.destination?.name) setDestValid(true); 
+        
         setDates({ start: parsed.startDate || "", end: parsed.endDate || "" });
         setAdults(parsed.adults || 1);
         setChildren(parsed.children || 0);
@@ -61,12 +67,9 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL; 
       const res = await fetch(`${baseUrl}/locations/geocode?keyword=${encodeURIComponent(locationName)}`);
-
       if (res.ok) {
         const data = await res.json();
-        if (data.lat && data.lon) {
-          return { lat: parseFloat(data.lat), lon: parseFloat(data.lon) };
-        }
+        if (data.lat && data.lon) return { lat: parseFloat(data.lat), lon: parseFloat(data.lon) };
       }
     } catch (err) {
       console.error(`Failed to fetch coordinates for ${locationName}:`, err);
@@ -75,25 +78,80 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
   };
 
   const handleInterestToggle = (id: string) => {
-    setInterests(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setInterests(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const handleSearchSubmit = async () => {
-    // Validation Logic
+    let finalSource = source;
+    let finalDest = destination;
+    let finalSourceValid = sourceValid;
+    let finalDestValid = destValid;
+
+    // 1. Auto-fill from previous search_state if the user typed a partial match
+    const savedStr = localStorage.getItem("search_state");
+    if (savedStr) {
+      try {
+        const parsed = JSON.parse(savedStr);
+        const savedSource = parsed.source?.name || "";
+        const savedDest = parsed.destination?.name || "";
+
+        // Removes spaces and lowercases for forgiving comparison (e.g. "boulder,colo" matches "boulder,colorado")
+        const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+
+        // If invalid but matches the start of the saved state, auto-correct it
+        if (!finalSourceValid && finalSource.trim() && savedSource && normalize(savedSource).startsWith(normalize(finalSource))) {
+          finalSource = savedSource;
+          setSource(savedSource); // Update the input field visually
+          finalSourceValid = true;
+          setSourceValid(true);
+        }
+
+        if (!finalDestValid && finalDest.trim() && savedDest && normalize(savedDest).startsWith(normalize(finalDest))) {
+          finalDest = savedDest;
+          setDestination(savedDest); // Update the input field visually
+          finalDestValid = true;
+          setDestValid(true);
+        }
+      } catch (e) {
+        console.error("Failed to parse search state for auto-fill", e);
+      }
+    }
+
     const newErrors: Record<string, string> = {};
-    if (!source) newErrors.source = "Departure location is required.";
-    if (!destination) newErrors.destination = "Destination is required.";
+
+    // 2. Strict Dropdown Selection Verification
+    if (!finalSource.trim()) newErrors.source = "Source location is required.";
+    else if (!finalSourceValid) newErrors.source = "Please select a valid source city from the dropdown.";
+
+    if (!finalDest.trim()) newErrors.destination = "Destination is required.";
+    else if (!finalDestValid) newErrors.destination = "Please select a valid destination city from the dropdown.";
+
+    if (finalSourceValid && finalDestValid && finalSource.toLowerCase().trim() === finalDest.toLowerCase().trim()) {
+      newErrors.destination = "Destination cannot be the same as source.";
+    }
+
+    // 3. Date validation
     if (!dates.start) newErrors.start = "Start date is required.";
     if (!dates.end) newErrors.end = "End date is required.";
     
-    // Additional Date Validation
     if (dates.start && dates.end) {
       const startDate = new Date(dates.start);
       const endDate = new Date(dates.end);
-      if (startDate > endDate) {
-        newErrors.end = "End date cannot be before start date.";
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tzOffsetStartDate = new Date(startDate.getTime() + startDate.getTimezoneOffset() * 60000);
+      const tzOffsetEndDate = new Date(endDate.getTime() + endDate.getTimezoneOffset() * 60000);
+
+      if (tzOffsetStartDate < today) {
+        newErrors.start = "Start date cannot be in the past.";
+      }
+      
+      if (tzOffsetStartDate >= tzOffsetEndDate) {
+        newErrors.end = "End date must be at least 1 day after start date.";
+      } else {
+        const diffDays = Math.ceil(Math.abs(tzOffsetEndDate.getTime() - tzOffsetStartDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays > 30) newErrors.end = "Trip duration cannot exceed 30 days.";
       }
     }
 
@@ -102,21 +160,22 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
       return;
     }
 
-    // Clear errors if validation passes
     setErrors({});
-
     if (onSearchStart) onSearchStart(); 
 
     setIsGeocoding(true);
     const [srcCoords, dstCoords] = await Promise.all([
-      getCoordinates(source),
-      getCoordinates(destination),
+      getCoordinates(finalSource), // Use the final corrected string
+      getCoordinates(finalDest),   // Use the final corrected string
     ]);
     setIsGeocoding(false);
 
+    if (!srcCoords) { setErrors({ source: "Could not find coordinates for this city." }); return; }
+    if (!dstCoords) { setErrors({ destination: "Could not find coordinates for this city." }); return; }
+
     const params = {
-      source: { name: source, ...(srcCoords || {}) },
-      destination: { name: destination, ...(dstCoords || {}) },
+      source: { name: finalSource, ...srcCoords },
+      destination: { name: finalDest, ...dstCoords },
       startDate: dates.start,
       endDate: dates.end,
       adults,
@@ -132,16 +191,24 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
   };
 
   const isWorking = loading || isGeocoding;
+  const nightCount = dates.start && dates.end ? Math.max(0, Math.ceil((new Date(dates.end).getTime() - new Date(dates.start).getTime()) / 86400000)) : 0;
+  
+  const todayStr = new Date().toISOString().split("T")[0];
 
-  const nightCount = dates.start && dates.end
-    ? Math.max(0, Math.ceil((new Date(dates.end).getTime() - new Date(dates.start).getTime()) / 86400000))
-    : 0;
+  let minEndDateStr = todayStr;
+  if (dates.start) {
+    const [year, month, day] = dates.start.split('-').map(Number);
+    const nextDay = new Date(year, month - 1, day + 1);
+    const y = nextDay.getFullYear();
+    const m = String(nextDay.getMonth() + 1).padStart(2, '0');
+    const d = String(nextDay.getDate()).padStart(2, '0');
+    minEndDateStr = `${y}-${m}-${d}`;
+  }
 
   return (
     <>
       <div className="w-[80vw] max-w-[320px] lg:w-[20vw] lg:max-w-none h-screen bg-slate-900 border-r border-slate-200/10 px-[18px] py-6 flex flex-col gap-5 font-sans overflow-y-auto text-white">
         
-        {/* Header row */}
         <div className="pb-2.5 border-b border-slate-800 flex justify-between items-start">
           <div>
             <div className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
@@ -150,12 +217,10 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
             <div className="text-[11px] text-[#c2c2c2] mt-1">Plan Your Trip</div>
           </div>
 
-          {/* Close button — only visible on mobile */}
           {onClose && (
             <button
               onClick={onClose}
               className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-              aria-label="Close sidebar"
             >
               <X size={20} />
             </button>
@@ -163,12 +228,13 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
         </div>
 
         <div>
-          <SbLabel>Departure From</SbLabel>
+          <SbLabel>Source</SbLabel>
           <LocationAutocomplete 
             placeholder="eg. NEW YORK, NY" 
             value={source} 
-            onChange={(val) => {
+            onChange={(val, isValid) => {
               setSource(val);
+              setSourceValid(isValid); 
               if (errors.source) setErrors(prev => ({ ...prev, source: "" }));
             }} 
             isDark={false} 
@@ -178,12 +244,13 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
         </div>
 
         <div>
-          <SbLabel>Destination To</SbLabel>
+          <SbLabel>Destination</SbLabel>
           <LocationAutocomplete 
             placeholder="eg. LOS ANGELES, CA" 
             value={destination} 
-            onChange={(val) => {
+            onChange={(val, isValid) => {
               setDestination(val);
+              setDestValid(isValid);
               if (errors.destination) setErrors(prev => ({ ...prev, destination: "" }));
             }} 
             isDark={false} 
@@ -198,17 +265,25 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
             {nightCount > 0 && <span className="font-normal text-slate-400 text-[10.5px]">· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
           </SbLabel>
           
-          {/* Flex-wrap applied here for responsive single-row to double-row date pickers */}
           <div className="flex flex-wrap gap-2">
             <div className="flex-1 min-w-[120px]">
               <input
                 type="date" 
+                min={todayStr}
                 value={dates.start}
                 onChange={e => {
                   setDates(d => ({ ...d, start: e.target.value }));
                   if (errors.start) setErrors(prev => ({ ...prev, start: "" }));
+                  
+                  if (dates.end) {
+                     const newStart = new Date(e.target.value);
+                     const currEnd = new Date(dates.end);
+                     if (newStart >= currEnd) {
+                        setDates(d => ({ ...d, start: e.target.value, end: "" }));
+                     }
+                  }
                 }}
-                className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.start ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/12 outline-none transition-all duration-150`}
+                className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.start ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
               />
               {errors.start && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.start}</span>}
             </div>
@@ -216,12 +291,13 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
             <div className="flex-1 min-w-[120px]">
               <input
                 type="date" 
+                min={minEndDateStr}
                 value={dates.end}
                 onChange={e => {
                   setDates(d => ({ ...d, end: e.target.value }));
                   if (errors.end) setErrors(prev => ({ ...prev, end: "" }));
                 }}
-                className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.end ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/12 outline-none transition-all duration-150`}
+                className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.end ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
               />
               {errors.end && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.end}</span>}
             </div>
@@ -240,77 +316,58 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
         </div>
 
         <div>
-          <SbLabel>
-            Travel Dates{" "}
-            {nightCount > 0 && <span className="font-normal text-slate-400 text-[10.5px]">· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
-          </SbLabel>
-          {/* Changed container to flex-wrap */}
-          <div className="flex flex-wrap gap-2">
-            <input
-              type="date" 
-              value={dates.start}
-              onChange={e => setDates(d => ({ ...d, start: e.target.value }))}
-              /* Added flex-1 and min-w-[120px] to allow wrapping */
-              className="flex-1 min-w-[120px] w-full py-[9px] px-3 bg-white border-[1.5px] border-slate-200 rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/12 outline-none transition-all duration-150"
-            />
-            <input
-              type="date" 
-              value={dates.end}
-              onChange={e => setDates(d => ({ ...d, end: e.target.value }))}
-              /* Added flex-1 and min-w-[120px] to allow wrapping */
-              className="flex-1 min-w-[120px] w-full py-[9px] px-3 bg-white border-[1.5px] border-slate-200 rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/12 outline-none transition-all duration-150"
-            />
-          </div>
-        </div>
-
-        <div>
           <SbLabel>Budget Category</SbLabel>
           <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
-            {(["budget", "luxury"] as const).map((opt) => {
-              const active = budget === opt;
-              return (
+            {(["budget", "luxury"] as const).map((opt) => (
                 <button 
                   key={opt} 
                   onClick={() => setBudget(opt)} 
-                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${active ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${budget === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
                 >
                   {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
                 </button>
-              );
-            })}
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <SbLabel>Travel Mode</SbLabel>
+          <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
+            {(["fly", "drive"] as const).map((opt) => (
+                <button 
+                  key={opt} 
+                  onClick={() => setTravelMode(opt)} 
+                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${travelMode === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                >
+                  {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
+                </button>
+            ))}
           </div>
         </div>
 
         <div>
           <SbLabel>
-            Search Radius{" "}
-            <span className="font-normal text-slate-400">({radius} mi)</span>
+            Search Radius <span className="font-normal text-slate-400">({radius} mi)</span>
           </SbLabel>
           <input
             type="range" min={1} max={25} step={1} value={radius}
             onChange={(e) => setRadius(parseInt(e.target.value))}
             className="w-full cursor-pointer my-1 accent-blue-600" 
           />
-          <div className="flex justify-between text-[10.5px] text-slate-400">
-            <span>1 mi</span><span>25 mi</span>
-          </div>
         </div>
 
         <div>
           <SbLabel>Interests</SbLabel>
           <div className="flex flex-wrap gap-1.5">
-            {INTEREST_CATEGORIES.map((category) => {
-              const active = interests.includes(category.id);
-              return (
+            {INTEREST_CATEGORIES.map((category) => (
                 <button
                   key={category.id} 
                   onClick={() => handleInterestToggle(category.id)} 
-                  className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${active ? 'border-blue-600 bg-blue-600/15 text-white' : 'border-slate-700 bg-transparent text-slate-400'}`}
+                  className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${interests.includes(category.id) ? 'border-blue-600 bg-blue-600/15 text-white' : 'border-slate-700 bg-transparent text-slate-400'}`}
                 >
                   {category.label}
                 </button>
-              );
-            })}
+            ))}
           </div>
         </div>
 
@@ -331,25 +388,15 @@ export default function Sidebar({ onSearch, onSearchStart, loading, onClose }: S
 }
 
 function SbLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#c6c6c6] mb-1.5 ml-1">
-      {children}
-    </div>
-  );
+  return <div className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#c6c6c6] mb-1.5 ml-1">{children}</div>;
 }
 
 function SbCounter({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (v: number) => void }) {
   return (
     <div className="flex items-center gap-2.5 bg-white p-1 rounded-[10px] border-[1.5px] border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-      <button 
-        className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer flex items-center justify-center font-mono shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors duration-150 hover:bg-slate-100" 
-        onClick={() => onChange(Math.max(min, value - 1))}
-      >−</button>
+      <button className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer" onClick={() => onChange(Math.max(min, value - 1))}>−</button>
       <span className="flex-1 font-bold text-sm text-slate-900 text-center">{value}</span>
-      <button 
-        className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer flex items-center justify-center font-mono shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors duration-150 hover:bg-slate-100"
-        onClick={() => onChange(Math.min(max, value + 1))}
-      >+</button>
+      <button className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer" onClick={() => onChange(Math.min(max, value + 1))}>+</button>
     </div>
   );
 }

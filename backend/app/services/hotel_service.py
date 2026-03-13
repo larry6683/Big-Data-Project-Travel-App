@@ -1,6 +1,7 @@
 import httpx
 from app.services.base_client import BaseAmadeusClient
 from app.schemas.hotel import Hotel, HotelOffer
+from app.services.location_service import location_service # <-- NEW: imported for the fallback
 
 class HotelService(BaseAmadeusClient):
     
@@ -10,6 +11,12 @@ class HotelService(BaseAmadeusClient):
         if not token:
             return {"error": "Authentication Failed"}
 
+        # 1. FIX: Secure bounds and precision to prevent Amadeus 400 Bad Requests
+        lat = round(lat, 5)
+        lon = round(lon, 5)
+        radius = min(max(int(radius), 1), 300)
+        adults = max(1, min(int(adults), 9))
+
         ref_url = f"{self.base_url}/v1/reference-data/locations/hotels/by-geocode"
         headers = {"Authorization": f"Bearer {token}"}
         ref_params = {"latitude": lat, "longitude": lon, "radius": radius, "radiusUnit": "KM"}
@@ -18,18 +25,31 @@ class HotelService(BaseAmadeusClient):
             try:
                 print(f"🏨 Finding hotels near {lat}, {lon}")
                 ref_response = await client.get(ref_url, headers=headers, params=ref_params, timeout=30.0)
+                
+                # 2. FIX: FALLBACK! Amadeus is decommissioning 'by-geocode' for many API tiers.
+                # If it fails, grab the nearest airport IATA and use the 'by-city' endpoint instead.
                 if ref_response.status_code != 200:
-                    return {"error": ref_response.text}
+                    print(f"⚠️ by-geocode failed ({ref_response.status_code}). Trying by-city fallback...")
+                    iata = await location_service.get_nearest_airport(lat, lon)
+                    if iata:
+                        city_url = f"{self.base_url}/v1/reference-data/locations/hotels/by-city"
+                        city_params = {"cityCode": iata}
+                        ref_response = await client.get(city_url, headers=headers, params=city_params, timeout=30.0)
+
+                if ref_response.status_code != 200:
+                    return {"error": f"Amadeus API Error: {ref_response.text}"}
                 
                 raw_hotels = ref_response.json().get("data", [])
                 
                 raw_hotels.sort(key=lambda x: x.get("distance", {}).get("value", 999))
-                closest_50_hotels = raw_hotels[:50]
                 
-                if not closest_50_hotels:
+                # 3. FIX: Safely limit to 40 hotels to avoid URL-too-long limits in v3 bulk search
+                closest_hotels = raw_hotels[:40]
+                
+                if not closest_hotels:
                     return []
 
-                hotel_ids = [h.get("hotelId") for h in closest_50_hotels]
+                hotel_ids = [h.get("hotelId") for h in closest_hotels]
                 hotel_ids_string = ",".join(hotel_ids)
 
                 offer_url = f"{self.base_url}/v3/shopping/hotel-offers"
@@ -54,7 +74,7 @@ class HotelService(BaseAmadeusClient):
                             available_hotel_ids.add(h_id)
 
                 clean_available_hotels = []
-                for hotel in closest_50_hotels:
+                for hotel in closest_hotels:
                     if hotel.get("hotelId") in available_hotel_ids:
                         clean_available_hotels.append(Hotel(
                             chain_code=hotel.get("chainCode"),
@@ -76,6 +96,8 @@ class HotelService(BaseAmadeusClient):
         token = await self.get_token()
         if not token:
             return {"error": "Authentication Failed"}
+
+        adults = max(1, min(int(adults), 9))
 
         offer_url = f"{self.base_url}/v3/shopping/hotel-offers"
         offer_params = {

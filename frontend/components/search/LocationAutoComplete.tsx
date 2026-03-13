@@ -7,15 +7,13 @@ import { travelApi } from '@/services/api';
 interface Props {
   placeholder: string;
   value: string;
-  onChange: (val: string) => void;
+  onChange: (val: string, isValid: boolean) => void;
   isDark?: boolean;
   showGPS?: boolean;
 }
 
 // ─── main GPS resolver ───────────────────────────────────────────────────────
-// Exclusively calls the backend so the BDC API key remains secure
 async function resolveCoords(lat: number, lon: number): Promise<{city:string;state:string}|null> {
-  console.log(`[GPS] resolving ${lat}, ${lon} via backend`);
   try {
     const data = await travelApi.getNearestCity(lat, lon);
     if (data?.city) { 
@@ -30,18 +28,32 @@ async function resolveCoords(lat: number, lon: number): Promise<{city:string;sta
 // ─── component ───────────────────────────────────────────────────────────────
 
 export default function LocationAutocomplete({ placeholder, value, onChange, isDark, showGPS }: Props) {
-  // Add this just for a quick test
-  console.log("Using API URL:", process.env.NEXT_PUBLIC_API_URL);
-  
   const [query, setQuery] = useState(value || '');
-  // ...
-  const [results, setResults]       = useState<any[]>([]);
-  const [isOpen, setIsOpen]         = useState(false);
+  const [results, setResults] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
+  
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const lastSelected = useRef(value || '');
+  
+  // NEW: Ref to target the scrollable dropdown list
+  const listRef = useRef<HTMLUListElement>(null);
 
-  useEffect(() => { if (value && value !== query && !isOpen) setQuery(value); }, [value]);
+  // NEW: Scroll the dropdown to the top whenever the results change
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
+  }, [results]);
+
+  useEffect(() => { 
+    if (value !== undefined && value !== query) {
+      setQuery(value);
+      setIsOpen(false); 
+      lastSelected.current = value; 
+    }
+  }, [value]);
 
   const cap = (s?: string) =>
     s ? s.split(' ').map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ') : '';
@@ -50,7 +62,11 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
 
   const handleSelect = (loc: any) => {
     const display = fmt(loc.city, loc.state);
-    setQuery(display); onChange(display); setResults([]); setIsOpen(false);
+    lastSelected.current = display; 
+    setQuery(display); 
+    onChange(display, true); 
+    setResults([]); 
+    setIsOpen(false);
   };
 
   const handleGPS = (e: React.MouseEvent) => {
@@ -66,8 +82,9 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
           const result = await resolveCoords(lat, lon);
           if (result) {
             const display = fmt(result.city, result.state);
+            lastSelected.current = display;
             setQuery(display);
-            onChange(display);
+            onChange(display, true); 
           } else {
             alert("We found your location but couldn't identify the city. Please type it manually.");
           }
@@ -79,12 +96,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
       },
       (err) => {
         setGpsLoading(false);
-        const msgs: Record<number,string> = {
-          1: "Location access denied. Please allow it and try again.",
-          2: "Your position couldn't be determined. Please type manually.",
-          3: "Location request timed out. Please try again.",
-        };
-        alert(msgs[err.code] || "Unknown location error.");
+        alert("Location access failed. Please type manually.");
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
@@ -92,32 +104,61 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
 
   useEffect(() => {
     const run = async () => {
-      if (query.length > 2 && query !== value) {
+      if (query.length > 2 && query !== lastSelected.current) {
         setIsSearching(true);
         try {
-          const data = await travelApi.searchLocations(query);
-          if (data?.length) { setResults(data); setIsOpen(true); }
-          else              { setResults([]); setIsOpen(false); }
+          const parts = query.split(',');
+          const cityQuery = parts[0].trim();
+          const stateQuery = parts.length > 1 ? parts[1].trim().toLowerCase() : '';
+
+          const data = await travelApi.searchLocations(cityQuery);
+          
+          if (data?.length) { 
+            let filteredResults = data;
+            if (stateQuery) {
+              filteredResults = data.filter((loc: any) => 
+                loc.state && loc.state.toLowerCase().includes(stateQuery)
+              );
+            }
+
+            if (filteredResults.length > 0) {
+              setResults(filteredResults); 
+              setIsOpen(true); 
+            } else {
+              setResults([]); 
+              setIsOpen(false);
+            }
+          } else { 
+            setResults([]); 
+            setIsOpen(false); 
+          }
         } catch { /* silent */ }
         finally { setIsSearching(false); }
-      } else { setResults([]); setIsOpen(false); }
+      } else { 
+        setResults([]); 
+        setIsOpen(false); 
+      }
     };
     const t = setTimeout(run, 300);
     return () => clearTimeout(t);
-  }, [query, value]);
+  }, [query]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsOpen(false);
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handler, true);
+    document.addEventListener('touchstart', handler, true); 
+    return () => {
+      document.removeEventListener('mousedown', handler, true);
+      document.removeEventListener('touchstart', handler, true);
+    };
   }, []);
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      
-      {/* --- Dynamic Input & Right-Side Action Icons --- */}
       <div className="relative flex items-center">
         <input
           className={`w-full p-3 rounded-xl outline-none transition-all duration-300 text-xs shadow-inner backdrop-blur-sm
@@ -127,24 +168,28 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
             ${!isSearching && query.length === 0 && showGPS ? 'pr-[70px]' : 'pr-10'}`}
           placeholder={placeholder}
           value={query}
-          onChange={e => { setQuery(e.target.value); if (!e.target.value) onChange(''); }}
+          onChange={e => { 
+            const val = e.target.value;
+            setQuery(val); 
+            onChange(val, false); 
+            if (lastSelected.current && val !== lastSelected.current) {
+              lastSelected.current = ''; 
+            }
+          }}
           onFocus={() => { if (results.length) setIsOpen(true); }}
         />
 
-        {/* 1. Loading Animation (Fetching Results) */}
         {isSearching ? (
           <div className="absolute right-3 flex items-center justify-center text-blue-500">
             <Loader2 size={16} className="animate-spin" />
           </div>
-        ) 
-        
-        /* 2. Clear (X) Button (Dropdown Open OR Input Has Text) */
-        : isOpen || query.length > 0 ? (
+        ) : isOpen || query.length > 0 ? (
           <button
             type="button"
             onClick={() => {
               setQuery('');
-              onChange('');
+              onChange('', false); 
+              lastSelected.current = '';
               setIsOpen(false);
               setResults([]);
             }}
@@ -152,10 +197,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
           >
             <X size={16} />
           </button>
-        ) 
-        
-        /* 3. GPS Button (Empty Input + GPS Enabled) */
-        : showGPS ? (
+        ) : showGPS ? (
           <button
             type="button"
             onClick={handleGPS}
@@ -175,8 +217,11 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
       </div>
 
       {isOpen && results.length > 0 && (
-        <ul className={`absolute z-50 w-full mt-2 border rounded-xl shadow-2xl max-h-[185px] overflow-y-auto backdrop-blur-md
-          ${isDark ? 'bg-slate-900/95 border-white/10' : 'bg-white border-gray-100'}`}>
+        <ul 
+          ref={listRef} // NEW: Attach the ref to the ul element
+          className={`absolute z-50 w-full mt-2 border rounded-xl shadow-2xl max-h-[185px] overflow-y-auto backdrop-blur-md
+          ${isDark ? 'bg-slate-900/95 border-white/10' : 'bg-white border-gray-100'}`}
+        >
           {results.map((loc, i) => (
             <li
               key={i}

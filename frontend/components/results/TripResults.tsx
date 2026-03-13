@@ -95,7 +95,7 @@ export default function TripResults({ data, loading }: { data: any, loading: boo
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm pt-2 mb-4 border-b border-gray-200 shadow-[0_4px_10px_rgba(0,0,0,0.02)] -mx-4 px-4 md:-mx-6 md:px-6">
+      <div className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm pb-3 pt-1 mb-4 border-b border-gray-200">
         <div className="flex w-full">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;

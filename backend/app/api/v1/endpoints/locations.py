@@ -2,7 +2,7 @@ from fastapi import APIRouter
 import httpx
 import os
 from app.services.location_service import location_service
-from app.core.config import settings # 👈 1. IMPORT YOUR SETTINGS HERE
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -18,6 +18,61 @@ US_STATES = {
     "SD":"South Dakota","TN":"Tennessee","TX":"Texas","UT":"Utah","VT":"Vermont",
     "VA":"Virginia","WA":"Washington","WV":"West Virginia","WI":"Wisconsin","WY":"Wyoming",
 }
+
+# NEW: Top 2 popular/major cities for each state to show when a user searches just the state name
+STATE_TOP_CITIES = {
+    "Alabama": ["Birmingham", "Montgomery"],
+    "Alaska": ["Anchorage", "Juneau"],
+    "Arizona": ["Phoenix", "Tucson"],
+    "Arkansas": ["Little Rock", "Fayetteville"],
+    "California": ["Los Angeles", "San Francisco"],
+    "Colorado": ["Denver", "Colorado Springs"],
+    "Connecticut": ["Bridgeport", "Hartford"],
+    "Delaware": ["Wilmington", "Dover"],
+    "Florida": ["Miami", "Orlando"],
+    "Georgia": ["Atlanta", "Savannah"],
+    "Hawaii": ["Honolulu", "Maui"],
+    "Idaho": ["Boise", "Idaho Falls"],
+    "Illinois": ["Chicago", "Springfield"],
+    "Indiana": ["Indianapolis", "Fort Wayne"],
+    "Iowa": ["Des Moines", "Cedar Rapids"],
+    "Kansas": ["Wichita", "Overland Park"],
+    "Kentucky": ["Louisville", "Lexington"],
+    "Louisiana": ["New Orleans", "Baton Rouge"],
+    "Maine": ["Portland", "Augusta"],
+    "Maryland": ["Baltimore", "Annapolis"],
+    "Massachusetts": ["Boston", "Worcester"],
+    "Michigan": ["Detroit", "Grand Rapids"],
+    "Minnesota": ["Minneapolis", "St. Paul"],
+    "Mississippi": ["Jackson", "Gulfport"],
+    "Missouri": ["Kansas City", "St. Louis"],
+    "Montana": ["Billings", "Bozeman"],
+    "Nebraska": ["Omaha", "Lincoln"],
+    "Nevada": ["Las Vegas", "Reno"],
+    "New Hampshire": ["Manchester", "Concord"],
+    "New Jersey": ["Newark", "Jersey City"],
+    "New Mexico": ["Albuquerque", "Santa Fe"],
+    "New York": ["New York City", "Buffalo"],
+    "North Carolina": ["Charlotte", "Raleigh"],
+    "North Dakota": ["Fargo", "Bismarck"],
+    "Ohio": ["Columbus", "Cleveland"],
+    "Oklahoma": ["Oklahoma City", "Tulsa"],
+    "Oregon": ["Portland", "Salem"],
+    "Pennsylvania": ["Philadelphia", "Pittsburgh"],
+    "Rhode Island": ["Providence", "Newport"],
+    "South Carolina": ["Charleston", "Columbia"],
+    "South Dakota": ["Sioux Falls", "Rapid City"],
+    "Tennessee": ["Nashville", "Memphis"],
+    "Texas": ["Houston", "Austin"],
+    "Utah": ["Salt Lake City", "Park City"],
+    "Vermont": ["Burlington", "Montpelier"],
+    "Virginia": ["Virginia Beach", "Richmond"],
+    "Washington": ["Seattle", "Spokane"],
+    "West Virginia": ["Charleston", "Huntington"],
+    "Wisconsin": ["Milwaukee", "Madison"],
+    "Wyoming": ["Cheyenne", "Jackson"]
+}
+
 STATE_NAMES = set(US_STATES.values())
 JUNK = STATE_NAMES | {"united states", "united states of america", "unknown", ""}
 
@@ -48,7 +103,6 @@ def parse_bdc(data: dict) -> tuple[str | None, str]:
     entries: list = (data.get("localityInfo") or {}).get("administrative") or []
     
     # 1. Force extraction of actual City/Town boundaries (Admin Levels 8, 7, 9)
-    # Level 8 = City/Municipality, Level 7 = Township, Level 9 = Village
     for target_level in [8, 7, 9]:
         match = next(
             (e for e in entries if (e.get("adminLevel") or 0) == target_level and ok((e.get("name") or "").strip())), 
@@ -65,7 +119,6 @@ def parse_bdc(data: dict) -> tuple[str | None, str]:
     return None, state
 
 async def try_bdc(client: httpx.AsyncClient, lat: float, lon: float) -> tuple[str | None, str]:
-    # 2. 👈 GRAB THE KEY FROM PYDANTIC SETTINGS
     api_key = settings.BDC_API_KEY 
     
     if api_key:
@@ -106,6 +159,14 @@ async def search_locations(keyword: str):
         return []
 
     results: list = []
+    
+    # --- NEW: Check if the user searched exactly for a state or its abbreviation ---
+    resolved_state = resolve_state(keyword)
+    if resolved_state in STATE_TOP_CITIES:
+        # If it's a state, immediately inject its top 2 cities as the top results
+        for top_city in STATE_TOP_CITIES[resolved_state]:
+            results.append({"city": top_city, "state": resolved_state})
+
     needle = keyword.lower().strip().replace(" ", "")
 
     async with httpx.AsyncClient() as client:
@@ -139,7 +200,9 @@ async def search_locations(keyword: str):
         if key not in seen:
             seen.add(key)
             unique.append(item)
-    return unique[:4]
+    
+    # Change slicing to 5 so we don't accidentally cut out good API matches if the first 2 are injected state cities
+    return unique[:5]
 
 @router.get("/geocode")
 async def geocode_location(keyword: str):
