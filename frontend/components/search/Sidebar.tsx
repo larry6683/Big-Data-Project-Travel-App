@@ -88,7 +88,6 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
     let finalSourceValid = sourceValid;
     let finalDestValid = destValid;
 
-    // 1. Auto-fill from previous search_state if the user typed a partial match
     const savedStr = localStorage.getItem("search_state");
     if (savedStr) {
       try {
@@ -96,20 +95,18 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
         const savedSource = parsed.source?.name || "";
         const savedDest = parsed.destination?.name || "";
 
-        // Removes spaces and lowercases for forgiving comparison (e.g. "boulder,colo" matches "boulder,colorado")
         const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
 
-        // If invalid but matches the start of the saved state, auto-correct it
         if (!finalSourceValid && finalSource.trim() && savedSource && normalize(savedSource).startsWith(normalize(finalSource))) {
           finalSource = savedSource;
-          setSource(savedSource); // Update the input field visually
+          setSource(savedSource); 
           finalSourceValid = true;
           setSourceValid(true);
         }
 
         if (!finalDestValid && finalDest.trim() && savedDest && normalize(savedDest).startsWith(normalize(finalDest))) {
           finalDest = savedDest;
-          setDestination(savedDest); // Update the input field visually
+          setDestination(savedDest); 
           finalDestValid = true;
           setDestValid(true);
         }
@@ -120,7 +117,6 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 
     const newErrors: Record<string, string> = {};
 
-    // 2. Strict Dropdown Selection Verification
     if (!finalSource.trim()) newErrors.source = "Source location is required.";
     else if (!finalSourceValid) newErrors.source = "Please select a valid source city from the dropdown.";
 
@@ -131,7 +127,6 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
       newErrors.destination = "Destination cannot be the same as source.";
     }
 
-    // 3. Date validation
     if (!dates.start) newErrors.start = "Start date is required.";
     if (!dates.end) newErrors.end = "End date is required.";
     
@@ -166,8 +161,8 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 
     setIsGeocoding(true);
     const [srcCoords, dstCoords] = await Promise.all([
-      getCoordinates(finalSource), // Use the final corrected string
-      getCoordinates(finalDest),   // Use the final corrected string
+      getCoordinates(finalSource),
+      getCoordinates(finalDest),
     ]);
     setIsGeocoding(false);
 
@@ -208,9 +203,15 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 
   return (
     <>
-      <div className="w-[80vw] max-w-[320px] lg:w-[20vw] lg:max-w-none h-screen bg-slate-900 border-r border-slate-200/10 px-[12px] py-4 flex flex-col gap-5 font-sans overflow-y-auto text-white">
-        
-        <div className="pb-4 border-b border-slate-800 shadow-md flex justify-between items-start -mx-[18px] px-[18px]">          <div>
+      {/* Changes to main wrapper:
+        1. Removed internal padding (handled by child sections)
+        2. Removed `overflow-y-auto` (scrolling handled by middle section)
+        3. Replaced `h-screen` with `h-[100dvh]` to handle mobile browser bars perfectly
+      */}
+<div className="w-[22vw] lg:w-[20vw] min-w-[300px] h-[100dvh] bg-slate-900 border-r border-slate-200/10 flex flex-col font-sans text-white">        
+        {/* FIXED HEADER */}
+        <div className="p-4 border-b border-slate-800 shadow-md flex justify-between items-start shrink-0">          
+          <div>
             <div className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
               WanderPlan <span className="text-blue-600">US</span>
             </div>
@@ -226,152 +227,156 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
           )}
         </div>
 
-        <div>
-      <div className="text-[11px] text-[#c2c2c2] mb-4">Plan Your Trip</div>
-          <SbLabel>Source</SbLabel>
-          <LocationAutocomplete 
-            placeholder="eg. NEW YORK, NY" 
-            value={source} 
-            onChange={(val, isValid) => {
-              setSource(val);
-              setSourceValid(isValid); 
-              if (errors.source) setErrors(prev => ({ ...prev, source: "" }));
-            }} 
-            isDark={false} 
-            showGPS={true} 
-          />
-          {errors.source && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.source}</span>}
-        </div>
+        {/* SCROLLABLE MIDDLE SECTION */}
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 custom-scrollbar pb-6">
+          <div>
+            <div className="text-[11px] text-[#c2c2c2] mb-4">Plan Your Trip</div>
+            <SbLabel>Source</SbLabel>
+            <LocationAutocomplete 
+              placeholder="eg. NEW YORK, NY" 
+              value={source} 
+              onChange={(val, isValid) => {
+                setSource(val);
+                setSourceValid(isValid); 
+                if (errors.source) setErrors(prev => ({ ...prev, source: "" }));
+              }} 
+              isDark={false} 
+              showGPS={true} 
+            />
+            {errors.source && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.source}</span>}
+          </div>
 
-        <div>
-          <SbLabel>Destination</SbLabel>
-          <LocationAutocomplete 
-            placeholder="eg. LOS ANGELES, CA" 
-            value={destination} 
-            onChange={(val, isValid) => {
-              setDestination(val);
-              setDestValid(isValid);
-              if (errors.destination) setErrors(prev => ({ ...prev, destination: "" }));
-            }} 
-            isDark={false} 
-            showGPS={false} 
-          />
-          {errors.destination && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.destination}</span>}
-        </div>
+          <div>
+            <SbLabel>Destination</SbLabel>
+            <LocationAutocomplete 
+              placeholder="eg. LOS ANGELES, CA" 
+              value={destination} 
+              onChange={(val, isValid) => {
+                setDestination(val);
+                setDestValid(isValid);
+                if (errors.destination) setErrors(prev => ({ ...prev, destination: "" }));
+              }} 
+              isDark={false} 
+              showGPS={false} 
+            />
+            {errors.destination && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.destination}</span>}
+          </div>
 
-        <div>
-          <SbLabel>
-            Travel Dates{" "}
-            {nightCount > 0 && <span className="font-normal text-slate-400 text-[10.5px]">· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
-          </SbLabel>
-          
-          <div className="flex flex-wrap gap-2">
-            <div className="flex-1 min-w-[120px]">
-              <input
-                type="date" 
-                min={todayStr}
-                value={dates.start}
-                onChange={e => {
-                  setDates(d => ({ ...d, start: e.target.value }));
-                  if (errors.start) setErrors(prev => ({ ...prev, start: "" }));
-                  
-                  if (dates.end) {
-                     const newStart = new Date(e.target.value);
-                     const currEnd = new Date(dates.end);
-                     if (newStart >= currEnd) {
-                        setDates(d => ({ ...d, start: e.target.value, end: "" }));
-                     }
-                  }
-                }}
-                className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.start ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
-              />
-              {errors.start && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.start}</span>}
-            </div>
+          <div>
+            <SbLabel>
+              Travel Dates{" "}
+              {nightCount > 0 && <span className="font-normal text-slate-400 text-[10.5px]">· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
+            </SbLabel>
             
-            <div className="flex-1 min-w-[120px]">
-              <input
-                type="date" 
-                min={minEndDateStr}
-                value={dates.end}
-                onChange={e => {
-                  setDates(d => ({ ...d, end: e.target.value }));
-                  if (errors.end) setErrors(prev => ({ ...prev, end: "" }));
-                }}
-                className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.end ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
-              />
-              {errors.end && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.end}</span>}
+            <div className="flex flex-wrap gap-2">
+              <div className="flex-1 min-w-[120px]">
+                <input
+                  type="date" 
+                  min={todayStr}
+                  value={dates.start}
+                  onChange={e => {
+                    setDates(d => ({ ...d, start: e.target.value }));
+                    if (errors.start) setErrors(prev => ({ ...prev, start: "" }));
+                    
+                    if (dates.end) {
+                       const newStart = new Date(e.target.value);
+                       const currEnd = new Date(dates.end);
+                       if (newStart >= currEnd) {
+                          setDates(d => ({ ...d, start: e.target.value, end: "" }));
+                       }
+                    }
+                  }}
+                  className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.start ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
+                />
+                {errors.start && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.start}</span>}
+              </div>
+              
+              <div className="flex-1 min-w-[120px]">
+                <input
+                  type="date" 
+                  min={minEndDateStr}
+                  value={dates.end}
+                  onChange={e => {
+                    setDates(d => ({ ...d, end: e.target.value }));
+                    if (errors.end) setErrors(prev => ({ ...prev, end: "" }));
+                  }}
+                  className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.end ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
+                />
+                {errors.end && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.end}</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2.5">
+            <div className="flex-1 basis-[120px]">
+              <SbLabel>Adults</SbLabel>
+              <SbCounter value={adults} min={1} max={9} onChange={setAdults} />
+            </div>
+            <div className="flex-1 basis-[120px]">
+              <SbLabel>Children</SbLabel>
+              <SbCounter value={children} min={0} max={9} onChange={setChildren} />
+            </div>
+          </div>
+
+          <div>
+            <SbLabel>Budget Category</SbLabel>
+            <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
+              {(["budget", "luxury"] as const).map((opt) => (
+                  <button 
+                    key={opt} 
+                    onClick={() => setBudget(opt)} 
+                    className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${budget === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                  >
+                    {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
+                  </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <SbLabel>Travel Mode</SbLabel>
+            <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
+              {(["fly", "drive"] as const).map((opt) => (
+                  <button 
+                    key={opt} 
+                    onClick={() => setTravelMode(opt)} 
+                    className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${travelMode === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                  >
+                    {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
+                  </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <SbLabel>
+              Search Radius <span className="font-normal text-slate-400">({radius} mi)</span>
+            </SbLabel>
+            <input
+              type="range" min={1} max={25} step={1} value={radius}
+              onChange={(e) => setRadius(parseInt(e.target.value))}
+              className="w-full cursor-pointer my-1 accent-blue-600" 
+            />
+          </div>
+
+          <div>
+            <SbLabel>Interests</SbLabel>
+            <div className="flex flex-wrap gap-1.5">
+              {INTEREST_CATEGORIES.map((category) => (
+                  <button
+                    key={category.id} 
+                    onClick={() => handleInterestToggle(category.id)} 
+                    className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${interests.includes(category.id) ? 'border-blue-600 bg-blue-600/15 text-white' : 'border-slate-700 bg-transparent text-slate-400'}`}
+                  >
+                    {category.label}
+                  </button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          <div className="flex-1 basis-[120px]">
-            <SbLabel>Adults</SbLabel>
-            <SbCounter value={adults} min={1} max={9} onChange={setAdults} />
-          </div>
-          <div className="flex-1 basis-[120px]">
-            <SbLabel>Children</SbLabel>
-            <SbCounter value={children} min={0} max={9} onChange={setChildren} />
-          </div>
-        </div>
-
-        <div>
-          <SbLabel>Budget Category</SbLabel>
-          <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
-            {(["budget", "luxury"] as const).map((opt) => (
-                <button 
-                  key={opt} 
-                  onClick={() => setBudget(opt)} 
-                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${budget === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
-                >
-                  {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
-                </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <SbLabel>Travel Mode</SbLabel>
-          <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
-            {(["fly", "drive"] as const).map((opt) => (
-                <button 
-                  key={opt} 
-                  onClick={() => setTravelMode(opt)} 
-                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${travelMode === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
-                >
-                  {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
-                </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <SbLabel>
-            Search Radius <span className="font-normal text-slate-400">({radius} mi)</span>
-          </SbLabel>
-          <input
-            type="range" min={1} max={25} step={1} value={radius}
-            onChange={(e) => setRadius(parseInt(e.target.value))}
-            className="w-full cursor-pointer my-1 accent-blue-600" 
-          />
-        </div>
-
-        <div>
-          <SbLabel>Interests</SbLabel>
-          <div className="flex flex-wrap gap-1.5">
-            {INTEREST_CATEGORIES.map((category) => (
-                <button
-                  key={category.id} 
-                  onClick={() => handleInterestToggle(category.id)} 
-                  className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${interests.includes(category.id) ? 'border-blue-600 bg-blue-600/15 text-white' : 'border-slate-700 bg-transparent text-slate-400'}`}
-                >
-                  {category.label}
-                </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-auto pt-4">
+        {/* FIXED FOOTER WITH SUBMIT BUTTON */}
+        <div className="p-4 bg-slate-900 border-t border-slate-800 shrink-0">
           {!isWorking ? (
             <button 
               className="w-full p-4 rounded-2xl bg-blue-600 text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-[0_4px_15px_rgba(37,99,235,0.3)] active:scale-[0.98]"
