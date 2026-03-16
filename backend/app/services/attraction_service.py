@@ -4,6 +4,7 @@ from app.schemas.attraction import Attraction
 class AttractionService:
     
     async def get_attractions(self, lat: float, lon: float, radius_miles: int = 30):
+        print(f"🔍 [ATTRACTIONS] CACHE MISS: Fetching OSM data for {lat}, {lon}")
         radius_meters = int(radius_miles * 1609.34)
         url = "https://overpass-api.de/api/interpreter"
         

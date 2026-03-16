@@ -7,6 +7,7 @@ class HotelService(BaseAmadeusClient):
     
     async def get_available_hotels_by_geocode(self, lat: float, lon: float, check_in_date: str, check_out_date: str, adults: int, radius: int = 50):
         """Fetches nearby hotels, checks availability in bulk, and returns available ones directly."""
+        print(f"🔍 [HOTELS] CACHE MISS: Fetching available hotels near {lat}, {lon}")
         token = await self.get_token()
         if not token:
             return {"error": "Authentication Failed"}
@@ -93,6 +94,7 @@ class HotelService(BaseAmadeusClient):
 
     async def get_specific_hotel_offer(self, hotel_id: str, check_in_date: str, check_out_date: str, adults: int):
         """Actively fetches the exact price for a specific hotel."""
+        print(f"🔍 [HOTEL OFFER] CACHE MISS: Fetching price for Hotel ID: {hotel_id}")
         token = await self.get_token()
         if not token:
             return {"error": "Authentication Failed"}

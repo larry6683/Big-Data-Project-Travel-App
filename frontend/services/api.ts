@@ -59,7 +59,7 @@ export const travelApi = {
 
   getDestinationData: async (params: any) => ({ lat: params?.destination?.lat, lon: params?.destination?.lon }),
 
-  // 1. Fetch Flights (Amadeus)
+  // 1. Fetch Flights (Amadeus - Now Cached in Backend)
   getFlights: async (params: TripSearchParams, signal?: AbortSignal) => {
     try {
       let originIata = params.source.iata;
@@ -85,6 +85,7 @@ export const travelApi = {
         ? 'BUSINESS,FIRST' 
         : 'ECONOMY,PREMIUM_ECONOMY';
 
+      // 🌟 Calls the backend endpoint which is now wrapped in @cache(expire=3600)
       const response = await axios.get(`${API_BASE_URL}/flights/search`, {
         params: {
           origin: originIata || 'JFK',
@@ -128,7 +129,7 @@ export const travelApi = {
     }
   },
 
-  // 3. Fetch Stays (Amadeus)
+  // 3. Fetch Stays (Amadeus - Now Cached in Backend)
   getStays: async (params: TripSearchParams, signal?: AbortSignal) => {
     try {
       const radiusKm = Math.round(params.radius * 1.60934); 
@@ -154,7 +155,6 @@ export const travelApi = {
     }
   },
 
-  // 🌟 ADDED THIS FUNCTION 🌟
   // 3b. Fetch Specific Hotel Offer
   getHotelOffer: async (hotelId: string, params: any, signal?: AbortSignal) => {
     try {
@@ -170,12 +170,11 @@ export const travelApi = {
       return response.data;
     } catch (error) {
       if (axios.isCancel(error)) return null;
-      // Fail silently for individual hotels that might have expired
       return { error: true }; 
     }
   },
 
-  // 4. Fetch Weather (OpenWeather)
+  // 4. Fetch Weather (OpenWeather - Now Cached in Backend)
   getWeather: async (dest: any, dates: any, signal?: AbortSignal) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/weather/forecast`, {
@@ -195,7 +194,7 @@ export const travelApi = {
     }
   },
 
-  // 5. Fetch Attractions (OSM)
+  // 5. Fetch Attractions (OSM - Now Cached in Backend)
   getAttractions: async (dest: any, radiusMiles: number, signal?: AbortSignal, retries = 2): Promise<any> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/attractions/nearby`, {
@@ -225,7 +224,7 @@ export const travelApi = {
     }
   },
 
-  // 6. Fetch Tours/Activities (Amadeus)
+  // 6. Fetch Tours/Activities (Amadeus - Now Cached in Backend)
   getTours: async (dest: any, radiusMiles: number, signal?: AbortSignal) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/activities/nearby`, {

@@ -2,10 +2,12 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List
 from app.services.attraction_service import attraction_service
 from app.schemas.attraction import Attraction
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
 @router.get("/nearby", response_model=List[Attraction])
+@cache(expire=3600)
 async def get_nearby_attractions(
     lat: float = Query(..., description="Destination Latitude from global state"),
     lon: float = Query(..., description="Destination Longitude from global state"),

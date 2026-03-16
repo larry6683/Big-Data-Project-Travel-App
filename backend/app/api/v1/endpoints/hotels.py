@@ -2,10 +2,12 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List
 from app.services.hotel_service import hotel_service
 from app.schemas.hotel import Hotel, HotelOffer
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
 @router.get("/nearby", response_model=List[Hotel])
+@cache(expire=3600)
 async def get_nearby_hotels(
     lat: float = Query(..., description="Destination Latitude from global state"),
     lon: float = Query(..., description="Destination Longitude from global state"),
@@ -29,6 +31,7 @@ async def get_nearby_hotels(
     return result
 
 @router.get("/offer", response_model=HotelOffer)
+@cache(expire=3600)
 async def get_hotel_price(
     hotel_id: str = Query(..., description="The Amadeus Hotel ID from the clicked checkbox"),
     check_in_date: str = Query(..., description="Arrival Date YYYY-MM-DD"),

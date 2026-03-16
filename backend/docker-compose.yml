@@ -12,11 +12,14 @@ services:
       - .:/app
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - REDIS_URL=redis://redis:6379
     networks:
       - travel-app-network
     depends_on:
       elasticsearch:
         condition: service_healthy
+      redis:
+        condition: service_started
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
@@ -36,6 +39,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  redis:
+    image: redis:alpine
+    container_name: travel-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - travel-app-network
+    restart: unless-stopped
 
 networks:
   travel-app-network:

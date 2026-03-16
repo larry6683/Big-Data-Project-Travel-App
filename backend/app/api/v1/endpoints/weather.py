@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException, Query
 from app.services.weather_service import weather_service
 from app.schemas.weather import WeatherSummary
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
 @router.get("/forecast", response_model=WeatherSummary)
+@cache(expire=3600)
 async def get_trip_weather(
     lat: float = Query(..., description="Destination Latitude"),
     lon: float = Query(..., description="Destination Longitude"),

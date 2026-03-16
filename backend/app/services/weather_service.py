@@ -11,6 +11,7 @@ class WeatherService:
         self.api_key = settings.WEATHER_API_KEY
 
     async def get_weather_for_trip(self, lat: float, lon: float, check_in_date: str, check_out_date: str):
+        print(f"🔍 [WEATHER] CACHE MISS: Fetching forecast for {lat}, {lon} from {check_in_date}")
         check_in = datetime.strptime(check_in_date, "%Y-%m-%d")
         check_out = datetime.strptime(check_out_date, "%Y-%m-%d")
         now = datetime.now()

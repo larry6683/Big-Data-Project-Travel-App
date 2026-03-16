@@ -107,6 +107,7 @@ class FlightService(BaseAmadeusClient):
         return clean_results
 
     async def search_flights(self, origin: str, destination: str, date: str, return_date: str, adults: int, travel_class: str = "ECONOMY", children: int = 0):
+        print(f"🔍 CACHE MISS: Fetching real-time flight data for {origin} -> {destination}")
         token = await self.get_token()
         if not token:
             return {"error": "Authentication Failed"}

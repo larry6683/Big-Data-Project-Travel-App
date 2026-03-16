@@ -1,10 +1,13 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-
 from app.db.database import engine, Base 
-
 from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips
+
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 
 Base.metadata.create_all(bind=engine)
 
@@ -35,6 +38,12 @@ def get_application():
     return _app
 
 app = get_application()
+
+@app.on_event("startup")
+async def startup():
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+    redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="wanderplan-cache")
 
 @app.get("/")
 def root():

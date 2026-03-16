@@ -1,5 +1,6 @@
 import httpx
 import time
+from typing import Any, Dict, Optional
 from app.core.config import settings
 
 class BaseAmadeusClient:
@@ -32,3 +33,37 @@ class BaseAmadeusClient:
             self.token = result["access_token"]
             self.token_expiry = time.time() + result["expires_in"] - 10
             return self.token
+
+    async def _make_request(
+        self, 
+        method: str, 
+        endpoint: str, 
+        params: Optional[Dict[str, Any]] = None, 
+        headers: Optional[Dict[str, Any]] = None,
+        json_data: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        """🌟 ADDED: Generic request helper that works with Redis Caching"""
+        url = f"{self.base_url}{endpoint}"
+        
+        # Ensure we always have the latest token
+        token = await self.get_token()
+        if not headers:
+            headers = {}
+        headers["Authorization"] = f"Bearer {token}"
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                response = await client.request(
+                    method=method,
+                    url=url,
+                    params=params,
+                    headers=headers,
+                    json=json_data
+                )
+                response.raise_for_status()
+                # Redis will store this returned JSON
+                return response.json()
+            except httpx.HTTPStatusError as e:
+                return {"error": f"API Error: {e.response.status_code}", "detail": e.response.text}
+            except Exception as e:
+                return {"error": f"Connection Error: {str(e)}"}
