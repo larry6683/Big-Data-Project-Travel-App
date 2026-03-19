@@ -86,6 +86,24 @@ export const travelApi = {
     const { data } = await axios.post(`${API_BASE_URL}/auth/login`, formData);
     return data;
   },
+  // --- NEW PROFILE METHODS ---
+  getProfile: async () => {
+    const response = await axios.get(`${API_BASE_URL}/users/me`, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  },
+
+  updateProfile: async (formData: FormData) => {
+    // Note: We pass the raw FormData object here so axios correctly sets multipart/form-data headers
+    const response = await axios.put(`${API_BASE_URL}/users/me`, formData, {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
 
   getDestinationData: async (params: any) => ({ lat: params?.destination?.lat, lon: params?.destination?.lon }),
 

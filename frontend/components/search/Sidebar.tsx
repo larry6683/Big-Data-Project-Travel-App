@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import LocationAutocomplete from "./LocationAutoComplete";
 import { useAuth } from "../../context/AuthContext";
+import ProfileModal from "../ProfileModal"; // 🌟 NEW IMPORT
+import { travelApi } from "../../services/api"; // 🌟 NEW IMPORT
 
 interface SidebarProps {
   onSearch: (params: any) => void;
@@ -57,6 +59,29 @@ export default function Sidebar({
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 🌟 NEW PROFILE STATES
+  const [showProfile, setShowProfile] = useState(false);
+  const [profilePic, setProfilePic] = useState<string | null>(null);
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
+    "http://localhost:8000";
+
+  // 🌟 NEW PROFILE FETCH FUNCTION
+  const fetchProfileImage = async () => {
+    if (isLoggedIn) {
+      try {
+        const data = await travelApi.getProfile();
+        setProfilePic(data.profile_picture_url);
+      } catch (e) {
+        console.error("Failed to fetch profile image", e);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchProfileImage();
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const saved = localStorage.getItem("search_state");
@@ -286,11 +311,23 @@ export default function Sidebar({
 
         {/* SCROLLABLE MIDDLE SECTION */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 custom-scrollbar pb-6">
+          {/* 🌟 UPDATED USER BADGE */}
           {isLoggedIn && (
-            <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs">
-                {user?.charAt(0).toUpperCase()}
-              </div>
+            <div
+              className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 flex items-center gap-3 mb-2 cursor-pointer hover:bg-slate-800 transition-all"
+              onClick={() => setShowProfile(true)}
+            >
+              {profilePic ? (
+                <img
+                  src={`${API_BASE_URL}${profilePic}`}
+                  alt="Profile"
+                  className="w-9 h-9 rounded-full object-cover border border-slate-600"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs">
+                  {user?.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="flex-1 overflow-hidden">
                 <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
                   Logged In As
@@ -520,7 +557,11 @@ export default function Sidebar({
                 <span>Search History</span>
               </button>
 
-              <button className="flex items-center gap-3 w-full p-2.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all text-sm group">
+              {/* 🌟 UPDATED BUTTON ACTION */}
+              <button
+                onClick={() => setShowProfile(true)}
+                className="flex items-center gap-3 w-full p-2.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all text-sm group"
+              >
                 <Settings
                   size={18}
                   className="text-slate-500 group-hover:text-blue-400"
@@ -565,6 +606,13 @@ export default function Sidebar({
           )}
         </div>
       </div>
+
+      {/* 🌟 NEW MODAL COMPONENT */}
+      <ProfileModal
+        isOpen={showProfile}
+        onClose={() => setShowProfile(false)}
+        onProfileUpdate={fetchProfileImage}
+      />
     </>
   );
 }

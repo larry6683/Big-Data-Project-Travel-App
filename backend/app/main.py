@@ -1,9 +1,11 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles # 🌟 NEW IMPORT
 from app.core.config import settings
 from app.db.database import engine, Base 
-from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips
+# 🌟 ADD "users" to the imports below
+from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips, users
 
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
@@ -22,6 +24,10 @@ def get_application():
         allow_headers=["*"],
     )
 
+    # 🌟 NEW: Serve the static files (images) so the frontend can display them
+    os.makedirs("static/profiles", exist_ok=True)
+    _app.mount("/static", StaticFiles(directory="static"), name="static")
+
     # Core Routes
     _app.include_router(flights.router, prefix="/api/v1/flights", tags=["flights"])
     _app.include_router(locations.router, prefix="/api/v1/locations", tags=["locations"])
@@ -35,6 +41,7 @@ def get_application():
 
     _app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
     _app.include_router(trips.router, prefix="/api/v1/trips", tags=["trips"])
+    _app.include_router(users.router, prefix="/api/v1/users", tags=["users"]) # 🌟 NEW ROUTER
     return _app
 
 app = get_application()
@@ -44,12 +51,7 @@ async def startup():
     redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
     redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=False)
     FastAPICache.init(RedisBackend(redis), prefix="wanderplan-cache")
-
-    app.state.redis = aioredis.from_url(redis_url, decode_responses=True)
-
-@app.on_event("shutdown")
-async def shutdown():
-    await app.state.redis.close()
+    app.state.redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
 
 @app.get("/")
 def root():
