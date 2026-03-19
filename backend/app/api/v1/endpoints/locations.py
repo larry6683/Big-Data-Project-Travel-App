@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Query
 import httpx
 import os
 from app.services.location_service import location_service
@@ -19,7 +19,6 @@ US_STATES = {
     "VA":"Virginia","WA":"Washington","WV":"West Virginia","WI":"Wisconsin","WY":"Wyoming",
 }
 
-# NEW: Top 2 popular/major cities for each state to show when a user searches just the state name
 STATE_TOP_CITIES = {
     "Alabama": ["Birmingham", "Montgomery"],
     "Alaska": ["Anchorage", "Juneau"],
@@ -92,17 +91,12 @@ def valid_name(name: str, state: str) -> bool:
     return bool(n) and n.lower() not in {j.lower() for j in JUNK} and n != state
 
 def parse_bdc(data: dict) -> tuple[str | None, str]:
-    """
-    Extract best city from BDC response by strictly checking administrative boundaries,
-    ignoring the polluted `city` or `locality` fields which often contain apartment names.
-    """
     raw   = (data.get("principalSubdivisionCode") or data.get("principalSubdivision") or "")
     state = resolve_state(raw)
     ok    = lambda n: valid_name(n, state)
 
     entries: list = (data.get("localityInfo") or {}).get("administrative") or []
     
-    # 1. Force extraction of actual City/Town boundaries (Admin Levels 8, 7, 9)
     for target_level in [8, 7, 9]:
         match = next(
             (e for e in entries if (e.get("adminLevel") or 0) == target_level and ok((e.get("name") or "").strip())), 
@@ -111,7 +105,6 @@ def parse_bdc(data: dict) -> tuple[str | None, str]:
         if match:
             return match["name"].strip(), state
 
-    # 2. Emergency fallback to the generic city field only if admin boundaries fail
     city = (data.get("city") or "").strip()
     if ok(city):
         return city, state
@@ -143,7 +136,6 @@ async def try_bdc(client: httpx.AsyncClient, lat: float, lon: float) -> tuple[st
 
 @router.get("/nearest")
 async def get_nearest(lat: float, lon: float):
-    """Reverse geocode coordinates → nearest US city strictly using BDC."""
     print(f"\n🌍 GPS /nearest → {lat}, {lon}")
     async with httpx.AsyncClient() as client:
         city, state = await try_bdc(client, lat, lon)
@@ -160,10 +152,8 @@ async def search_locations(keyword: str):
 
     results: list = []
     
-    # --- NEW: Check if the user searched exactly for a state or its abbreviation ---
     resolved_state = resolve_state(keyword)
     if resolved_state in STATE_TOP_CITIES:
-        # If it's a state, immediately inject its top 2 cities as the top results
         for top_city in STATE_TOP_CITIES[resolved_state]:
             results.append({"city": top_city, "state": resolved_state})
 
@@ -201,11 +191,15 @@ async def search_locations(keyword: str):
             seen.add(key)
             unique.append(item)
     
-    # Change slicing to 5 so we don't accidentally cut out good API matches if the first 2 are injected state cities
     return unique[:5]
 
+# 🌟 NEW: Added is_destination flag to strictly separate source vs destination
 @router.get("/geocode")
-async def geocode_location(keyword: str):
+async def geocode_location(
+    request: Request, 
+    keyword: str, 
+    is_destination: bool = Query(False, description="Set to true ONLY if this is the final travel destination")
+):
     if not keyword:
         return {"error": "No keyword provided"}
 
@@ -231,6 +225,19 @@ async def geocode_location(keyword: str):
                 if match:
                     us = match
 
+            # --- TOP 5 DESTINATION TRACKING ---
+            # 🌟 ONLY track this search in Redis if the frontend explicitly flagged it as the destination!
+            if is_destination:
+                try:
+                    found_city = us[0].get("name", city_name)
+                    found_state = us[0].get("admin1", "")
+                    
+                    destination_key = f"{found_city}, {found_state}" if found_state else found_city
+                    await request.app.state.redis.zincrby("top_destinations", 1, destination_key)
+                except Exception as redis_err:
+                    print(f"[Redis] Failed to track destination: {redis_err}")
+            # -----------------------------------
+
             return {"lat": float(us[0]["latitude"]), "lon": float(us[0]["longitude"])}
         except Exception as e:
             return {"error": str(e)}
@@ -239,3 +246,27 @@ async def geocode_location(keyword: str):
 async def get_nearest_airport(lat: float, lon: float):
     iata = await location_service.get_nearest_airport(lat, lon)
     return {"iata": iata} if iata else {"iata": None}
+
+@router.get("/top")
+async def get_top_destinations(request: Request):
+    """Returns the top 5 most searched destinations."""
+    try:
+        top_destinations = await request.app.state.redis.zrevrange("top_destinations", 0, 4, withscores=True)
+        
+        results = []
+        for dest, count in top_destinations:
+            parts = dest.split(", ")
+            city = parts[0]
+            state = parts[1] if len(parts) > 1 else ""
+            
+            results.append({
+                "city": city,
+                "state": state,
+                "full_name": dest,
+                "searches": int(count)
+            })
+            
+        return results
+    except Exception as e:
+        print(f"[Redis] Failed to fetch top destinations: {e}")
+        return []

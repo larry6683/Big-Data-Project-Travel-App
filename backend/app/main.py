@@ -45,6 +45,12 @@ async def startup():
     redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=False)
     FastAPICache.init(RedisBackend(redis), prefix="wanderplan-cache")
 
+    app.state.redis = aioredis.from_url(redis_url, decode_responses=True)
+
+@app.on_event("shutdown")
+async def shutdown():
+    await app.state.redis.close()
+
 @app.get("/")
 def root():
     return {"message": "API is operational", "status": "ok"}

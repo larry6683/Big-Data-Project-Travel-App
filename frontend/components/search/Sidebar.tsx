@@ -13,7 +13,7 @@ import {
   LogOut,
 } from "lucide-react";
 import LocationAutocomplete from "./LocationAutoComplete";
-import { useAuth } from "../../context/AuthContext"; // 🌟 Import Phase 2 Auth Context
+import { useAuth } from "../../context/AuthContext";
 
 interface SidebarProps {
   onSearch: (params: any) => void;
@@ -85,14 +85,21 @@ export default function Sidebar({
     }
   }, []);
 
-  const getCoordinates = async (locationName: string) => {
+  const getCoordinates = async (
+    locationName: string,
+    isDestination: boolean = false
+  ) => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(
-        `${baseUrl}/locations/geocode?keyword=${encodeURIComponent(
-          locationName
-        )}`
-      );
+      const url = isDestination
+        ? `${baseUrl}/locations/geocode?keyword=${encodeURIComponent(
+            locationName
+          )}&is_destination=true`
+        : `${baseUrl}/locations/geocode?keyword=${encodeURIComponent(
+            locationName
+          )}`;
+
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         if (data.lat && data.lon)
@@ -202,8 +209,8 @@ export default function Sidebar({
 
     setIsGeocoding(true);
     const [srcCoords, dstCoords] = await Promise.all([
-      getCoordinates(finalSource),
-      getCoordinates(finalDest),
+      getCoordinates(finalSource, false),
+      getCoordinates(finalDest, true),
     ]);
     setIsGeocoding(false);
 
@@ -492,7 +499,7 @@ export default function Sidebar({
             </div>
           </div>
 
-          {/* 🌟 New Phase 2: Private Dashboard Section */}
+          {/* Private Dashboard Section */}
           {isLoggedIn && (
             <div className="mt-4 pt-6 border-t border-slate-800 flex flex-col gap-2">
               <div className="text-[10px] font-bold tracking-[0.1em] uppercase text-blue-500 mb-1 ml-1">
