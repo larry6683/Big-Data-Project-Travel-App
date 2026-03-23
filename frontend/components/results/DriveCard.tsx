@@ -56,12 +56,10 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
     sessionStorage.setItem("drive_intermediates_open", String(newState));
   };
 
-  // If data hasn't arrived or is invalid, render nothing
   if (!drivingData || !drivingData.geometry) return null;
 
   const fuel = calculateFuel(drivingData.distance_km);
 
-  // 🌟 Read the pre-fetched data directly! No more waiting.
   const passedCities = drivingData.passedCities || [];
   const sName = drivingData.sourceName || "Origin";
   const dName = drivingData.destinationName || "Destination";
@@ -72,7 +70,7 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
         className={`bg-white rounded-xl overflow-hidden border p-5 transition-all duration-200 ${
           isSelected
             ? "border-blue-600 ring-1 ring-blue-600 bg-blue-100/10"
-            : "bg-white hover:shadow-md"
+            : "border-gray-200 shadow-sm hover:border-gray-300 hover:shadow-md"
         }`}
       >
         <div className="mb-6">
@@ -105,8 +103,9 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
           </div>
         </div>
 
+        {/* 🌟 Updated styles: border-gray-200 and shadow-sm added to stat boxes */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col justify-center">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
             <span className="text-[10px] uppercase font-black text-gray-400 block mb-1">
               Distance
             </span>
@@ -117,7 +116,7 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
               {drivingData.distance_km} km
             </span>
           </div>
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col justify-center">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
             <span className="text-[10px] uppercase font-black text-gray-400 block mb-1">
               Drive Time
             </span>
@@ -126,7 +125,7 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
               {Math.round(drivingData.duration_mins % 60)}m
             </span>
           </div>
-          <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex flex-col justify-center">
+          <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-center">
             <span className="text-[10px] uppercase font-black text-emerald-600 block mb-1">
               Fuel Estimate
             </span>
@@ -152,7 +151,7 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
           </button>
 
           {showIntermediates && (
-            <div className="mt-4 bg-slate-50 rounded-xl p-6 border border-slate-200">
+            <div className="mt-4 bg-slate-50 rounded-xl p-6 border border-slate-200 shadow-inner">
               <div className="relative flex flex-col gap-6 ml-2">
                 <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-blue-200"></div>
 

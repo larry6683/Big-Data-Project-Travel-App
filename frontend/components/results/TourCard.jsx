@@ -1,4 +1,4 @@
-// larry6683/big-data-project-travel-app/frontend/components/results/TourCard.jsx
+// frontend/components/results/TourCard.jsx
 
 import React, { useState, useEffect } from 'react';
 
@@ -52,7 +52,6 @@ export default function ToursCard({ tours }) {
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
       <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-4">🗺️ Local Tours & Experiences</h3>
       
-      {/* 🌟 CHANGED: Updated to xl:grid-cols-2 so tablets strictly get 1 column */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         {tours.map((tour, idx) => {
           const uniqueKey = tour.id || `tour-${idx}`;
@@ -61,21 +60,28 @@ export default function ToursCard({ tours }) {
           return (
             <div 
               key={uniqueKey} 
-              className={`border rounded-xl p-4 transition-colors shadow-sm flex flex-col gap-4 ${isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10' : 'bg-white hover:shadow-md'}`}
+              className={`group border rounded-xl p-4 transition-all duration-200 flex flex-col gap-4 ${isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md shadow-sm'}`}
             >
               
               {tour.picture_url ? (
-                <img src={tour.picture_url} alt={tour.name} className="w-full h-40 md:h-48 object-cover rounded-lg shrink-0 shadow-sm border border-gray-200" />
+                <div className="w-full h-40 md:h-48 rounded-lg shrink-0 shadow-sm border border-gray-200 overflow-hidden">
+                  <img 
+                    src={tour.picture_url} 
+                    alt={tour.name} 
+                    className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-500 ease-out" 
+                  />
+                </div>
               ) : (
-                <div className="w-full h-40 md:h-48 bg-blue-100 text-blue-400 flex items-center justify-center rounded-lg shrink-0 shadow-sm text-4xl border border-blue-200">
-                  🎟️
+                <div className="w-full h-40 md:h-48 bg-blue-100 text-blue-400 flex items-center justify-center rounded-lg shrink-0 shadow-sm text-4xl border border-blue-200 overflow-hidden">
+                  <div className="scale-110 group-hover:scale-100 transition-transform duration-500 ease-out">
+                    🎟️
+                  </div>
                 </div>
               )}
               
               <div className="flex flex-col flex-1 justify-between overflow-hidden">
                 <div>
                   
-                  {/* 🌟 Flex-wrap fix for the checkbox title from earlier */}
                   <div className="flex flex-wrap justify-between items-start gap-3">
                     <h4 className="font-bold text-gray-800 text-base leading-tight mb-1 flex-1 min-w-[150px]" title={tour.name}>
                       {tour.name}
@@ -100,7 +106,7 @@ export default function ToursCard({ tours }) {
                 </div>
                 
                 {/* Centered Duration and Price Layout */}
-                <div className="flex w-full items-center justify-center pt-3 mt-4 border-t border-gray-200/60">
+                <div className="flex w-full items-center justify-center pt-3 mt-4 border-t border-gray-200">
                   
                   {/* Duration Half */}
                   <div className="flex-1 text-center border-r border-gray-200">

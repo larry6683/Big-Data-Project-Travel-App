@@ -1,6 +1,5 @@
 // frontend/components/results/StayCard.tsx
 import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
 
 const getNumNights = (start?: string, end?: string) => {
   if (!start || !end) return 1;
@@ -35,22 +34,6 @@ const StayRow = ({
   toggleStaySelection,
   searchParams,
 }: any) => {
-  const [expanded, setExpanded] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const saved = sessionStorage.getItem("stay_dropdown_state");
-    return saved ? !!JSON.parse(saved)[hotelId] : false;
-  });
-
-  useEffect(() => {
-    const saved = sessionStorage.getItem("stay_dropdown_state");
-    const parsed = saved ? JSON.parse(saved) : {};
-    if (parsed[hotelId] !== expanded) {
-      parsed[hotelId] = expanded;
-      sessionStorage.setItem("stay_dropdown_state", JSON.stringify(parsed));
-    }
-  }, [expanded, hotelId]);
-
-  // 🌟 Read the pre-fetched offer directly from the stay object
   const offer = stay.roomDetails;
   const isUnavailable =
     offer?.unavailable || !offer || (offer.rooms && offer.rooms.length === 0);
@@ -65,10 +48,10 @@ const StayRow = ({
 
   return (
     <div
-      className={`border rounded-xl p-4 transition-colors shadow-sm bg-white ${
+      className={`border rounded-xl p-4 transition-all duration-200 bg-white ${
         isSelected
-          ? "border-blue-600 ring-1 ring-blue-600 bg-blue-100/10"
-          : "hover:shadow-md"
+          ? "border-blue-600 ring-1 ring-blue-600 bg-blue-100/10 shadow-sm"
+          : "border-gray-200 shadow-sm hover:border-gray-300 hover:shadow-md"
       }`}
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -122,29 +105,17 @@ const StayRow = ({
                 Sold Out
               </span>
             )}
-
-            {hasRooms && !isUnavailable && (
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors shrink-0"
-              >
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-700 transition-transform ${
-                    expanded ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-            )}
           </div>
         </div>
       </div>
 
-      {expanded && hasRooms && (
-        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3 animate-in fade-in duration-300">
+      {/* Renders the rooms immediately without requiring a dropdown */}
+      {hasRooms && !isUnavailable && (
+        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3">
           {offer.rooms.map((room: any, i: number) => (
             <div
               key={i}
-              className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-100 gap-1.5 shadow-sm"
+              className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-200 gap-1.5 shadow-sm"
             >
               <div className="flex justify-between items-center w-full">
                 <div className="flex justify-between items-center">
@@ -209,7 +180,6 @@ export default function StaysCard({
       tripState.stays = [];
       setSelectedStayKeys([]);
     } else {
-      // Because we pre-fetched the data, stay.roomDetails is already available to save
       tripState.stays = [
         { ...stay, _selectionKey: uniqueKey, offerDetails: stay.roomDetails },
       ];
@@ -219,8 +189,8 @@ export default function StaysCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <div className="flex justify-between items-end border-b pb-3 mb-4">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <div className="flex justify-between items-end border-b border-gray-200 pb-3 mb-4">
         <h3 className="text-2xl font-black text-gray-900 tracking-tight">
           🏨 Stays
         </h3>

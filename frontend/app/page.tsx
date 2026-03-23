@@ -67,7 +67,8 @@ const STATE_ABBR: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(false);
+  // 1. Initialize loading to true so it shows loader while checking cached data
+  const [loading, setLoading] = useState(true);
   const [tripData, setTripData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -86,6 +87,9 @@ export default function Dashboard() {
         console.error("Failed to parse cached trip data", err);
       }
     }
+    
+    // 2. Set loading to false once initial check is done
+    setLoading(false);
   }, []);
 
   const handleSearch = async (params: TripSearchParams) => {
@@ -104,7 +108,6 @@ export default function Dashboard() {
         ? travelApi.getDriving(params)
         : travelApi.getFlights(params);
 
-      // 1. Fetch the base data
       let [transportResponse, rawStays, weather, attractions, toursData] =
         await Promise.all([
           transportPromise,
@@ -117,7 +120,6 @@ export default function Dashboard() {
           travelApi.getTours(params.destination, params.radius),
         ]);
 
-      // 🌟 Pre-fetch hotel offers
       let processedStays = rawStays;
       if (rawStays && rawStays.length > 0) {
         const topStays = rawStays.slice(0, 10);
@@ -164,7 +166,6 @@ export default function Dashboard() {
         }
       }
 
-      // 🌟 Pre-fetch passing cities for the drive route
       if (finalDriveData?.geometry?.coordinates) {
         const coords = finalDriveData.geometry.coordinates;
         const citiesFound: string[] = [];
@@ -231,10 +232,8 @@ export default function Dashboard() {
           params.destination?.name || "Destination";
       }
 
-      // 🌟 NEW: Pre-load Tour Images silently in the background
       if (toursData && toursData.length > 0 && typeof window !== "undefined") {
         toursData.slice(0, 15).forEach((tour: any) => {
-          // Amadeus activities API usually puts images in the `pictures` array
           const imageUrl = tour.pictures?.[0] || tour.image;
           if (imageUrl) {
             const img = new window.Image();
@@ -307,9 +306,10 @@ export default function Dashboard() {
         />
 
         <div className="flex flex-1 overflow-hidden">
+          {/* Main Trip Results Section */}
           <div
             className={`flex-1 h-full overflow-y-auto custom-scrollbar bg-gray-50/30 ${
-              mapOpen ? "hidden md:block" : ""
+              mapOpen && !loading ? "hidden md:block" : "" // Added !loading so it doesn't hide on mobile while fetching
             }`}
           >
             <div className="p-4 md:p-6 w-full relative">
@@ -351,15 +351,18 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div
-            className={`h-full border-l border-gray-100 bg-white ${
-              mapOpen ? "flex-1 w-full" : "hidden"
-            } md:flex md:flex-none md:w-[40vw] lg:w-[30vw]`}
-          >
-            <div className="w-full h-full relative">
-              <DynamicMap mapData={tripData?.rawParams?.destination} />
+          {/* 3. Conditionally remove Map when loading, allowing results pane to expand to 100% width */}
+          {!loading && (
+            <div
+              className={`h-full border-l border-gray-100 bg-white ${
+                mapOpen ? "flex-1 w-full" : "hidden"
+              } md:flex md:flex-none md:w-[40vw] lg:w-[30vw]`}
+            >
+              <div className="w-full h-full relative">
+                <DynamicMap mapData={tripData?.rawParams?.destination} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>

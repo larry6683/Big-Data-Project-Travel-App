@@ -1,4 +1,4 @@
-// larry6683/big-data-project-travel-app/frontend/components/results/FlightCard.tsx
+// frontend/components/results/FlightCard.tsx
 
 import React, { useState, useMemo, useEffect } from 'react';
 
@@ -8,7 +8,6 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
   const [sortBy, setSortBy] = useState<SortOption>('price_asc');
   const [selectedFlightKeys, setSelectedFlightKeys] = useState<string[]>([]);
 
-  // 🌟 FIX: Load the saved flight selection from localStorage instead of clearing it
   useEffect(() => {
     const tripStateStr = localStorage.getItem('trip_state');
     if (tripStateStr) {
@@ -25,7 +24,6 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     }
   }, [flights]);
 
-  // Handle Single Selection Toggle
   const toggleFlightSelection = (flight: any, uniqueKey: string) => {
     const tripStateStr = localStorage.getItem('trip_state');
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
@@ -33,11 +31,9 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     const isSelected = selectedFlightKeys.includes(uniqueKey);
 
     if (isSelected) {
-      // If already selected, deselect it
       tripState.flights = [];
       setSelectedFlightKeys([]);
     } else {
-      // If NOT selected, overwrite the array so ONLY this one is selected
       const flightToSave = { ...flight, _selectionKey: uniqueKey };
       tripState.flights = [flightToSave];
       setSelectedFlightKeys([uniqueKey]);
@@ -46,7 +42,6 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     localStorage.setItem('trip_state', JSON.stringify(tripState)); 
   };
 
-  // --- FORMATTING HELPERS ---
   const formatTime = (timeString: string) => {
     if (!timeString) return 'TBA';
     return new Date(timeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -110,7 +105,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     });
   }, [flights, sortBy]);
 
-  if (loading) return null; // Handled globally by TripResults now
+  if (loading) return null; 
 
   if (!flights || !Array.isArray(flights) || flights.length === 0) {
     return (
@@ -160,11 +155,11 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
         return (
           <div 
             key={uniqueKey} 
-            className={`bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-200 ${
-              isSelected       ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10' : 'bg-white hover:shadow-md'
+            className={`rounded-lg overflow-hidden transition-all duration-200 border ${
+              isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
             }`}
           >
-            <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-blue-50 border-blue-100' : 'bg-gray-100/40 border-gray-100'}`}>
+            <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-blue-50 border-blue-100' : 'bg-gray-100/40 border-gray-200'}`}>
               <div className="flex items-center gap-3">
 
                 <div className="w-12 h-12 flex items-center justify-center overflow-hidden relative shrink-0">
@@ -193,7 +188,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                     onChange={() => toggleFlightSelection(flight, uniqueKey)} 
                     className="w-4 h-4 accent-blue-600 cursor-pointer" 
                   />
-          <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
+                  <span className="text-xs font-bold text-gray-700 select-none w-[56px] inline-block text-center">
                     {isSelected ? 'Selected' : 'Select'}
                   </span>
                 </label>
@@ -204,8 +199,8 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
               {flight.itineraries?.map((itinerary: any, itinIndex: number) => {
                 const isOutbound = itinIndex === 0;
                 const theme = isOutbound 
-                  ? { bg: 'bg-transparent', text: 'text-blue-600', badgeBg: 'bg-blue-100', icon: '🛫', label: 'Outbound' }
-                  : { bg: 'bg-transparent', text: 'text-green-600', badgeBg: 'bg-green-100', icon: '🛬', label: 'Return' };
+                  ? { bg: 'bg-transparent', text: 'text-blue-700', badgeBg: 'bg-blue-100', icon: '🛫', label: 'Outbound' }
+                  : { bg: 'bg-transparent', text: 'text-green-700', badgeBg: 'bg-green-100', icon: '🛬', label: 'Return' };
                 const departureDate = itinerary.segments?.[0]?.departure_time;
 
                 return (
@@ -240,7 +235,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                               <div className={`w-3 h-3 rounded-full border-2 bg-white relative z-20 ${isOutbound ? 'border-blue-600' : 'border-emerald-500'}`}></div>
                             </div>
 
-                            <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm relative">
+                            <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm relative">
                               <div className="flex justify-between items-center">
                                 <div>
                                   <p className="text-lg font-black text-gray-800 leading-none">{formatTime(seg.departure_time)}</p>

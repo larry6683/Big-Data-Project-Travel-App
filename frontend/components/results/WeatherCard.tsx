@@ -10,7 +10,6 @@ export default function WeatherCard({ weather }: { weather: any }) {
     if (tripStateStr) {
       try {
         const tripState = JSON.parse(tripStateStr);
-        // Check if weather is saved as a selected object
         if (tripState.weather && tripState.weather.selected) {
           setIsSelected(true);
         } else {
@@ -29,7 +28,6 @@ export default function WeatherCard({ weather }: { weather: any }) {
     const newSelected = !isSelected;
     setIsSelected(newSelected);
 
-    // Save the entire weather data object just like the DrivingCard does
     tripState.weather = newSelected ? { selected: true, data: weather } : null;
     localStorage.setItem('trip_state', JSON.stringify(tripState));
   };
@@ -59,11 +57,10 @@ export default function WeatherCard({ weather }: { weather: any }) {
   };
 
   return (
-    <div className={`bg-white rounded-xl border transition-all duration-200 shadow-sm p-5 ${isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10' : 'bg-white hover:shadow-md'}`}>
+    <div className={`rounded-xl border transition-all duration-200 p-5 ${isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'}`}>
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-2xl font-black text-gray-900 tracking-tight">Trip Forecast</h3>
         
-        {/* Main Selection Checkbox */}
         <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors shadow-sm shrink-0">
           <input 
             type="checkbox" 
@@ -84,12 +81,10 @@ export default function WeatherCard({ weather }: { weather: any }) {
         </div>
       )}
 
-      {/* Changed to flex-col to stack rows vertically (one day per row) */}
       <div className="flex flex-col gap-3">
         {weather.days.map((day: any, idx: number) => (
-          <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-gray-50 transition-colors shadow-sm flex flex-row items-center justify-between gap-4">
+          <div key={idx} className="border border-gray-200 rounded-xl p-4 bg-gray-50 transition-colors shadow-sm flex flex-row items-center justify-between gap-4 hover:border-gray-300">
             
-            {/* Left Side: Icon & Date Details */}
             <div className="flex items-center gap-4">
               <div className="text-4xl drop-shadow-sm shrink-0">
                 {getWeatherIcon(day.weather)}
@@ -104,7 +99,6 @@ export default function WeatherCard({ weather }: { weather: any }) {
               </div>
             </div>
             
-            {/* Right Side: High/Low Temperatures */}
             <div className="flex items-center gap-4 sm:gap-6 shrink-0">
               <div className="flex flex-col text-right">
                 <span className="text-[10px] text-red-400 font-bold uppercase mb-0.5">High</span>

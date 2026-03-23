@@ -4,7 +4,7 @@ import FlightCard from "./FlightCard";
 import StaysCard from "./StayCard";
 import WeatherCard from "./WeatherCard";
 import AttractionsCard from "./AttractionCard";
-import DrivingCard from "./DrivingCard";
+import DrivingCard from "./DriveCard";
 import ToursCard from "./TourCard";
 import { Loader2 } from "lucide-react";
 
