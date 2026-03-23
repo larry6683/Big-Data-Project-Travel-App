@@ -12,6 +12,7 @@ import {
   Download,
   Share2,
   Loader2,
+  Send,
 } from "lucide-react";
 import { travelApi } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -30,7 +31,15 @@ export default function ItineraryModal({
   weatherData,
 }: ItineraryModalProps) {
   const [selections, setSelections] = useState<any>({});
+
+  // PDF Download State
   const [isExporting, setIsExporting] = useState(false);
+
+  // PDF Share State
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isSharing, setIsSharing] = useState(false);
+
   const { user } = useAuth();
 
   useEffect(() => {
@@ -45,6 +54,10 @@ export default function ItineraryModal({
       } else {
         setSelections({});
       }
+
+      // Reset share state when opened
+      setShowEmailInput(false);
+      setEmail("");
     }
   }, [isOpen]);
 
@@ -88,7 +101,6 @@ export default function ItineraryModal({
         weather: weatherData || cachedTrip.weather,
         flight: flight,
         hotel: stay,
-        // 🌟 FIX: Pull exclusively from 'selections', NOT 'cachedTrip'
         attractions: selections?.attractions || [],
         activities: selections?.tours || selections?.activities || [],
       });
@@ -109,6 +121,44 @@ export default function ItineraryModal({
       alert("Failed to generate PDF Itinerary.");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleSharePdf = async () => {
+    if (!email || !email.includes("@")) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+    setIsSharing(true);
+    try {
+      const cachedTripStr = sessionStorage.getItem("current_trip_results");
+      const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : {};
+
+      const payload = {
+        destination:
+          rawParams?.destination?.city ||
+          rawParams?.destination?.name ||
+          "Trip",
+        username: user || "Traveler",
+        check_in_date: rawParams?.startDate,
+        check_out_date: rawParams?.endDate,
+        weather: weatherData || cachedTrip.weather,
+        flight: flight,
+        hotel: stay,
+        attractions: selections?.attractions || [],
+        activities: selections?.tours || selections?.activities || [],
+      };
+
+      // Assuming travelApi.sharePdf was added to your api.ts file
+      await travelApi.sharePdf(payload, email);
+      alert("Itinerary sent successfully!");
+      setShowEmailInput(false);
+      setEmail("");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to send itinerary to email.");
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -239,23 +289,60 @@ export default function ItineraryModal({
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3">
-          <button
-            onClick={handleExportPdf}
-            disabled={isExporting}
-            className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 ${
-              isExporting
-                ? "bg-gray-400 text-white cursor-not-allowed shadow-none"
-                : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
-            }`}
-          >
-            {isExporting ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <Download size={18} />
-            )}
-            {isExporting ? "Generating PDF..." : "Download PDF"}
-          </button>
+        <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col gap-4">
+          <div className="flex gap-3">
+            <button
+              onClick={handleExportPdf}
+              disabled={isExporting || isSharing}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 ${
+                isExporting || isSharing
+                  ? "bg-gray-400 text-white cursor-not-allowed shadow-none"
+                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
+              }`}
+            >
+              {isExporting ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Download size={18} />
+              )}
+              {isExporting ? "Generating PDF..." : "Download PDF"}
+            </button>
+
+            <button
+              onClick={() => setShowEmailInput(!showEmailInput)}
+              disabled={isExporting || isSharing}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 ${
+                (isExporting || isSharing) && "opacity-50 cursor-not-allowed"
+              }`}
+            >
+              <Share2 size={18} />
+              Share
+            </button>
+          </div>
+
+          {showEmailInput && (
+            <div className="flex gap-2 animate-in slide-in-from-top-2 fade-in duration-200">
+              <input
+                type="email"
+                placeholder="Enter email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+              />
+              <button
+                onClick={handleSharePdf}
+                disabled={isSharing || !email}
+                className="px-6 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2 transition-all active:scale-95 shadow-md"
+              >
+                {isSharing ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <Send size={18} />
+                )}
+                Send
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
