@@ -2,8 +2,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Loader2, X } from "lucide-react";
+import { Search, Loader2, X, Calendar } from "lucide-react";
 import LocationAutocomplete from "./LocationAutoComplete";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface SidebarProps {
   onSearch: (params: any) => void;
@@ -131,22 +133,20 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
     if (!dates.end) newErrors.end = "End date is required.";
     
     if (dates.start && dates.end) {
-      const startDate = new Date(dates.start);
-      const endDate = new Date(dates.end);
+      const startDate = new Date(dates.start + "T12:00:00");
+      const endDate = new Date(dates.end + "T12:00:00");
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const tzOffsetStartDate = new Date(startDate.getTime() + startDate.getTimezoneOffset() * 60000);
-      const tzOffsetEndDate = new Date(endDate.getTime() + endDate.getTimezoneOffset() * 60000);
 
-      if (tzOffsetStartDate < today) {
+      if (startDate < today) {
         newErrors.start = "Start date cannot be in the past.";
       }
       
-      if (tzOffsetStartDate >= tzOffsetEndDate) {
+      if (startDate >= endDate) {
         newErrors.end = "End date must be at least 1 day after start date.";
       } else {
-        const diffDays = Math.ceil(Math.abs(tzOffsetEndDate.getTime() - tzOffsetStartDate.getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil(Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         if (diffDays > 30) newErrors.end = "Trip duration cannot exceed 30 days.";
       }
     }
@@ -189,43 +189,40 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
   const isWorking = loading || isGeocoding;
   const nightCount = dates.start && dates.end ? Math.max(0, Math.ceil((new Date(dates.end).getTime() - new Date(dates.start).getTime()) / 86400000)) : 0;
   
-  const todayStr = new Date().toISOString().split("T")[0];
+  // Helper to format DatePicker output nicely to YYYY-MM-DD
+  const formatDate = (date: Date) => {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
+  };
 
-  let minEndDateStr = todayStr;
-  if (dates.start) {
-    const [year, month, day] = dates.start.split('-').map(Number);
-    const nextDay = new Date(year, month - 1, day + 1);
-    const y = nextDay.getFullYear();
-    const m = String(nextDay.getMonth() + 1).padStart(2, '0');
-    const d = String(nextDay.getDate()).padStart(2, '0');
-    minEndDateStr = `${y}-${m}-${d}`;
-  }
+  const minEndDate = dates.start ? new Date(new Date(dates.start + "T12:00:00").getTime() + 86400000) : new Date();
 
   return (
     <>
-
-<div className="w-[20vw] lg:w-[20vw] min-w-[300px] h-[100dvh] bg-slate-900 border-r border-slate-200/10 flex flex-col font-sans text-white">        
+      <div className="w-[20vw] lg:w-[20vw] min-w-[300px] h-[100dvh] bg-deep-forest border-r border-canopy/20 flex flex-col font-sans text-parchment">        
         {/* FIXED HEADER */}
-        <div className="p-4 border-b border-slate-800 shadow-md flex justify-between items-start shrink-0">          
+        <div className="p-4 border-b border-canopy/20 shadow-md flex justify-between items-start shrink-0">          
           <div>
-            <div className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              WanderPlan <span className="text-blue-600">US</span>
+            <div className="text-2xl font-extrabold text-parchment tracking-tight flex items-center gap-2">
+              WanderPlan <span className="text-sage">US</span>
             </div>
           </div>
 
           {onClose && (
             <button
               onClick={onClose}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="lg:hidden p-1.5 rounded-lg text-parchment/60 hover:text-parchment hover:bg-parchment/10 transition-colors"
             >
               <X size={20} />
             </button>
           )}
         </div>
+        
         {/* SCROLLABLE CONTENT */}
         <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-5 custom-scrollbar pb-6">
           <div>
-            <div className="text-[11px] text-[#c2c2c2] mb-4">Plan Your Trip</div>
+            <div className="text-[11px] text-parchment/70 mb-4">Plan Your Trip</div>
             <SbLabel>Source</SbLabel>
             <LocationAutocomplete 
               placeholder="eg. NEW YORK, NY" 
@@ -260,42 +257,49 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
           <div>
             <SbLabel>
               Travel Dates{" "}
-              {nightCount > 0 && <span className="font-normal text-slate-400 text-[10.5px]">· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
+              {nightCount > 0 && <span className="font-normal text-parchment/60 text-[10.5px]">· {nightCount} night{nightCount !== 1 ? "s" : ""}</span>}
             </SbLabel>
             
             <div className="flex flex-wrap gap-2">
-              <div className="flex-1 min-w-[120px]">
-                <input
-                  type="date" 
-                  min={todayStr}
-                  value={dates.start}
-                  onChange={e => {
-                    setDates(d => ({ ...d, start: e.target.value }));
-                    if (errors.start) setErrors(prev => ({ ...prev, start: "" }));
-                    
-                    if (dates.end) {
-                       const newStart = new Date(e.target.value);
-                       const currEnd = new Date(dates.end);
-                       if (newStart >= currEnd) {
-                          setDates(d => ({ ...d, start: e.target.value, end: "" }));
-                       }
-                    }
+                <div className="flex-1 min-w-[120px] relative">
+                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-canopy pointer-events-none z-10" />
+                <DatePicker
+                  selected={dates.start ? new Date(dates.start + "T12:00:00") : null}
+                  onChange={(date: Date | null): void => {
+                  if (!date) return;
+                  const formatted: string = formatDate(date);
+                  setDates((d: typeof dates) => ({ ...d, start: formatted }));
+                  if (errors.start) setErrors((prev: Record<string, string>) => ({ ...prev, start: "" }));
+                  
+                  if (dates.end) {
+                     const currEnd: Date = new Date(dates.end + "T12:00:00");
+                     if (date >= currEnd) {
+                      setDates((d: typeof dates) => ({ ...d, start: formatted, end: "" }));
+                     }
+                  }
                   }}
-                  className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.start ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
+                  minDate={new Date()}
+                  placeholderText="Start..."
+                  popperPlacement="bottom-start"
+                  className={`w-full py-[9px] pl-8 pr-3 bg-parchment border-[1.5px] ${errors.start ? 'border-red-500' : 'border-canopy/30'} rounded-[10px] font-semibold text-[13px] text-deep-forest focus:border-canopy focus:ring-1 focus:ring-canopy outline-none`}
                 />
                 {errors.start && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.start}</span>}
-              </div>
+                </div>
               
-              <div className="flex-1 min-w-[120px]">
-                <input
-                  type="date" 
-                  min={minEndDateStr}
-                  value={dates.end}
-                  onChange={e => {
-                    setDates(d => ({ ...d, end: e.target.value }));
-                    if (errors.end) setErrors(prev => ({ ...prev, end: "" }));
+              <div className="flex-1 min-w-[120px] relative">
+                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-canopy pointer-events-none z-10" />
+                <DatePicker
+                  selected={dates.end ? new Date(dates.end + "T12:00:00") : null}
+                  onChange={(date: Date | null) => {
+                    if (!date) return;
+                    const formatted: string = formatDate(date);
+                    setDates((d: typeof dates) => ({ ...d, end: formatted }));
+                    if (errors.end) setErrors((prev: Record<string, string>) => ({ ...prev, end: "" }));
                   }}
-                  className={`w-full py-[9px] px-3 bg-white border-[1.5px] ${errors.end ? 'border-red-500' : 'border-slate-200'} rounded-[10px] font-inherit text-[13px] text-slate-900 focus:border-blue-600 outline-none`}
+                  minDate={minEndDate}
+                  placeholderText="End..."
+                  popperPlacement="bottom-start"
+                  className={`w-full py-[9px] pl-8 pr-3 bg-parchment border-[1.5px] ${errors.end ? 'border-red-500' : 'border-canopy/30'} rounded-[10px] font-semibold text-[13px] text-deep-forest focus:border-canopy focus:ring-1 focus:ring-canopy outline-none`}
                 />
                 {errors.end && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.end}</span>}
               </div>
@@ -315,12 +319,12 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 
           <div>
             <SbLabel>Budget Category</SbLabel>
-            <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
+            <div className="flex bg-parchment rounded-[10px] p-[3px] gap-[3px]">
               {(["budget", "luxury"] as const).map((opt) => (
                   <button 
                     key={opt} 
                     onClick={() => setBudget(opt)} 
-                    className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${budget === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                    className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${budget === opt ? 'bg-forest-green font-bold text-parchment shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-deep-forest/70'}`}
                   >
                     {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
                   </button>
@@ -330,12 +334,12 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 
           <div>
             <SbLabel>Travel Mode</SbLabel>
-            <div className="flex bg-slate-100 rounded-[10px] p-[3px] gap-[3px]">
+            <div className="flex bg-parchment rounded-[10px] p-[3px] gap-[3px]">
               {(["fly", "drive"] as const).map((opt) => (
                   <button 
                     key={opt} 
                     onClick={() => setTravelMode(opt)} 
-                    className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${travelMode === opt ? 'bg-white font-bold text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-slate-500'}`}
+                    className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${travelMode === opt ? 'bg-forest-green font-bold text-parchment shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent font-normal text-deep-forest/70'}`}
                   >
                     {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
                   </button>
@@ -345,12 +349,12 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 
           <div>
             <SbLabel>
-              Search Radius <span className="font-normal text-slate-400">({radius} mi)</span>
+              Search Radius <span className="font-normal text-parchment/60">({radius} mi)</span>
             </SbLabel>
             <input
               type="range" min={1} max={25} step={1} value={radius}
               onChange={(e) => setRadius(parseInt(e.target.value))}
-              className="w-full cursor-pointer my-1 accent-blue-600" 
+              className="w-full cursor-pointer my-1 accent-forest-green" 
             />
           </div>
 
@@ -361,7 +365,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
                   <button
                     key={category.id} 
                     onClick={() => handleInterestToggle(category.id)} 
-                    className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${interests.includes(category.id) ? 'border-blue-600 bg-blue-600/15 text-white' : 'border-slate-700 bg-transparent text-slate-400'}`}
+                    className={`px-2.5 py-1.5 rounded-2xl border-[1.5px] text-xs cursor-pointer transition-all duration-200 ${interests.includes(category.id) ? 'border-canopy bg-canopy/20 text-parchment/90' : 'border-canopy/30 bg-transparent text-parchment/70 hover:text-parchment hover:border-canopy/60'}`}
                   >
                     {category.label}
                   </button>
@@ -371,24 +375,24 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
         </div>
 
         {/* FIXED FOOTER WITH SUBMIT BUTTON */}
-        <div className="p-4 bg-slate-900 border-t border-slate-800 shrink-0">
+        <div className="p-4 bg-deep-forest border-t border-canopy/20 shrink-0">
           {!isWorking ? (
             <button 
-              className="w-full p-4 rounded-2xl bg-blue-600 text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-[0_4px_15px_rgba(37,99,235,0.3)] active:scale-[0.98]"
+              className="w-full p-4 rounded-2xl bg-forest-green text-parchment text-sm font-bold flex items-center justify-center gap-2 hover:bg-canopy transition-all shadow-[0_4px_15px_rgba(58,100,50,0.3)] active:scale-[0.98]"
               onClick={handleSearchSubmit} 
             >
               <Search size={17} /> SUBMIT
             </button>
           ) : (
             <div className="flex gap-2 h-[52px]">
-              <div className="flex-1 rounded-2xl bg-slate-800 text-slate-300 font-bold flex items-center justify-center gap-2 border border-slate-700">
-                <Loader2 size={17} className="animate-spin" />
+              <div className="flex-1 rounded-2xl bg-deep-forest border border-canopy/40 text-parchment/80 font-bold flex items-center justify-center gap-2">
+                <Loader2 size={17} className="animate-spin text-sage" />
                 <span className="text-xs tracking-wider">GATHERING...</span>
               </div>
               <button 
                 onClick={onCancel}
                 title="Cancel Search"
-                className="w-[52px] rounded-2xl bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg active:scale-95"
+                className="w-[52px] rounded-2xl bg-red-500/90 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg active:scale-95"
               >
                 <X size={20} />
               </button>
@@ -401,15 +405,15 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 }
 
 function SbLabel({ children }: { children: React.ReactNode }) {
-  return <div className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#c6c6c6] mb-1.5 ml-1">{children}</div>;
+  return <div className="text-[10px] font-bold tracking-[0.1em] uppercase text-parchment/70 mb-1.5 ml-1">{children}</div>;
 }
 
 function SbCounter({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (v: number) => void }) {
   return (
-    <div className="flex items-center gap-2.5 bg-white p-1 rounded-[10px] border-[1.5px] border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-      <button className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer" onClick={() => onChange(Math.max(min, value - 1))}>−</button>
-      <span className="flex-1 font-bold text-sm text-slate-900 text-center">{value}</span>
-      <button className="w-[30px] h-[30px] border-[1.5px] border-slate-200 rounded-lg bg-white text-slate-700 text-[17px] cursor-pointer" onClick={() => onChange(Math.min(max, value + 1))}>+</button>
+    <div className="flex items-center gap-2.5 bg-parchment p-1 rounded-[10px] border-[1.5px] border-canopy/30 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <button className="w-[30px] h-[30px] border-[1.5px] border-canopy/30 rounded-lg bg-parchment text-deep-forest text-[17px] cursor-pointer hover:bg-canopy/10 transition-colors" onClick={() => onChange(Math.max(min, value - 1))}>−</button>
+      <span className="flex-1 font-bold text-sm text-deep-forest text-center">{value}</span>
+      <button className="w-[30px] h-[30px] border-[1.5px] border-canopy/30 rounded-lg bg-parchment text-deep-forest text-[17px] cursor-pointer hover:bg-canopy/10 transition-colors" onClick={() => onChange(Math.min(max, value + 1))}>+</button>
     </div>
   );
 }

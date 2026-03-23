@@ -1,13 +1,25 @@
+/* frontend/app/globals.css */
 /* ✅ Leaflet MUST be the absolute first line */
 @import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Default Theme: Parchment background, Deep Forest text */
+  --background: #F5F2EC; 
+  --foreground: #0C1208;
 }
 
 @theme inline {
+  /* Custom Color Palette */
+  --color-deep-forest: #0C1208;
+  --color-forest-green: #3A6432;
+  --color-canopy: #4A7C40;
+  --color-sage: #8FB87A;
+  --color-antique-gold: #C8A84A;
+  --color-parchment: #F5F2EC;
+  --color-linen: #E8DFC8;
+
+  /* Map base variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -16,8 +28,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Dark Theme: Deep Forest background, Linen text */
+    --background: #0C1208;
+    --foreground: #E8DFC8;
   }
 }
 
@@ -27,7 +40,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Minimalist Custom Scrollbar */
+/* Minimalist Custom Scrollbar matching the Nature Theme */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -38,16 +51,42 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.279); /* subtle gray */
+  background-color: rgba(74, 124, 64, 0.3); /* Canopy color with opacity */
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.364); /* darker gray on hover */
+  background-color: rgba(58, 100, 50, 0.6); /* Forest green on hover */
 }
 
 /* Firefox Support */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.214) transparent;
+  scrollbar-color: rgba(74, 124, 64, 0.3) transparent;
+}
+
+/* Custom React Datepicker Styling (Tailwind v4 Compliant) */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+.react-datepicker {
+  @apply bg-parchment! border! border-canopy/30! font-sans! shadow-xl!;
+}
+.react-datepicker__header {
+  @apply bg-linen/50! border-b! border-canopy/20!;
+}
+.react-datepicker__day:hover {
+  @apply bg-canopy/20! text-deep-forest! rounded-full!;
+}
+.react-datepicker__day--selected, .react-datepicker__day--keyboard-selected {
+  @apply bg-canopy! text-parchment! font-bold! rounded-full!;
+}
+.react-datepicker__current-month, .react-datepicker-time__header, .react-datepicker-year-header, .react-datepicker__day-name {
+  @apply text-deep-forest!;
+}
+.react-datepicker__day {
+  @apply text-deep-forest/80;
+}
+.react-datepicker__day--disabled {
+  @apply text-deep-forest/30 hover:bg-transparent!;
 }

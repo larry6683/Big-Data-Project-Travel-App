@@ -1,3 +1,4 @@
+// frontend/components/search/LocationAutoComplete.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
@@ -27,7 +28,7 @@ async function resolveCoords(lat: number, lon: number): Promise<{city:string;sta
 
 // ─── component ───────────────────────────────────────────────────────────────
 
-export default function LocationAutocomplete({ placeholder, value, onChange, isDark, showGPS }: Props) {
+export default function LocationAutocomplete({ placeholder, value, onChange, showGPS }: Props) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -37,10 +38,8 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
   const wrapperRef = useRef<HTMLDivElement>(null);
   const lastSelected = useRef(value || '');
   
-  // NEW: Ref to target the scrollable dropdown list
   const listRef = useRef<HTMLUListElement>(null);
 
-  // NEW: Scroll the dropdown to the top whenever the results change
   useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollTop = 0;
@@ -162,9 +161,8 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
       <div className="relative flex items-center">
         <input
           className={`w-full p-3 rounded-xl outline-none transition-all duration-300 text-xs shadow-inner backdrop-blur-sm
-            ${isDark
-              ? 'bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:bg-white/10'
-              : 'bg-white border border-gray-200 text-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'}
+            bg-parchment border border-canopy/30 text-deep-forest placeholder:text-deep-forest/50 
+            focus:border-canopy focus:ring-1 focus:ring-canopy focus:bg-parchment
             ${!isSearching && query.length === 0 && showGPS ? 'pr-[70px]' : 'pr-10'}`}
           placeholder={placeholder}
           value={query}
@@ -180,7 +178,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
         />
 
         {isSearching ? (
-          <div className="absolute right-3 flex items-center justify-center text-blue-500">
+          <div className="absolute right-3 flex items-center justify-center text-canopy">
             <Loader2 size={16} className="animate-spin" />
           </div>
         ) : isOpen || query.length > 0 ? (
@@ -193,7 +191,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
               setIsOpen(false);
               setResults([]);
             }}
-            className={`absolute right-2 p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-800 hover:bg-gray-100'}`}
+            className="absolute right-2 p-1.5 rounded-lg transition-colors text-deep-forest/50 hover:text-deep-forest hover:bg-canopy/20"
           >
             <X size={16} />
           </button>
@@ -205,9 +203,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
             title="Use current location"
             className={`absolute right-2 px-2.5 py-1.5 rounded-lg transition-all duration-300 text-[10px] font-bold tracking-wider flex items-center gap-1
               ${gpsLoading ? 'opacity-60 cursor-not-allowed' : ''}
-              ${isDark
-                ? 'bg-white/5 hover:bg-blue-600 text-white border border-white/5 hover:border-blue-600'
-                : 'bg-gray-100 hover:bg-blue-600 text-gray-600 hover:text-white'}`}
+              bg-canopy/10 hover:bg-canopy text-canopy hover:text-parchment border border-transparent hover:border-canopy`}
           >
             {gpsLoading
               ? <><Loader2 size={12} className="animate-spin" /></>
@@ -218,28 +214,21 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
 
       {isOpen && results.length > 0 && (
         <ul 
-          ref={listRef} // NEW: Attach the ref to the ul element
-          className={`absolute z-50 w-full mt-2 border rounded-xl shadow-2xl max-h-[185px] overflow-y-auto backdrop-blur-md
-          ${isDark ? 'bg-slate-900/95 border-white/10' : 'bg-white border-gray-100'}`}
+          ref={listRef} 
+          className="absolute z-50 w-full mt-2 border rounded-xl shadow-2xl max-h-[185px] overflow-y-auto backdrop-blur-md bg-parchment border-canopy/20 custom-scrollbar"
         >
           {results.map((loc, i) => (
             <li
               key={i}
               onMouseDown={e => { e.preventDefault(); handleSelect(loc); }}
-              className={`p-3 flex items-center gap-3 cursor-pointer transition-colors duration-200 group
-                ${isDark
-                  ? 'hover:bg-blue-600/20 border-b border-white/5 last:border-0 text-slate-200'
-                  : 'hover:bg-blue-50 border-b border-gray-50 last:border-0 text-gray-700'}`}
+              className="p-3 flex items-center gap-3 cursor-pointer transition-colors duration-200 group hover:bg-sage/20 border-b border-canopy/10 last:border-0 text-deep-forest"
             >
-              <div className={`p-1.5 rounded-lg transition-all duration-300 group-hover:scale-110
-                ${isDark
-                  ? 'bg-slate-800 text-slate-400 group-hover:bg-blue-600 group-hover:text-white'
-                  : 'bg-gray-100 text-gray-500 group-hover:bg-blue-600 group-hover:text-white'}`}>
+              <div className="p-1.5 rounded-lg transition-all duration-300 group-hover:scale-110 bg-canopy/10 text-canopy group-hover:bg-canopy group-hover:text-parchment">
                 <MapPin className='size-6'/>
               </div>
               <div className="flex-1 text-sm overflow-hidden flex flex-col justify-center">
-                <div className="font-semibold truncate leading-tight">{cap(loc.city)}</div>
-                <div className={`text-[10px] font-medium leading-tight mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                <div className="font-semibold truncate leading-tight group-hover:text-forest-green transition-colors">{cap(loc.city)}</div>
+                <div className="text-[10px] font-medium leading-tight mt-0.5 text-deep-forest/60 group-hover:text-canopy transition-colors">
                   {cap(loc.state)}
                 </div>
               </div>
