@@ -84,6 +84,21 @@ signup: async (formData: FormData) => {
   });
   return data;
 },
+sharePdf: async (data: any, email: string, signal?: AbortSignal) => {
+  try {
+    const payload = { ...data, email };
+    const response = await axios.post(`${API_BASE_URL}/trips/share-pdf`, payload, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      signal
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to share PDF:", error);
+    throw error;
+  }
+},
   login: async (username: string, password: string) => {
     const formData = new FormData();
     formData.append('username', username);

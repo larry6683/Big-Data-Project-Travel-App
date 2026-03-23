@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     BDC_API_KEY: str  
 
     POSTGRES_URL: str 
+    # --- ADD THESE NEW VARIABLES ---
+    SMTP_SERVER: str = "smtp.gmail.com" # Default for Gmail
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = "" # Add to your .env
+    SMTP_PASSWORD: str = "" # Add to your .env (Use App Passwords for Gmail)
+    FROM_EMAIL: str = ""    # Add to your .env
 
     # 🌟 FIX: Use SettingsConfigDict for Pydantic V2 instead of the inner Config class
     model_config = SettingsConfigDict(
