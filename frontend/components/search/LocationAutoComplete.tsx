@@ -210,7 +210,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, isD
                 : 'bg-gray-100 hover:bg-blue-600 text-gray-600 hover:text-white'}`}
           >
             {gpsLoading
-              ? <><Loader2 size={12} className="animate-spin" />...</>
+              ? <><Loader2 size={12} className="animate-spin" /></>
               : <><Navigation size={12} />GPS</>}
           </button>
         ) : null}
