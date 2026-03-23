@@ -75,15 +75,6 @@ export const travelApi = {
     });
     return response.data;
   },
-// Find your existing signup function and replace it with this:
-signup: async (formData: FormData) => {
-  const { data } = await axios.post(`${API_BASE_URL}/auth/signup`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  });
-  return data;
-},
 sharePdf: async (data: any, email: string, signal?: AbortSignal) => {
   try {
     const payload = { ...data, email };
@@ -99,13 +90,22 @@ sharePdf: async (data: any, email: string, signal?: AbortSignal) => {
     throw error;
   }
 },
-  login: async (username: string, password: string) => {
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('password', password);
-    const { data } = await axios.post(`${API_BASE_URL}/auth/login`, formData);
-    return data;
-  },
+signup: async (name: string, email: string, password: string) => {
+  const { data } = await axios.post(`${API_BASE_URL}/auth/signup`, {
+    full_name: name,
+    email: email,
+    password: password
+  });
+  return data;
+},
+
+login: async (email: string, password: string) => {
+  const { data } = await axios.post(`${API_BASE_URL}/auth/login`, {
+    email: email,
+    password: password
+  });
+  return data;
+},
   // --- NEW PROFILE METHODS ---
   getProfile: async () => {
     const response = await axios.get(`${API_BASE_URL}/users/me`, {
