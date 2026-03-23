@@ -13,6 +13,59 @@ const DynamicMap = dynamic(() => import("@/components/map/TripMap"), {
   ssr: false,
 });
 
+const STATE_ABBR: Record<string, string> = {
+  Alabama: "AL",
+  Alaska: "AK",
+  Arizona: "AZ",
+  Arkansas: "AR",
+  California: "CA",
+  Colorado: "CO",
+  Connecticut: "CT",
+  Delaware: "DE",
+  Florida: "FL",
+  Georgia: "GA",
+  Hawaii: "HI",
+  Idaho: "ID",
+  Illinois: "IL",
+  Indiana: "IN",
+  Iowa: "IA",
+  Kansas: "KS",
+  Kentucky: "KY",
+  Louisiana: "LA",
+  Maine: "ME",
+  Maryland: "MD",
+  Massachusetts: "MA",
+  Michigan: "MI",
+  Minnesota: "MN",
+  Mississippi: "MS",
+  Missouri: "MO",
+  Montana: "MT",
+  Nebraska: "NE",
+  Nevada: "NV",
+  "New Hampshire": "NH",
+  "New Jersey": "NJ",
+  "New Mexico": "NM",
+  "New York": "NY",
+  "North Carolina": "NC",
+  "North Dakota": "ND",
+  Ohio: "OH",
+  Oklahoma: "OK",
+  Oregon: "OR",
+  Pennsylvania: "PA",
+  "Rhode Island": "RI",
+  "South Carolina": "SC",
+  "South Dakota": "SD",
+  Tennessee: "TN",
+  Texas: "TX",
+  Utah: "UT",
+  Vermont: "VT",
+  Virginia: "VA",
+  Washington: "WA",
+  "West Virginia": "WV",
+  Wisconsin: "WI",
+  Wyoming: "WY",
+};
+
 export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [tripData, setTripData] = useState<any>(null);
@@ -64,32 +117,27 @@ export default function Dashboard() {
           travelApi.getTours(params.destination, params.radius),
         ]);
 
-      // 🌟 NEW: Pre-fetch hotel offers during the main loading screen
+      // 🌟 Pre-fetch hotel offers
       let processedStays = rawStays;
       if (rawStays && rawStays.length > 0) {
         const topStays = rawStays.slice(0, 10);
         const offers: any[] = [];
 
-        // Batch requests in chunks of 3 to prevent API rate limit errors
         for (let i = 0; i < topStays.length; i += 3) {
           const chunk = topStays.slice(i, i + 3);
           const chunkOffers = await Promise.all(
             chunk.map((stay: any) => {
               const hId = stay.hotel_id || stay.hotelId || stay.id;
-              // Catch individual errors so one failed hotel doesn't break the app
               return travelApi
                 .getHotelOffer(hId, params)
                 .catch(() => ({ unavailable: true }));
             })
           );
           offers.push(...chunkOffers);
-
-          // Small delay between chunks to respect API rate limits
           if (i + 3 < topStays.length)
             await new Promise((r) => setTimeout(r, 200));
         }
 
-        // Attach the fetched offers directly to the stay objects
         processedStays = rawStays.map((stay: any, index: number) => {
           if (index < 10) {
             const offer = offers[index];
@@ -116,7 +164,85 @@ export default function Dashboard() {
         }
       }
 
-      // 2. Use the processedStays array here instead of raw stays
+      // 🌟 Pre-fetch passing cities for the drive route
+      if (finalDriveData?.geometry?.coordinates) {
+        const coords = finalDriveData.geometry.coordinates;
+        const citiesFound: string[] = [];
+        const step = Math.max(1, Math.floor(coords.length / 40));
+        const startCoord = coords[0];
+        const endCoord = coords[coords.length - 1];
+
+        const sNameLower = (params.source?.name || "")
+          .toLowerCase()
+          .split(",")[0]
+          .trim();
+        const dNameLower = (params.destination?.name || "")
+          .toLowerCase()
+          .split(",")[0]
+          .trim();
+
+        const cityPromises = [];
+        for (let i = step; i < coords.length - step; i += step) {
+          const [lon, lat] = coords[i];
+          const distToStart = Math.sqrt(
+            Math.pow(lon - startCoord[0], 2) + Math.pow(lat - startCoord[1], 2)
+          );
+          const distToEnd = Math.sqrt(
+            Math.pow(lon - endCoord[0], 2) + Math.pow(lat - endCoord[1], 2)
+          );
+
+          if (distToStart > 0.08 && distToEnd > 0.08) {
+            cityPromises.push(
+              travelApi.getNearestCity(lat, lon).catch(() => null)
+            );
+          }
+        }
+
+        const nearestCities = await Promise.all(cityPromises);
+
+        nearestCities.forEach((data) => {
+          if (data && data.city) {
+            const cityName = data.city;
+            const stateName = data.state;
+            const stateDisplay = stateName
+              ? STATE_ABBR[stateName] || stateName
+              : "";
+            const fullLabel = stateDisplay
+              ? `${cityName}, ${stateDisplay}`
+              : cityName;
+            const cityLower = (cityName || "").toLowerCase().trim();
+
+            const isSourceOrDest =
+              sNameLower === cityLower || dNameLower === cityLower;
+
+            if (
+              cityName !== "Unknown" &&
+              !citiesFound.includes(fullLabel) &&
+              !isSourceOrDest
+            ) {
+              citiesFound.push(fullLabel);
+            }
+          }
+        });
+
+        finalDriveData.passedCities = citiesFound;
+        finalDriveData.sourceName = params.source?.name || "Origin";
+        finalDriveData.destinationName =
+          params.destination?.name || "Destination";
+      }
+
+      // 🌟 NEW: Pre-load Tour Images silently in the background
+      if (toursData && toursData.length > 0 && typeof window !== "undefined") {
+        toursData.slice(0, 15).forEach((tour: any) => {
+          // Amadeus activities API usually puts images in the `pictures` array
+          const imageUrl = tour.pictures?.[0] || tour.image;
+          if (imageUrl) {
+            const img = new window.Image();
+            img.src = imageUrl;
+          }
+        });
+      }
+
       const newTripData: any = {
         rawParams: params,
         flightData: finalFlightData,
@@ -142,7 +268,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen w-screen bg-white overflow-hidden">
-      {/* Itinerary Modal Popup */}
       <ItineraryModal
         isOpen={isItineraryOpen}
         onClose={() => setIsItineraryOpen(false)}
@@ -193,7 +318,6 @@ export default function Dashboard() {
                   Trip Planner
                 </h1>
 
-                {/* 🌟 Button now logic: Render if we have data. The Modal handle empty selection UI. */}
                 {tripData && !loading && (
                   <button
                     onClick={() => setIsItineraryOpen(true)}
