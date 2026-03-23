@@ -203,12 +203,8 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
 
   return (
     <>
-      {/* Changes to main wrapper:
-        1. Removed internal padding (handled by child sections)
-        2. Removed `overflow-y-auto` (scrolling handled by middle section)
-        3. Replaced `h-screen` with `h-[100dvh]` to handle mobile browser bars perfectly
-      */}
-<div className="w-[22vw] lg:w-[20vw] min-w-[300px] h-[100dvh] bg-slate-900 border-r border-slate-200/10 flex flex-col font-sans text-white">        
+
+<div className="w-[20vw] lg:w-[20vw] min-w-[300px] h-[100dvh] bg-slate-900 border-r border-slate-200/10 flex flex-col font-sans text-white">        
         {/* FIXED HEADER */}
         <div className="p-4 border-b border-slate-800 shadow-md flex justify-between items-start shrink-0">          
           <div>
@@ -226,9 +222,8 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
             </button>
           )}
         </div>
-
-        {/* SCROLLABLE MIDDLE SECTION */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 custom-scrollbar pb-6">
+        {/* SCROLLABLE CONTENT */}
+        <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-5 custom-scrollbar pb-6">
           <div>
             <div className="text-[11px] text-[#c2c2c2] mb-4">Plan Your Trip</div>
             <SbLabel>Source</SbLabel>

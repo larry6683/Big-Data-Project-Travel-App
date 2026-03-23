@@ -159,27 +159,29 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
               isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
             }`}
           >
+            {/* Header: Airline, Price, Select Checkbox */}
             <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-blue-50 border-blue-100' : 'bg-gray-100/40 border-gray-200'}`}>
               <div className="flex items-center gap-3">
-
                 <div className="w-12 h-12 flex items-center justify-center overflow-hidden relative shrink-0">
                   <img src={`https://images.kiwi.com/airlines/64/${flight.airline_code}.png`} alt={flight.airline_code} className="max-w-[80%] max-h-[80%] object-contain" />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-gray-900 leading-none mb-0">
+                  <h4 className="font-extrabold text-gray-900 leading-none mb-0 flex items-center gap-2">
                     {flight.airline_name || flight.airline_code} 
-                    <span className="inline-block px-2 py-0.5 ml-2 bg-gray-100 text-gray-600 text-[10px] uppercase tracking-widest font-bold rounded">
+                    <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] uppercase tracking-widest font-bold rounded">
                       {flight.cabin_class}
                     </span>
                   </h4>
                 </div>
               </div>
-              <div className="text-right leading-none">
-                <p className="text-2xl font-black text-blue-600 tracking-tight">
-                  ${getPrice(flight).toFixed(2)} 
-                  <span className="text-[10px] text-gray-500 font-bold tracking-wider ml-1">{flight.currency}</span>
-                </p>
-              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="text-right leading-none">
+                  <p className="text-2xl font-black text-blue-600 tracking-tight">
+                    ${getPrice(flight).toFixed(2)} 
+                    <span className="text-[10px] text-gray-500 font-bold tracking-wider ml-1">{flight.currency}</span>
+                  </p>
+                </div>
 
                 <label className="flex items-center gap-2 cursor-pointer bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors shadow-sm shrink-0">
                   <input 
@@ -192,10 +194,14 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                     {isSelected ? 'Selected' : 'Select'}
                   </span>
                 </label>
-
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+            {/* FLUID WRAP CONTAINER: 
+                - `flex-wrap` and `basis-[340px]` make itineraries sit side-by-side by default.
+                - If the width drops below ~680px, it automatically wraps them vertically. 
+            */}
+            <div className="flex flex-wrap w-full">
               {flight.itineraries?.map((itinerary: any, itinIndex: number) => {
                 const isOutbound = itinIndex === 0;
                 const theme = isOutbound 
@@ -204,7 +210,12 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                 const departureDate = itinerary.segments?.[0]?.departure_time;
 
                 return (
-                  <div key={itinIndex} className={`p-3 ${theme.bg}`}>
+                  <div 
+                    key={itinIndex} 
+                    className={`flex-1 basis-[340px] p-4 ${theme.bg} ${
+                      isOutbound ? 'border-b xl:border-b-0 xl:border-r border-gray-100' : ''
+                    }`}
+                  >
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${theme.badgeBg} ${theme.text}`}>
@@ -235,7 +246,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                               <div className={`w-3 h-3 rounded-full border-2 bg-white relative z-20 ${isOutbound ? 'border-blue-600' : 'border-emerald-500'}`}></div>
                             </div>
 
-                            <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm relative">
+                            <div className="flex-1 bg-white p-3 rounded-lg border border-gray-200 shadow-sm relative">
                               <div className="flex justify-between items-center">
                                 <div>
                                   <p className="text-lg font-black text-gray-800 leading-none">{formatTime(seg.departure_time)}</p>
@@ -247,11 +258,11 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                                   <span className="text-[10px] text-gray-400 font-bold tracking-widest uppercase mb-0.5">
                                     {seg.carrier_code} {seg.flight_number}
                                   </span>
-                                  <div className="w-12 h-[2px] bg-gray-200 mb-1"></div>
+                                  <div className="w-16 sm:w-24 h-[2px] bg-gray-200 mb-1"></div>
                                   <div className="flex items-center gap-1 text-xs font-bold text-gray-500">
-                                    <span className="flex items-center gap-0.5 bg-gray-50 px-1 py-0.5 rounded">🎒 {seg.personal_item ?? 1}</span>
-                                    <span className="flex items-center gap-0.5 bg-gray-50 px-1 py-0.5 rounded">💼 {seg.cabin_bags ?? 0}</span>
-                                    <span className="flex items-center gap-0.5 bg-gray-50 px-1 py-0.5 rounded">🧳 {seg.checked_bags ?? 0}</span>
+                                    <span className="flex items-center gap-0.5 bg-gray-50 px-1 py-0.5 rounded" title="Personal item">🎒 {seg.personal_item ?? 1}</span>
+                                    <span className="flex items-center gap-0.5 bg-gray-50 px-1 py-0.5 rounded" title="Cabin bag">💼 {seg.cabin_bags ?? 0}</span>
+                                    <span className="flex items-center gap-0.5 bg-gray-50 px-1 py-0.5 rounded" title="Checked bag">🧳 {seg.checked_bags ?? 0}</span>
                                   </div>
                                 </div>
                                 <div className="text-right">
@@ -262,7 +273,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                                 </div>
                               </div>
                               {!isLast && nextSeg && (
-                                <div className="absolute left-1/2 -bottom-3.5 transform -translate-x-1/2 z-30">
+                                <div className="absolute left-1/2 -bottom-4 transform -translate-x-1/2 z-30">
                                   <span className="bg-amber-100 text-amber-800 text-[10px] uppercase tracking-widest font-black px-2 py-0.5 rounded-full border border-amber-200 shadow-sm whitespace-nowrap">
                                      Layover: {getLayoverDuration(seg.arrival_time, nextSeg.departure_time)}
                                   </span>

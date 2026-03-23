@@ -130,7 +130,8 @@ export default function TripResults({
         </div>
       </div>
 
-      <div className="w-full min-h-[400px]">
+     {/* Changed: Added fixed height, overflow, and custom-scrollbar */}
+      <div className="w-full h-[calc(100vh-220px)] pb-8">
         {activeTab === "flights" && (
           <FlightCard flights={data?.flightData || []} />
         )}

@@ -37,8 +37,8 @@ export default function Navbar({
   return (
     <nav className="relative flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-200 bg-white flex-shrink-0 z-[60] shadow-sm min-h-[64px]">
       
-      {/* LEFT SECTION: Mobile Controls & Logo */}
-      <div className="flex items-center gap-4 w-1/3">
+ {/* LEFT SECTION: Mobile Controls & Logo */}
+      <div className="flex items-center gap-4 flex-shrink-0">
         {/* Menu Button (Hidden on Desktop) */}
         <button
           onClick={onMenuClick}
@@ -56,16 +56,21 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* CENTER SECTION: Search with AI */}
-      <div className="hidden md:flex justify-center w-1/3">
-        <button className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border border-indigo-100 rounded-full hover:shadow-md hover:scale-[1.02] transition-all text-sm font-bold">
-          <Sparkles size={16} className="text-purple-500" />
-          Search with AI
-        </button>
-      </div>
+      {/* CENTER SECTION: Search with AI Input */}
+      {/* We use flex-1 to let it grow, and lg:pl-12 to push it slightly left to center it over the TripResults */}
+      <div className="hidden md:flex flex-1 justify-center lg:justify-start max-w-xl px-4 lg:pl-12">
+        <div className="relative w-full md:w-[300px] flex items-center group">
+          <Sparkles size={16} className="absolute left-4 text-purple-500 z-10" />
+          <input 
+            type="text"
+            placeholder="Ask AI to plan your trip..."
+            className="w-full pl-11 pr-5 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 placeholder-indigo-700 border border-indigo-100 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-300 focus:bg-white focus:shadow-md hover: placeholder-indigo-700 shadow-sm transition-all text-sm font-semibold"
+          />
+        </div>
+      </div>  
 
       {/* RIGHT SECTION: Auth & Map */}
-      <div className="flex items-center justify-end gap-3 w-1/3">
+      <div className="flex items-center justify-end gap-3 flex-shrink-0">
         {/* Mobile AI Search Icon (Shows only on small screens) */}
         <button className="md:hidden p-2 rounded-xl bg-indigo-50 text-indigo-600">
           <Sparkles size={20} />

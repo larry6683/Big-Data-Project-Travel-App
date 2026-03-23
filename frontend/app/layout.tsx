@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
+import ClientInit from "../components/ClientInIt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +39,11 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {/* 🌟 Wrap children with AuthProvider to enable Login/Logout state globally */}
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {/* Runs silently on load to get Geolocation and Platform */}
+          <ClientInit />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
