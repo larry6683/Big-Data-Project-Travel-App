@@ -106,6 +106,19 @@ login: async (email: string, password: string) => {
   });
   return data;
 },
+forgotPassword: async (email: string) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });
+  return response.data;
+},
+
+resetPassword: async (email: string, code: string, newPassword: string) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, { 
+    email: email,
+    code: code,
+    new_password: newPassword
+  });
+  return response.data;
+},
   // --- NEW PROFILE METHODS ---
   getProfile: async () => {
     const response = await axios.get(`${API_BASE_URL}/users/me`, {

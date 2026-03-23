@@ -13,3 +13,11 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     email: str
+
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+class ResetPassword(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
