@@ -1,219 +1,207 @@
 // frontend/components/results/StayCard.tsx
-
-import React, { useState, useEffect } from 'react';
-import { travelApi } from '@/services/api';
-import { Loader2, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
 
 const getNumNights = (start?: string, end?: string) => {
   if (!start || !end) return 1;
   const d1 = new Date(start);
   const d2 = new Date(end);
-  return Math.max(1, Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / 86400000));
+  return Math.max(
+    1,
+    Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / 86400000)
+  );
 };
 
-// 🌟 Helper to format the full hotel address
 const formatAddress = (address: any) => {
-  if (!address) return 'Location unavailable';
-  if (typeof address === 'string') return address;
-  
+  if (!address) return "Location unavailable";
+  if (typeof address === "string") return address;
+
   const parts = [
-    address.lines?.join(', '),
+    address.lines?.join(", "),
     address.cityName,
     address.stateCode,
     address.postalCode,
-    address.countryCode
+    address.countryCode,
   ].filter(Boolean);
 
-  return parts.length > 0 ? parts.join(', ') : 'Location unavailable';
+  return parts.length > 0 ? parts.join(", ") : "Location unavailable";
 };
 
-const StayRow = ({ stay, uniqueKey, hotelId, isSelected, toggleStaySelection, offer, isLoadingOffer, searchParams }: any) => {
-  // 🌟 Persist dropdown state in sessionStorage
+const StayRow = ({
+  stay,
+  uniqueKey,
+  hotelId,
+  isSelected,
+  toggleStaySelection,
+  searchParams,
+}: any) => {
   const [expanded, setExpanded] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const saved = sessionStorage.getItem('stay_dropdown_state');
+    if (typeof window === "undefined") return false;
+    const saved = sessionStorage.getItem("stay_dropdown_state");
     return saved ? !!JSON.parse(saved)[hotelId] : false;
   });
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('stay_dropdown_state');
+    const saved = sessionStorage.getItem("stay_dropdown_state");
     const parsed = saved ? JSON.parse(saved) : {};
     if (parsed[hotelId] !== expanded) {
       parsed[hotelId] = expanded;
-      sessionStorage.setItem('stay_dropdown_state', JSON.stringify(parsed));
+      sessionStorage.setItem("stay_dropdown_state", JSON.stringify(parsed));
     }
   }, [expanded, hotelId]);
-  
-  const numNights = getNumNights(searchParams?.startDate, searchParams?.endDate);
-  const totalGuests = (searchParams?.adults || 1) + (searchParams?.children || 0);
+
+  // 🌟 Read the pre-fetched offer directly from the stay object
+  const offer = stay.roomDetails;
+  const isUnavailable =
+    offer?.unavailable || !offer || (offer.rooms && offer.rooms.length === 0);
   const hasRooms = offer?.rooms && offer.rooms.length > 0;
-  const isUnavailable = offer?.unavailable || (offer && !isLoadingOffer && !hasRooms);
+
+  const numNights = getNumNights(
+    searchParams?.startDate,
+    searchParams?.endDate
+  );
+  const totalGuests =
+    (searchParams?.adults || 1) + (searchParams?.children || 0);
 
   return (
-    <div className={`border rounded-xl p-4 transition-colors shadow-sm bg-white ${isSelected ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-100/10' : 'hover:shadow-md'}`}>
+    <div
+      className={`border rounded-xl p-4 transition-colors shadow-sm bg-white ${
+        isSelected
+          ? "border-blue-600 ring-1 ring-blue-600 bg-blue-100/10"
+          : "hover:shadow-md"
+      }`}
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex flex-col flex-1 w-full text-left">
           <h4 className="font-extrabold text-lg text-gray-900 leading-tight mb-1">
-            {stay.name || stay.hotel?.name || 'Hotel'}
+            {stay.name || stay.hotel?.name || "Hotel"}
           </h4>
-          {/* 🌟 Updated to show full address instead of city only */}
-          <p className="text-sm text-gray-500 font-medium">📍 {formatAddress(stay.address)}</p>
+          <p className="text-sm text-gray-500 font-medium">
+            📍 {formatAddress(stay.address)}
+          </p>
         </div>
-        
+
         <div className="flex flex-col items-end gap-2.5 shrink-0 w-full sm:w-auto">
-          {/* Select Box: Disabled if Sold Out/Unavailable */}
-          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shadow-sm shrink-0 
-            ${(isLoadingOffer || isUnavailable) ? 'opacity-40 cursor-not-allowed bg-gray-50 border-gray-100' : 'cursor-pointer hover:bg-gray-50 border-gray-200'}`}>
-            <input 
-              type="checkbox" 
-              checked={isSelected} 
-              disabled={isLoadingOffer || isUnavailable}
-              onChange={() => { if (!isLoadingOffer && !isUnavailable) toggleStaySelection(stay, uniqueKey) }} 
-              className="w-4 h-4 accent-blue-600 cursor-pointer disabled:cursor-not-allowed" 
+          <label
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shadow-sm shrink-0 
+            ${
+              isUnavailable
+                ? "opacity-40 cursor-not-allowed bg-gray-50 border-gray-100"
+                : "cursor-pointer hover:bg-gray-50 border-gray-200"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={isSelected}
+              disabled={isUnavailable}
+              onChange={() => {
+                if (!isUnavailable) toggleStaySelection(stay, uniqueKey);
+              }}
+              className="w-4 h-4 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
             />
             <span className="text-xs font-bold text-gray-700 select-none w-[60px] inline-block text-center">
-              {isSelected ? 'Selected' : 'Select'}
+              {isSelected ? "Selected" : "Select"}
             </span>
           </label>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            {isLoadingOffer ? (
-              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-            ) : offer && !isUnavailable ? (
+            {!isUnavailable && offer ? (
               <div className="text-right leading-none">
                 <p className="text-xl font-black text-blue-600 tracking-tight">
-                  ${offer.price?.toFixed(2)} 
-                  <span className="text-[10px] text-gray-500 font-bold tracking-wider ml-1">{offer.currency || 'USD'}</span>
+                  ${offer.price?.toFixed(2)}
+                  <span className="text-[10px] text-gray-500 font-bold tracking-wider ml-1">
+                    {offer.currency || "USD"}
+                  </span>
                 </p>
-                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Total Stay</p>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                  Total Stay
+                </p>
               </div>
             ) : (
-              <span className="text-amber-500 text-[10px] font-bold uppercase tracking-widest">Sold Out</span>
+              <span className="text-amber-500 text-[10px] font-bold uppercase tracking-widest">
+                Sold Out
+              </span>
             )}
 
-            {hasRooms && !isLoadingOffer && !isUnavailable && (
-               <button 
-                 onClick={() => setExpanded(!expanded)} 
-                 className="flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors shrink-0"
-               >
-                 <ChevronDown className={`w-4 h-4 text-gray-700 transition-transform ${expanded ? "rotate-180" : ""}`} />
-               </button>
+            {hasRooms && !isUnavailable && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors shrink-0"
+              >
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-700 transition-transform ${
+                    expanded ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* 🌟 Expanded Room Dropdown UI */}
       {expanded && hasRooms && (
         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3 animate-in fade-in duration-300">
-           {offer.rooms.map((room: any, i: number) => (
-              <div key={i} className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-100 gap-1.5 shadow-sm">
-                 {/* Room Name and Price to the right */}
-                 <div className="flex justify-between items-center w-full">
-                    <div className="flex justify-between items-center">
-                       <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
-                         {totalGuests} Guests • {numNights} Night{numNights > 1 ? 's' : ''}
-                       </p>
-                       </div>
-                       <div>
-                       <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
-                         ${(room.price / numNights).toFixed(2)} / night
-                       </p> 
-                    </div>
-                 </div>
-                 
-                 <div className="flex flex-col gap-1">
-                    {/* Description */}
-                    <p className="text-[11px] text-gray-500 font-medium leading-relaxed italic">
-                      {room.description || 'Standard room amenities included.'}
-                    </p>
-                    
-                    {/* Category • Bed Type • Beds in small faded gray text */}
-                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                      {room.category || 'Room'} • {room.bed_type || 'Standard'} • {room.beds_count || 1} {room.beds_count === 1 ? 'Bed' : 'Beds'}
-                    </p>
-
-
-                 </div>
+          {offer.rooms.map((room: any, i: number) => (
+            <div
+              key={i}
+              className="flex flex-col bg-gray-50/50 p-3 rounded-xl border border-gray-100 gap-1.5 shadow-sm"
+            >
+              <div className="flex justify-between items-center w-full">
+                <div className="flex justify-between items-center">
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+                    {totalGuests} Guests • {numNights} Night
+                    {numNights > 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+                    ${(room.price / numNights).toFixed(2)} / night
+                  </p>
+                </div>
               </div>
-           ))}
+
+              <div className="flex flex-col gap-1">
+                <p className="text-[11px] text-gray-500 font-medium leading-relaxed italic">
+                  {room.description || "Standard room amenities included."}
+                </p>
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                  {room.category || "Room"} • {room.bed_type || "Standard"} •{" "}
+                  {room.beds_count || 1}{" "}
+                  {room.beds_count === 1 ? "Bed" : "Beds"}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 };
 
-export default function StaysCard({ stays, searchParams }: { stays: any[], searchParams?: any }) {
+export default function StaysCard({
+  stays,
+  searchParams,
+}: {
+  stays: any[];
+  searchParams?: any;
+}) {
   const [selectedStayKeys, setSelectedStayKeys] = useState<string[]>([]);
-  
-  // Initialize state from sessionStorage to prevent re-fetching
-  const [offers, setOffers] = useState<Record<string, any>>(() => {
-    if (typeof window === 'undefined') return {};
-    const cached = sessionStorage.getItem('current_trip_results');
-    if (!cached) return {};
-    try {
-      const parsed = JSON.parse(cached);
-      const saved: Record<string, any> = {};
-      parsed.stays?.forEach((s: any) => {
-        const id = s.hotel_id || s.hotelId || s.id;
-        if (s.roomDetails) saved[id] = s.roomDetails;
-      });
-      return saved;
-    } catch (e) { return {}; }
-  });
-
-  const [loadingOffers, setLoadingOffers] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const tripState = localStorage.getItem('trip_state');
+    const tripState = localStorage.getItem("trip_state");
     if (tripState) {
       try {
         const parsed = JSON.parse(tripState);
-        if (parsed.stays) setSelectedStayKeys(parsed.stays.map((s: any) => s._selectionKey));
-      } catch (e) { console.error(e); }
+        if (parsed.stays)
+          setSelectedStayKeys(parsed.stays.map((s: any) => s._selectionKey));
+      } catch (e) {
+        console.error(e);
+      }
     }
   }, [stays]);
 
-  useEffect(() => {
-    if (!stays || stays.length === 0 || !searchParams) return;
-
-    const fetchOffers = async () => {
-      for (const stay of stays.slice(0, 10)) {
-        const hId = stay.hotel_id || stay.hotelId || stay.id;
-        if (!hId || offers[hId]) continue;
-
-        setLoadingOffers(prev => ({ ...prev, [hId]: true }));
-        try {
-          const offer = await travelApi.getHotelOffer(hId, searchParams);
-          if (offer && !offer.error) {
-            setOffers(prev => ({ ...prev, [hId]: offer }));
-            
-            // Sync to sessionStorage
-            const current = sessionStorage.getItem('current_trip_results');
-            if (current) {
-              const parsed = JSON.parse(current);
-              const idx = parsed.stays.findIndex((s: any) => (s.hotel_id || s.hotelId || s.id) === hId);
-              if (idx !== -1) {
-                parsed.stays[idx].roomDetails = offer;
-                sessionStorage.setItem('current_trip_results', JSON.stringify(parsed));
-              }
-            }
-          } else {
-            setOffers(prev => ({ ...prev, [hId]: { unavailable: true } }));
-          }
-        } catch (e) {
-          setOffers(prev => ({ ...prev, [hId]: { unavailable: true } }));
-        } finally {
-          setLoadingOffers(prev => ({ ...prev, [hId]: false }));
-        }
-        await new Promise(r => setTimeout(r, 400));
-      }
-    };
-    fetchOffers();
-  }, [stays, searchParams]);
-
   const toggleStaySelection = (stay: any, uniqueKey: string) => {
-    const tripStateStr = localStorage.getItem('trip_state');
+    const tripStateStr = localStorage.getItem("trip_state");
     let tripState = tripStateStr ? JSON.parse(tripStateStr) : {};
     const isSelected = selectedStayKeys.includes(uniqueKey);
 
@@ -221,29 +209,35 @@ export default function StaysCard({ stays, searchParams }: { stays: any[], searc
       tripState.stays = [];
       setSelectedStayKeys([]);
     } else {
-      const hId = stay.hotel_id || stay.hotelId || stay.id;
-      tripState.stays = [{ ...stay, _selectionKey: uniqueKey, offerDetails: offers[hId] }];
+      // Because we pre-fetched the data, stay.roomDetails is already available to save
+      tripState.stays = [
+        { ...stay, _selectionKey: uniqueKey, offerDetails: stay.roomDetails },
+      ];
       setSelectedStayKeys([uniqueKey]);
     }
-    localStorage.setItem('trip_state', JSON.stringify(tripState));
+    localStorage.setItem("trip_state", JSON.stringify(tripState));
   };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex justify-between items-end border-b pb-3 mb-4">
-        <h3 className="text-2xl font-black text-gray-900 tracking-tight">🏨 Stays</h3>
+        <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+          🏨 Stays
+        </h3>
       </div>
       <div className="flex flex-col gap-3">
         {stays.slice(0, 12).map((stay, idx) => {
           const hId = stay.hotel_id || stay.hotelId || stay.id;
           const uniqueKey = hId || `stay-${idx}`;
           return (
-            <StayRow 
-               key={uniqueKey} stay={stay} uniqueKey={uniqueKey} hotelId={hId}
-               isSelected={selectedStayKeys.includes(uniqueKey)}
-               toggleStaySelection={toggleStaySelection}
-               offer={offers[hId]} isLoadingOffer={loadingOffers[hId]}
-               searchParams={searchParams}
+            <StayRow
+              key={uniqueKey}
+              stay={stay}
+              uniqueKey={uniqueKey}
+              hotelId={hId}
+              isSelected={selectedStayKeys.includes(uniqueKey)}
+              toggleStaySelection={toggleStaySelection}
+              searchParams={searchParams}
             />
           );
         })}

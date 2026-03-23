@@ -51,7 +51,8 @@ export default function Dashboard() {
         ? travelApi.getDriving(params)
         : travelApi.getFlights(params);
 
-      let [transportResponse, stays, weather, attractions, toursData] =
+      // 1. Fetch the base data
+      let [transportResponse, rawStays, weather, attractions, toursData] =
         await Promise.all([
           transportPromise,
           travelApi.getStays(params),
@@ -62,6 +63,45 @@ export default function Dashboard() {
           travelApi.getAttractions(params.destination, params.radius),
           travelApi.getTours(params.destination, params.radius),
         ]);
+
+      // 🌟 NEW: Pre-fetch hotel offers during the main loading screen
+      let processedStays = rawStays;
+      if (rawStays && rawStays.length > 0) {
+        const topStays = rawStays.slice(0, 10);
+        const offers: any[] = [];
+
+        // Batch requests in chunks of 3 to prevent API rate limit errors
+        for (let i = 0; i < topStays.length; i += 3) {
+          const chunk = topStays.slice(i, i + 3);
+          const chunkOffers = await Promise.all(
+            chunk.map((stay: any) => {
+              const hId = stay.hotel_id || stay.hotelId || stay.id;
+              // Catch individual errors so one failed hotel doesn't break the app
+              return travelApi
+                .getHotelOffer(hId, params)
+                .catch(() => ({ unavailable: true }));
+            })
+          );
+          offers.push(...chunkOffers);
+
+          // Small delay between chunks to respect API rate limits
+          if (i + 3 < topStays.length)
+            await new Promise((r) => setTimeout(r, 200));
+        }
+
+        // Attach the fetched offers directly to the stay objects
+        processedStays = rawStays.map((stay: any, index: number) => {
+          if (index < 10) {
+            const offer = offers[index];
+            return {
+              ...stay,
+              roomDetails:
+                !offer || offer.error ? { unavailable: true } : offer,
+            };
+          }
+          return stay;
+        });
+      }
 
       let finalFlightData = null;
       let finalDriveData = null;
@@ -76,11 +116,13 @@ export default function Dashboard() {
         }
       }
 
+      // 2. Use the processedStays array here instead of raw stays
       const newTripData: any = {
         rawParams: params,
         flightData: finalFlightData,
         drivingData: finalDriveData,
-        stays: stays && stays.length > 0 ? stays : null,
+        stays:
+          processedStays && processedStays.length > 0 ? processedStays : null,
         weather: weather && Object.keys(weather).length > 0 ? weather : null,
         attractions: attractions && attractions.length > 0 ? attractions : null,
         toursData: toursData && toursData.length > 0 ? toursData : null,
