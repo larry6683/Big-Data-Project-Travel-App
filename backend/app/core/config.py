@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = "" # Add to your .env
     SMTP_PASSWORD: str = "" # Add to your .env (Use App Passwords for Gmail)
     FROM_EMAIL: str = ""    # Add to your .env
+    OPENAI_API_KEY: str = ""
 
     # 🌟 FIX: Use SettingsConfigDict for Pydantic V2 instead of the inner Config class
     model_config = SettingsConfigDict(

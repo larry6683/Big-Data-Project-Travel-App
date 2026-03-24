@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import ClientInit from "../components/ClientInIt";
+import Chatbot from "../components/Chatbot"; // 🌟 NEW: Import the Chatbot component
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +43,11 @@ export default function RootLayout({
         <AuthProvider>
           {/* Runs silently on load to get Geolocation and Platform */}
           <ClientInit />
+
           {children}
+
+          {/* 🌟 NEW: Mount the Chatbot globally so it appears on all pages */}
+          <Chatbot />
         </AuthProvider>
       </body>
     </html>
