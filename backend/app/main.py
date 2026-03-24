@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles # 🌟 NEW IMPORT
 from app.core.config import settings
 from app.db.database import engine, Base 
 # 🌟 ADD "users" to the imports below
-from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips, users
+from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips, users, chatbot
 
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
@@ -77,7 +77,8 @@ def get_application():
 
     _app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
     _app.include_router(trips.router, prefix="/api/v1/trips", tags=["trips"])
-    _app.include_router(users.router, prefix="/api/v1/users", tags=["users"]) # 🌟 NEW ROUTER
+    _app.include_router(users.router, prefix="/api/v1/users", tags=["users"]) 
+    _app.include_router(chatbot.router, prefix="/api/v1/chatbot", tags=["chatbot"])
     return _app
 
 app = get_application()
