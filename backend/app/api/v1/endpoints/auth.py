@@ -68,7 +68,7 @@ async def sign_up(user_in: UserCreate, db: Session = Depends(get_db)):
     )
     return {"access_token": access_token, "token_type": "bearer", "email": new_user.email}
 
-@router.post("/auth", response_model=Token)
+@router.post("/login", response_model=Token)
 async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user_credentials.email).first()
     if not db_user or not verify_password(user_credentials.password, db_user.hashed_password):
