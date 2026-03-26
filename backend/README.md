@@ -61,6 +61,22 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+## Running with Docker 🐳
+
+If you prefer to run the application using Docker, ensure you have Docker and Docker Compose installed.
+
+To build the images and start the containers in the background (detached mode):
+
+```bash
+docker-compose up --build -d
+```
+
+To stop the containers and completely remove the associated volumes (useful for wiping the database clean):
+
+```bash
+docker-compose down -v
+```
+
 ### Top 5 destinations check in redis:
 
 http://localhost:8000/api/v1/locations/top
