@@ -49,6 +49,7 @@ export default function ItineraryModal({
   // Save Trip State
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isAlreadySaved, setIsAlreadySaved] = useState(false);
 
   // Grab user and isLoggedIn from AuthContext
   const { user, isLoggedIn } = useAuth();
@@ -70,32 +71,98 @@ export default function ItineraryModal({
       setShowEmailInput(false);
       setEmail("");
       setIsSaved(false);
+      setIsAlreadySaved(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   // Extract selected items
-  const flight = selections?.flights?.[0];
-  const drive = selections?.drive?.[0];
-  const stay = selections?.stays?.[0];
+  const flight = Array.isArray(selections?.flights)
+    ? selections.flights[0]
+    : selections?.flights;
+
+  // FIXED: Properly extract driving data by checking for the .data property
+  let rawDrive = selections?.drive || selections?.driving;
+  let drive = null;
+  if (rawDrive) {
+    if (Array.isArray(rawDrive)) {
+      drive = rawDrive[0];
+    } else if (rawDrive.data) {
+      drive = rawDrive.data; // This is how DriveCard.tsx saves it!
+    } else {
+      drive = rawDrive;
+    }
+  }
+
+  const stay = Array.isArray(selections?.stays)
+    ? selections.stays[0]
+    : selections?.stays;
   const attractions = selections?.attractions || [];
   const tours = selections?.tours || selections?.activities || [];
 
+  // Check if Weather was actually selected on the home page
+  const isWeatherSelected = selections?.weather?.selected === true;
+
+  // Helper to calculate fuel cost dynamically (just like DriveCard.tsx)
+  const getFuelCost = () => {
+    if (!drive) return 0;
+    if (drive.distance_km) {
+      const miles = drive.distance_km * 0.621371;
+      const gallons = miles / 25;
+      return gallons * 3.35; // Standard fuel price used in DriveCard
+    }
+    // Fallback for older formats
+    const fuel = drive.fuelEstimate || drive.fuel_estimate || drive.price || 0;
+    if (typeof fuel === "string") return Number(fuel.replace(/[^0-9.-]+/g, ""));
+    return Number(fuel);
+  };
+
+  // Safe display helpers for driving distance and duration
+  let displayDriveDuration = "N/A";
+  if (drive?.duration_mins) {
+    const hrs = Math.floor(drive.duration_mins / 60);
+    const mins = Math.round(drive.duration_mins % 60);
+    displayDriveDuration = `${hrs}h ${mins}m`;
+  } else if (drive?.duration?.text || drive?.duration) {
+    displayDriveDuration = drive.duration.text || drive.duration;
+  }
+
+  let displayDriveDistance = "Distance N/A";
+  if (drive?.distance_km) {
+    const miles = (drive.distance_km * 0.621371).toFixed(0);
+    displayDriveDistance = `${miles} Mi`;
+  } else if (drive?.distance?.text || drive?.distance) {
+    displayDriveDistance = drive.distance.text || drive.distance;
+  }
+
   // Calculate Total Cost
   let totalCost = 0;
-  if (flight) totalCost += flight.price || 0;
-  if (stay) totalCost += stay.offerDetails?.price || 0;
+  if (flight) {
+    totalCost += Number(flight.price?.total || flight.price || 0);
+  } else if (drive) {
+    totalCost += getFuelCost(); // Adds driving fuel cost to the top total!
+  }
+
+  if (stay) totalCost += Number(stay.offerDetails?.price || stay.price || 0);
   tours.forEach((t: any) => {
     if (t.price && t.price.amount) {
       totalCost += parseFloat(t.price.amount);
     }
   });
 
-  // Extract first day weather for summary
+  // Extract first day weather for summary ONLY if selected
   let firstDayWeather = null;
-  if (weatherData && Object.keys(weatherData).length > 0) {
-    firstDayWeather = Object.values(weatherData)[0] as any;
+  if (isWeatherSelected) {
+    const activeWeatherData = selections?.weather?.data || weatherData;
+    if (activeWeatherData?.days && activeWeatherData.days.length > 0) {
+      firstDayWeather = activeWeatherData.days[0];
+    } else if (
+      activeWeatherData?.data?.days &&
+      activeWeatherData.data.days.length > 0
+    ) {
+      firstDayWeather = activeWeatherData.data.days[0];
+    }
   }
 
   const formatDate = (dateStr: string) => {
@@ -115,6 +182,48 @@ export default function ItineraryModal({
     });
   };
 
+  const formatTime = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const formatShortDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const getLayoverTime = (arrivalStr: string, departureStr: string) => {
+    if (!arrivalStr || !departureStr) return null;
+    const arr = new Date(arrivalStr).getTime();
+    const dep = new Date(departureStr).getTime();
+    const diffMs = dep - arr;
+    if (diffMs <= 0) return null;
+
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (diffHrs > 0) return `${diffHrs}h ${diffMins}m`;
+    return `${diffMins}m`;
+  };
+
+  const getFullTripTitle = () => {
+    const source =
+      rawParams?.source?.name?.split(",")[0] || rawParams?.source?.city;
+    const dest =
+      rawParams?.destination?.name?.split(",")[0] ||
+      rawParams?.destination?.city ||
+      "Trip";
+    return source ? `${source} to ${dest}` : dest;
+  };
+
   const handleExportPdf = async () => {
     setIsExporting(true);
     try {
@@ -122,15 +231,21 @@ export default function ItineraryModal({
       const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : {};
 
       const pdfBlob = await travelApi.exportPdf({
-        destination:
-          rawParams?.destination?.city ||
-          rawParams?.destination?.name ||
-          "Trip",
+        destination: getFullTripTitle(),
         username: user || "Traveler",
         check_in_date: rawParams?.startDate,
         check_out_date: rawParams?.endDate,
-        weather: weatherData || cachedTrip.weather,
+        weather: isWeatherSelected
+          ? selections?.weather?.data || weatherData || cachedTrip.weather
+          : null,
         flight: flight,
+        drive: drive
+          ? {
+              distance: displayDriveDistance,
+              duration: displayDriveDuration,
+              fuelEstimate: getFuelCost(),
+            }
+          : null,
         hotel: stay,
         attractions: attractions,
         activities: tours,
@@ -142,7 +257,7 @@ export default function ItineraryModal({
         link.href = url;
         link.setAttribute(
           "download",
-          `${rawParams?.destination?.city || "Itinerary"}.pdf`
+          `${getFullTripTitle().replace(/\s+/g, "_")}.pdf`
         );
         document.body.appendChild(link);
         link.click();
@@ -166,15 +281,21 @@ export default function ItineraryModal({
       const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : {};
 
       const payload = {
-        destination:
-          rawParams?.destination?.city ||
-          rawParams?.destination?.name ||
-          "Trip",
+        destination: getFullTripTitle(),
         username: user || "Traveler",
         check_in_date: rawParams?.startDate,
         check_out_date: rawParams?.endDate,
-        weather: weatherData || cachedTrip.weather,
+        weather: isWeatherSelected
+          ? selections?.weather?.data || weatherData || cachedTrip.weather
+          : null,
         flight: flight,
+        drive: drive
+          ? {
+              distance: displayDriveDistance,
+              duration: displayDriveDuration,
+              fuelEstimate: getFuelCost(),
+            }
+          : null,
         hotel: stay,
         attractions: attractions,
         activities: tours,
@@ -192,15 +313,12 @@ export default function ItineraryModal({
     }
   };
 
-  // --- NEW: Save Trip Logic ---
   const handleSaveTrip = async () => {
-    if (!isLoggedIn) return; // Failsafe
+    if (!isLoggedIn) return;
     setIsSaving(true);
-    try {
-      const cachedTripStr = sessionStorage.getItem("current_trip_results");
-      const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : {};
+    setIsAlreadySaved(false);
 
-      // Formatting data structure to save properly in the database
+    try {
       const tripDataToSave = {
         destination:
           rawParams?.destination?.city ||
@@ -208,17 +326,63 @@ export default function ItineraryModal({
           "Trip",
         check_in_date: rawParams?.startDate,
         check_out_date: rawParams?.endDate,
-        weather: weatherData || cachedTrip.weather,
-        flight: flight,
-        hotel: stay,
-        attractions: attractions,
-        activities: tours,
-        rawParams: rawParams,
-        selections: selections,
+
+        flight: flight
+          ? {
+              airline_name: flight.airline_name,
+              price: flight.price?.total || flight.price,
+              itineraries: (flight.itineraries || []).map((itin: any) => ({
+                segments: (itin.segments || []).map((seg: any) => ({
+                  departure_airport: seg.departure_airport,
+                  arrival_airport: seg.arrival_airport,
+                  departure_time: seg.departure_time,
+                  arrival_time: seg.arrival_time,
+                })),
+              })),
+            }
+          : null,
+
+        // Clean drive data saved into the database so the Saved Trips page can easily read it
+        drive: drive
+          ? {
+              distance: displayDriveDistance,
+              duration: displayDriveDuration,
+              fuelEstimate: getFuelCost(),
+            }
+          : null,
+
+        hotel: stay
+          ? {
+              name: stay.name,
+              price: stay.offerDetails?.price || stay.price,
+              address: { lines: stay.address?.lines || [] },
+            }
+          : null,
+
+        attractions: attractions
+          ? attractions.map((a: any) => ({ name: a.name }))
+          : [],
+        activities: tours
+          ? tours.map((t: any) => ({ name: t.name || t.title }))
+          : [],
+
+        rawParams: {
+          source: {
+            name:
+              rawParams?.source?.name?.split(",")[0] || rawParams?.source?.city,
+          },
+          startDate: rawParams?.startDate,
+          endDate: rawParams?.endDate,
+        },
       };
 
-      await travelApi.saveTrip(tripDataToSave);
-      setIsSaved(true);
+      const response = await travelApi.saveTrip(tripDataToSave);
+
+      if (response && response.message === "Trip already saved!") {
+        setIsAlreadySaved(true);
+      } else {
+        setIsSaved(true);
+      }
     } catch (error) {
       console.error(error);
       alert("Failed to save the trip. Please try again.");
@@ -280,7 +444,7 @@ export default function ItineraryModal({
                 highlight
               />
 
-              {firstDayWeather && (
+              {isWeatherSelected && firstDayWeather && (
                 <div className="mt-2 p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-400/5 border border-blue-500/20">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-blue-600/70">
@@ -290,14 +454,27 @@ export default function ItineraryModal({
                   </div>
                   <div className="flex items-end gap-2">
                     <span className="text-2xl font-black text-theme-text">
-                      {Math.round(firstDayWeather.temperature_max)}°
+                      {Math.round(
+                        firstDayWeather.max_temp ??
+                          firstDayWeather.temperature_max ??
+                          0
+                      )}
+                      °
                     </span>
                     <span className="text-sm font-bold text-theme-muted mb-1">
-                      / {Math.round(firstDayWeather.temperature_min)}° F
+                      /{" "}
+                      {Math.round(
+                        firstDayWeather.min_temp ??
+                          firstDayWeather.temperature_min ??
+                          0
+                      )}
+                      ° F
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-theme-text/70 mt-1 capitalize">
-                    {firstDayWeather.weather_description || "Clear skies"}
+                    {firstDayWeather.weather ??
+                      firstDayWeather.weather_description ??
+                      "Clear skies"}
                   </p>
                 </div>
               )}
@@ -313,64 +490,136 @@ export default function ItineraryModal({
                 />
                 {flight ? (
                   <div className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-5">
                       <span className="font-black text-theme-text flex items-center gap-2">
                         {flight.airline_name}
                       </span>
                       <span className="text-theme-primary font-black">
-                        ${(flight.price || 0).toFixed(2)}
+                        $
+                        {Number(
+                          flight.price?.total || flight.price || 0
+                        ).toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-theme-text/80">
-                      <div className="flex-1">
-                        <p className="font-bold text-lg">
-                          {
-                            flight.itineraries?.[0]?.segments?.[0]
-                              ?.departure_airport
-                          }
-                        </p>
-                      </div>
-                      <div className="h-px flex-1 bg-theme-surface relative">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-theme-bg px-2 rounded-full border border-theme-surface text-xs">
-                          ✈️
-                        </div>
-                      </div>
-                      <div className="flex-1 text-right">
-                        <p className="font-bold text-lg">
-                          {
-                            flight.itineraries?.[0]?.segments?.slice(-1)[0]
-                              ?.arrival_airport
-                          }
-                        </p>
-                      </div>
+                    <div className="flex flex-col gap-4">
+                      {(flight.itineraries || []).map(
+                        (itin: any, idx: number) => {
+                          const stops = itin.segments?.length
+                            ? itin.segments.length - 1
+                            : 0;
+                          const boundDate = itin.segments?.[0]?.departure_time
+                            ? formatShortDate(itin.segments[0].departure_time)
+                            : "";
+
+                          return (
+                            <div
+                              key={idx}
+                              className="bg-theme-bg p-3.5 rounded-xl border border-theme-surface/60"
+                            >
+                              <div className="flex justify-between items-center mb-3 pb-2 border-b border-theme-surface/40">
+                                <span className="text-[10px] uppercase font-bold text-theme-muted tracking-wider">
+                                  {idx === 0 ? "Outbound" : "Return"}{" "}
+                                  {boundDate && `• ${boundDate}`}
+                                </span>
+                                <span
+                                  className={`text-[10px] uppercase font-bold tracking-wider ${
+                                    stops === 0
+                                      ? "text-green-500"
+                                      : "text-amber-500"
+                                  }`}
+                                >
+                                  {stops === 0 ? "Direct" : `${stops} Stop(s)`}
+                                </span>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {(itin.segments || []).map(
+                                  (seg: any, sIdx: number) => {
+                                    let layoverStr = null;
+                                    if (sIdx > 0) {
+                                      const prevSeg = itin.segments[sIdx - 1];
+                                      layoverStr = getLayoverTime(
+                                        prevSeg.arrival_time,
+                                        seg.departure_time
+                                      );
+                                    }
+
+                                    return (
+                                      <React.Fragment key={sIdx}>
+                                        {layoverStr && (
+                                          <div className="flex items-center justify-center my-1">
+                                            <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                                              Layover: {layoverStr}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        <div className="flex items-center gap-4 text-sm text-theme-text/80 my-1">
+                                          <div className="flex-1">
+                                            <p className="font-black text-lg text-theme-text">
+                                              {seg.departure_airport}
+                                            </p>
+                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
+                                              {formatTime(seg.departure_time)}
+                                            </p>
+                                          </div>
+                                          <div className="h-px flex-1 bg-theme-surface relative">
+                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-theme-bg px-1 text-[10px]">
+                                              ✈️
+                                            </div>
+                                          </div>
+                                          <div className="flex-1 text-right">
+                                            <p className="font-black text-lg text-theme-text">
+                                              {seg.arrival_airport}
+                                            </p>
+                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
+                                              {formatTime(seg.arrival_time)}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </React.Fragment>
+                                    );
+                                  }
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                      )}
                     </div>
                   </div>
                 ) : drive ? (
                   <div className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
                     <div className="flex justify-between items-center mb-4">
                       <span className="font-black text-theme-text flex items-center gap-2">
-                        Road Trip
+                        Road Trip Journey
                       </span>
                       <span className="text-theme-primary font-black text-sm">
-                        {drive.duration
-                          ? Math.round(drive.duration / 3600) + " hrs drive"
-                          : "N/A"}
+                        {displayDriveDuration}
                       </span>
                     </div>
-                    <div className="text-sm text-theme-text/80">
-                      <p className="font-bold">
-                        {drive.sourceName ||
-                          rawParams?.source?.name?.split(",")[0]}{" "}
-                        →{" "}
-                        {drive.destinationName ||
-                          rawParams?.destination?.name?.split(",")[0]}
-                      </p>
-                      <p className="text-xs text-theme-muted font-bold mt-1 uppercase tracking-wider">
-                        {drive.distance
-                          ? Math.round(drive.distance / 1609.34) +
-                            " miles total"
-                          : ""}
-                      </p>
+                    <div className="text-sm text-theme-text/80 flex justify-between items-end">
+                      <div>
+                        <p className="font-bold text-base text-theme-text">
+                          {drive?.sourceName ||
+                            rawParams?.source?.name?.split(",")[0] ||
+                            "Origin"}{" "}
+                          →{" "}
+                          {drive?.destinationName ||
+                            rawParams?.destination?.name?.split(",")[0] ||
+                            "Destination"}
+                        </p>
+                        <p className="text-xs text-theme-muted font-bold mt-1 uppercase tracking-wider">
+                          Distance: {displayDriveDistance}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-theme-primary font-black text-lg">
+                          ${getFuelCost().toFixed(2)}
+                        </p>
+                        <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider mt-0.5">
+                          Fuel Est.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -400,7 +649,10 @@ export default function ItineraryModal({
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-theme-primary font-black text-lg">
-                          ${(stay.offerDetails?.price || 0).toFixed(2)}
+                          $
+                          {Number(
+                            stay.offerDetails?.price || stay.price || 0
+                          ).toFixed(2)}
                         </p>
                         <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider mt-0.5">
                           Total
@@ -491,25 +743,42 @@ export default function ItineraryModal({
         {/* Footer Actions */}
         <div className="p-4 sm:p-6 border-t border-theme-surface bg-theme-bg shrink-0 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* Conditional 'Save Trip' Button Rendered ONLY if user is logged in */}
             {isLoggedIn && (
               <button
                 onClick={handleSaveTrip}
-                disabled={isSaving || isSaved || isExporting || isSharing}
+                disabled={
+                  isSaving ||
+                  isSaved ||
+                  isAlreadySaved ||
+                  isExporting ||
+                  isSharing
+                }
                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${
-                  isSaving || isSaved || isExporting || isSharing
+                  isSaving ||
+                  isSaved ||
+                  isAlreadySaved ||
+                  isExporting ||
+                  isSharing
                     ? "bg-theme-surface text-theme-muted cursor-not-allowed shadow-none"
                     : "bg-theme-secondary text-theme-bg shadow-lg shadow-theme-secondary/20 hover:opacity-90"
                 }`}
               >
                 {isSaving ? (
                   <Loader2 size={18} className="animate-spin" />
+                ) : isAlreadySaved ? (
+                  <Save size={18} className="text-yellow-500" />
                 ) : isSaved ? (
                   <Save size={18} className="text-green-500" />
                 ) : (
                   <Save size={18} />
                 )}
-                {isSaving ? "Saving..." : isSaved ? "Saved!" : "Save Trip"}
+                {isSaving
+                  ? "Saving..."
+                  : isAlreadySaved
+                  ? "Already Saved!"
+                  : isSaved
+                  ? "Saved!"
+                  : "Save Trip"}
               </button>
             )}
 

@@ -8,6 +8,10 @@ class TripGenerateRequest(BaseModel):
     check_in_date: str
     check_out_date: str
     
+    # New fields to match the frontend payload
+    email: Optional[str] = None 
+    drive: Optional[Dict[str, Any]] = None 
+    
     flight: Optional[Dict[str, Any]] = None
     hotel: Optional[Dict[str, Any]] = None
     weather: Optional[Dict[str, Any]] = None
