@@ -17,7 +17,8 @@ import {
   Car,
   Ticket,
   Sun,
-  Camera
+  Camera,
+  Save,
 } from "lucide-react";
 import { travelApi } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -45,7 +46,12 @@ export default function ItineraryModal({
   const [email, setEmail] = useState("");
   const [isSharing, setIsSharing] = useState(false);
 
-  const { user } = useAuth();
+  // Save Trip State
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Grab user and isLoggedIn from AuthContext
+  const { user, isLoggedIn } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -60,9 +66,10 @@ export default function ItineraryModal({
         setSelections({});
       }
 
-      // Reset share state when opened
+      // Reset states when opened
       setShowEmailInput(false);
       setEmail("");
+      setIsSaved(false);
     }
   }, [isOpen]);
 
@@ -185,6 +192,41 @@ export default function ItineraryModal({
     }
   };
 
+  // --- NEW: Save Trip Logic ---
+  const handleSaveTrip = async () => {
+    if (!isLoggedIn) return; // Failsafe
+    setIsSaving(true);
+    try {
+      const cachedTripStr = sessionStorage.getItem("current_trip_results");
+      const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : {};
+
+      // Formatting data structure to save properly in the database
+      const tripDataToSave = {
+        destination:
+          rawParams?.destination?.city ||
+          rawParams?.destination?.name ||
+          "Trip",
+        check_in_date: rawParams?.startDate,
+        check_out_date: rawParams?.endDate,
+        weather: weatherData || cachedTrip.weather,
+        flight: flight,
+        hotel: stay,
+        attractions: attractions,
+        activities: tours,
+        rawParams: rawParams,
+        selections: selections,
+      };
+
+      await travelApi.saveTrip(tripDataToSave);
+      setIsSaved(true);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save the trip. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div
@@ -193,7 +235,6 @@ export default function ItineraryModal({
       />
 
       <div className="relative bg-theme-bg w-full max-w-5xl max-h-[95vh] rounded-[32px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-        
         {/* Header */}
         <div className="px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center bg-gradient-to-r from-theme-surface to-transparent border-b border-theme-surface shrink-0">
           <div>
@@ -201,8 +242,8 @@ export default function ItineraryModal({
               Your Custom Itinerary
             </h2>
             <p className="text-xs sm:text-sm text-theme-text/60 font-bold uppercase tracking-widest mt-1 truncate max-w-xs sm:max-w-md">
-              {rawParams?.source?.name?.split(',')[0] || "Origin"} →{" "}
-              {rawParams?.destination?.name?.split(',')[0] || "Destination"}
+              {rawParams?.source?.name?.split(",")[0] || "Origin"} →{" "}
+              {rawParams?.destination?.name?.split(",")[0] || "Destination"}
             </p>
           </div>
           <button
@@ -216,7 +257,6 @@ export default function ItineraryModal({
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
             {/* Left Column (Summary) */}
             <div className="lg:col-span-1 flex flex-col gap-4">
               <SummaryCard
@@ -243,12 +283,18 @@ export default function ItineraryModal({
               {firstDayWeather && (
                 <div className="mt-2 p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-400/5 border border-blue-500/20">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600/70">Expected Weather</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600/70">
+                      Expected Weather
+                    </span>
                     <Sun size={16} className="text-amber-500" />
                   </div>
                   <div className="flex items-end gap-2">
-                    <span className="text-2xl font-black text-theme-text">{Math.round(firstDayWeather.temperature_max)}°</span>
-                    <span className="text-sm font-bold text-theme-muted mb-1">/ {Math.round(firstDayWeather.temperature_min)}° F</span>
+                    <span className="text-2xl font-black text-theme-text">
+                      {Math.round(firstDayWeather.temperature_max)}°
+                    </span>
+                    <span className="text-sm font-bold text-theme-muted mb-1">
+                      / {Math.round(firstDayWeather.temperature_min)}° F
+                    </span>
                   </div>
                   <p className="text-xs font-semibold text-theme-text/70 mt-1 capitalize">
                     {firstDayWeather.weather_description || "Clear skies"}
@@ -259,7 +305,6 @@ export default function ItineraryModal({
 
             {/* Right Column (Details) */}
             <div className="lg:col-span-2 flex flex-col gap-8">
-              
               {/* Transport Section */}
               <section>
                 <SectionTitle
@@ -279,7 +324,10 @@ export default function ItineraryModal({
                     <div className="flex items-center gap-4 text-sm text-theme-text/80">
                       <div className="flex-1">
                         <p className="font-bold text-lg">
-                          {flight.itineraries?.[0]?.segments?.[0]?.departure_airport}
+                          {
+                            flight.itineraries?.[0]?.segments?.[0]
+                              ?.departure_airport
+                          }
                         </p>
                       </div>
                       <div className="h-px flex-1 bg-theme-surface relative">
@@ -289,7 +337,10 @@ export default function ItineraryModal({
                       </div>
                       <div className="flex-1 text-right">
                         <p className="font-bold text-lg">
-                          {flight.itineraries?.[0]?.segments?.slice(-1)[0]?.arrival_airport}
+                          {
+                            flight.itineraries?.[0]?.segments?.slice(-1)[0]
+                              ?.arrival_airport
+                          }
                         </p>
                       </div>
                     </div>
@@ -301,13 +352,24 @@ export default function ItineraryModal({
                         Road Trip
                       </span>
                       <span className="text-theme-primary font-black text-sm">
-                        {drive.duration ? Math.round(drive.duration / 3600) + ' hrs drive' : 'N/A'}
+                        {drive.duration
+                          ? Math.round(drive.duration / 3600) + " hrs drive"
+                          : "N/A"}
                       </span>
                     </div>
                     <div className="text-sm text-theme-text/80">
-                      <p className="font-bold">{drive.sourceName || rawParams?.source?.name?.split(',')[0]} → {drive.destinationName || rawParams?.destination?.name?.split(',')[0]}</p>
+                      <p className="font-bold">
+                        {drive.sourceName ||
+                          rawParams?.source?.name?.split(",")[0]}{" "}
+                        →{" "}
+                        {drive.destinationName ||
+                          rawParams?.destination?.name?.split(",")[0]}
+                      </p>
                       <p className="text-xs text-theme-muted font-bold mt-1 uppercase tracking-wider">
-                        {drive.distance ? Math.round(drive.distance / 1609.34) + ' miles total' : ''}
+                        {drive.distance
+                          ? Math.round(drive.distance / 1609.34) +
+                            " miles total"
+                          : ""}
                       </p>
                     </div>
                   </div>
@@ -330,14 +392,19 @@ export default function ItineraryModal({
                           {stay.name}
                         </h4>
                         <p className="text-xs text-theme-text/60 mt-1.5 flex items-center gap-1 font-medium">
-                          <MapPin size={12} className="shrink-0" /> <span className="line-clamp-1">{stay.address?.lines?.join(", ")}</span>
+                          <MapPin size={12} className="shrink-0" />{" "}
+                          <span className="line-clamp-1">
+                            {stay.address?.lines?.join(", ")}
+                          </span>
                         </p>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-theme-primary font-black text-lg">
                           ${(stay.offerDetails?.price || 0).toFixed(2)}
                         </p>
-                        <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider mt-0.5">Total</p>
+                        <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider mt-0.5">
+                          Total
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -355,14 +422,21 @@ export default function ItineraryModal({
                 {attractions.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {attractions.map((attr: any, idx: number) => (
-                      <div key={idx} className="bg-theme-bg rounded-xl p-3 border border-theme-surface shadow-sm flex items-center gap-3">
+                      <div
+                        key={idx}
+                        className="bg-theme-bg rounded-xl p-3 border border-theme-surface shadow-sm flex items-center gap-3"
+                      >
                         <div className="w-10 h-10 rounded-lg bg-theme-surface flex items-center justify-center shrink-0">
                           <MapPin size={16} className="text-theme-primary/60" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h5 className="font-bold text-sm text-theme-text truncate">{attr.name}</h5>
+                          <h5 className="font-bold text-sm text-theme-text truncate">
+                            {attr.name}
+                          </h5>
                           <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider truncate mt-0.5">
-                            {attr.category || attr.kinds?.split(',')[0]?.replace(/_/g, ' ') || 'Point of Interest'}
+                            {attr.category ||
+                              attr.kinds?.split(",")[0]?.replace(/_/g, " ") ||
+                              "Point of Interest"}
                           </p>
                         </div>
                       </div>
@@ -382,9 +456,14 @@ export default function ItineraryModal({
                 {tours.length > 0 ? (
                   <div className="flex flex-col gap-3">
                     {tours.map((tour: any, idx: number) => (
-                      <div key={idx} className="bg-theme-bg rounded-xl p-3 sm:p-4 border border-theme-surface shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div
+                        key={idx}
+                        className="bg-theme-bg rounded-xl p-3 sm:p-4 border border-theme-surface shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
                         <div className="flex-1 min-w-0">
-                          <h5 className="font-bold text-sm text-theme-text line-clamp-2 leading-snug">{tour.name || tour.title}</h5>
+                          <h5 className="font-bold text-sm text-theme-text line-clamp-2 leading-snug">
+                            {tour.name || tour.title}
+                          </h5>
                           {tour.rating && (
                             <p className="text-[10px] text-theme-secondary font-black uppercase tracking-wider mt-1">
                               ★ {tour.rating} Rating
@@ -405,7 +484,6 @@ export default function ItineraryModal({
                   <EmptySelection text="No tours or activities booked" />
                 )}
               </section>
-
             </div>
           </div>
         </div>
@@ -413,11 +491,33 @@ export default function ItineraryModal({
         {/* Footer Actions */}
         <div className="p-4 sm:p-6 border-t border-theme-surface bg-theme-bg shrink-0 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-3">
+            {/* Conditional 'Save Trip' Button Rendered ONLY if user is logged in */}
+            {isLoggedIn && (
+              <button
+                onClick={handleSaveTrip}
+                disabled={isSaving || isSaved || isExporting || isSharing}
+                className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${
+                  isSaving || isSaved || isExporting || isSharing
+                    ? "bg-theme-surface text-theme-muted cursor-not-allowed shadow-none"
+                    : "bg-theme-secondary text-theme-bg shadow-lg shadow-theme-secondary/20 hover:opacity-90"
+                }`}
+              >
+                {isSaving ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : isSaved ? (
+                  <Save size={18} className="text-green-500" />
+                ) : (
+                  <Save size={18} />
+                )}
+                {isSaving ? "Saving..." : isSaved ? "Saved!" : "Save Trip"}
+              </button>
+            )}
+
             <button
               onClick={handleExportPdf}
-              disabled={isExporting || isSharing}
+              disabled={isExporting || isSharing || isSaving}
               className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${
-                isExporting || isSharing
+                isExporting || isSharing || isSaving
                   ? "bg-theme-surface text-theme-muted cursor-not-allowed shadow-none"
                   : "bg-theme-primary hover:bg-theme-secondary text-theme-bg shadow-lg shadow-theme-primary/20"
               }`}
@@ -432,9 +532,10 @@ export default function ItineraryModal({
 
             <button
               onClick={() => setShowEmailInput(!showEmailInput)}
-              disabled={isExporting || isSharing}
+              disabled={isExporting || isSharing || isSaving}
               className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 bg-theme-bg border-2 border-theme-surface text-theme-text hover:bg-theme-surface ${
-                (isExporting || isSharing) && "opacity-50 cursor-not-allowed"
+                (isExporting || isSharing || isSaving) &&
+                "opacity-50 cursor-not-allowed"
               }`}
             >
               <Share2 size={18} />
@@ -480,7 +581,9 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-center gap-2.5 mb-3.5">
-      <div className="p-1.5 bg-theme-surface text-theme-text rounded-lg border border-theme-surface/50 shadow-sm">{icon}</div>
+      <div className="p-1.5 bg-theme-surface text-theme-text rounded-lg border border-theme-surface/50 shadow-sm">
+        {icon}
+      </div>
       <h3 className="font-black text-theme-text uppercase tracking-widest text-[11px] sm:text-xs">
         {title}
       </h3>
