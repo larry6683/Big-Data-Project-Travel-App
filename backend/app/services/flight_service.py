@@ -1,10 +1,32 @@
 import httpx
 import asyncio
+import airportsdata
 from app.services.base_client import BaseAmadeusClient
 from app.schemas.flight import FlightOffer, FlightSegment, FlightItinerary
 
 class FlightService(BaseAmadeusClient):
     
+    def __init__(self):
+        super().__init__()
+        # Load the 28,000+ airport database into memory instantly when the service starts
+        # Using 'IATA' makes the 3-letter code the dictionary key
+        self.airports_dict = airportsdata.load('IATA')
+
+    def get_airport_name(self, iata_code: str) -> str:
+        """Instantly resolves the IATA code from the local database in O(1) time."""
+        if not iata_code or iata_code == "TBA":
+            return "Airport"
+            
+        code_upper = iata_code.upper()
+        
+        # Look up the code in the local dictionary
+        airport_info = self.airports_dict.get(code_upper)
+        
+        if airport_info:
+            return airport_info.get("name", code_upper)
+            
+        return code_upper
+
     def _parse_flight_data(self, raw_data: dict) -> list[FlightOffer]:
         clean_results = []
         if "data" not in raw_data:
@@ -73,8 +95,10 @@ class FlightService(BaseAmadeusClient):
                         
                         clean_segments.append(FlightSegment(
                             departure_airport=departure.get("iataCode", "TBA"),
+                            departure_airport_name=None, 
                             departure_time=departure.get("at", "TBA"),
                             arrival_airport=arrival.get("iataCode", "TBA"),
+                            arrival_airport_name=None, 
                             arrival_time=arrival.get("at", "TBA"),
                             carrier_code=seg_carrier_code,
                             carrier_name=seg_carrier_name,  
@@ -159,6 +183,27 @@ class FlightService(BaseAmadeusClient):
                         flight.id = f"flight_{len(seen_signatures)}"
                         clean_data.append(flight)
         
+        # --- INSTANT NAME RESOLUTION --- 
+        unique_iata_codes = set()
+        for flight in clean_data:
+            for itin in flight.itineraries:
+                for seg in itin.segments:
+                    if seg.departure_airport and seg.departure_airport != "TBA":
+                        unique_iata_codes.add(seg.departure_airport)
+                    if seg.arrival_airport and seg.arrival_airport != "TBA":
+                        unique_iata_codes.add(seg.arrival_airport)
+
+        # Because we are using a local dictionary, we don't need async/await here anymore!
+        resolved_names = {code: self.get_airport_name(code) for code in unique_iata_codes}
+
+        for flight in clean_data:
+            for itin in flight.itineraries:
+                for seg in itin.segments:
+                    if seg.departure_airport in resolved_names:
+                        seg.departure_airport_name = resolved_names[seg.departure_airport]
+                    if seg.arrival_airport in resolved_names:
+                        seg.arrival_airport_name = resolved_names[seg.arrival_airport]
+
         return clean_data
 
 flight_service = FlightService()

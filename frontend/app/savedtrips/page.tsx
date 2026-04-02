@@ -27,7 +27,7 @@ interface SavedTrip {
     endDate?: string;
     rawParams?: any;
     flight?: any;
-    drive?: any; // Added drive support
+    drive?: any;
     hotel?: any;
     weather?: any;
     activities?: any[];
@@ -67,7 +67,6 @@ export default function SavedTripsPage() {
     }
   };
 
-  // --- HELPER FUNCTIONS (MATCHING ITINERARY MODAL) ---
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "N/A";
     const parts = dateStr.split("-");
@@ -385,21 +384,40 @@ export default function SavedTripsPage() {
                                               </span>
                                             </div>
                                           )}
-                                          <div className="flex items-center gap-3 text-sm text-theme-text/80">
-                                            <div className="flex-1">
-                                              <p className="font-black text-theme-text">
-                                                {seg.departure_airport}
+
+                                          {/* UPDATED: Flight segment names mapped here! (Responsive Wrapping) */}
+                                          <div className="flex items-start gap-3 text-sm text-theme-text/80 my-2">
+                                            {/* Departure Info */}
+                                            <div className="flex-1 min-w-0">
+                                              <p className="font-black text-sm sm:text-base text-theme-text leading-tight break-words">
+                                                {seg.departure_airport_name ||
+                                                  "Airport"}
+                                                <span className="text-theme-muted font-bold text-[10px] ml-1 whitespace-nowrap">
+                                                  ({seg.departure_airport})
+                                                </span>
                                               </p>
-                                              <p className="text-[10px] font-bold text-theme-muted">
+                                              <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mt-1">
                                                 {formatTime(seg.departure_time)}
                                               </p>
                                             </div>
-                                            <span className="text-xs">✈️</span>
-                                            <div className="flex-1 text-right">
-                                              <p className="font-black text-theme-text">
-                                                {seg.arrival_airport}
+
+                                            {/* Airplane Icon */}
+                                            <div className="flex flex-col items-center justify-start mt-0.5 px-2">
+                                              <span className="text-xs">
+                                                ✈️
+                                              </span>
+                                            </div>
+
+                                            {/* Arrival Info */}
+                                            <div className="flex-1 min-w-0 text-right">
+                                              <p className="font-black text-sm sm:text-base text-theme-text leading-tight break-words">
+                                                {seg.arrival_airport_name ||
+                                                  "Airport"}
+                                                <span className="text-theme-muted font-bold text-[10px] ml-1 whitespace-nowrap">
+                                                  ({seg.arrival_airport})
+                                                </span>
                                               </p>
-                                              <p className="text-[10px] font-bold text-theme-muted">
+                                              <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mt-1">
                                                 {formatTime(seg.arrival_time)}
                                               </p>
                                             </div>

@@ -82,14 +82,13 @@ export default function ItineraryModal({
     ? selections.flights[0]
     : selections?.flights;
 
-  // FIXED: Properly extract driving data by checking for the .data property
   let rawDrive = selections?.drive || selections?.driving;
   let drive = null;
   if (rawDrive) {
     if (Array.isArray(rawDrive)) {
       drive = rawDrive[0];
     } else if (rawDrive.data) {
-      drive = rawDrive.data; // This is how DriveCard.tsx saves it!
+      drive = rawDrive.data;
     } else {
       drive = rawDrive;
     }
@@ -104,21 +103,19 @@ export default function ItineraryModal({
   // Check if Weather was actually selected on the home page
   const isWeatherSelected = selections?.weather?.selected === true;
 
-  // Helper to calculate fuel cost dynamically (just like DriveCard.tsx)
+  // Helper to calculate fuel cost dynamically
   const getFuelCost = () => {
     if (!drive) return 0;
     if (drive.distance_km) {
       const miles = drive.distance_km * 0.621371;
       const gallons = miles / 25;
-      return gallons * 3.35; // Standard fuel price used in DriveCard
+      return gallons * 3.35;
     }
-    // Fallback for older formats
     const fuel = drive.fuelEstimate || drive.fuel_estimate || drive.price || 0;
     if (typeof fuel === "string") return Number(fuel.replace(/[^0-9.-]+/g, ""));
     return Number(fuel);
   };
 
-  // Safe display helpers for driving distance and duration
   let displayDriveDuration = "N/A";
   if (drive?.duration_mins) {
     const hrs = Math.floor(drive.duration_mins / 60);
@@ -141,7 +138,7 @@ export default function ItineraryModal({
   if (flight) {
     totalCost += Number(flight.price?.total || flight.price || 0);
   } else if (drive) {
-    totalCost += getFuelCost(); // Adds driving fuel cost to the top total!
+    totalCost += getFuelCost();
   }
 
   if (stay) totalCost += Number(stay.offerDetails?.price || stay.price || 0);
@@ -151,7 +148,6 @@ export default function ItineraryModal({
     }
   });
 
-  // Extract first day weather for summary ONLY if selected
   let firstDayWeather = null;
   if (isWeatherSelected) {
     const activeWeatherData = selections?.weather?.data || weatherData;
@@ -334,7 +330,9 @@ export default function ItineraryModal({
               itineraries: (flight.itineraries || []).map((itin: any) => ({
                 segments: (itin.segments || []).map((seg: any) => ({
                   departure_airport: seg.departure_airport,
+                  departure_airport_name: seg.departure_airport_name, // UPDATED: Ensure name is saved
                   arrival_airport: seg.arrival_airport,
+                  arrival_airport_name: seg.arrival_airport_name, // UPDATED: Ensure name is saved
                   departure_time: seg.departure_time,
                   arrival_time: seg.arrival_time,
                 })),
@@ -342,7 +340,6 @@ export default function ItineraryModal({
             }
           : null,
 
-        // Clean drive data saved into the database so the Saved Trips page can easily read it
         drive: drive
           ? {
               distance: displayDriveDistance,
@@ -553,25 +550,36 @@ export default function ItineraryModal({
                                           </div>
                                         )}
 
-                                        <div className="flex items-center gap-4 text-sm text-theme-text/80 my-1">
-                                          <div className="flex-1">
-                                            <p className="font-black text-lg text-theme-text">
-                                              {seg.departure_airport}
+                                        <div className="flex items-start gap-3 text-sm text-theme-text/80 my-2">
+                                          {/* UPDATED: Departure Info (Responsive Wrapping) */}
+                                          <div className="flex-1 min-w-0">
+                                            <p className="font-black text-sm sm:text-base text-theme-text leading-tight break-words">
+                                              {seg.departure_airport_name ||
+                                                "Airport"}
+                                              <span className="text-theme-muted font-bold text-[10px] ml-1 whitespace-nowrap">
+                                                ({seg.departure_airport})
+                                              </span>
                                             </p>
-                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
+                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mt-1">
                                               {formatTime(seg.departure_time)}
                                             </p>
                                           </div>
-                                          <div className="h-px flex-1 bg-theme-surface relative">
-                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-theme-bg px-1 text-[10px]">
-                                              ✈️
-                                            </div>
+
+                                          {/* Simplified Airplane Icon for multiline support */}
+                                          <div className="flex flex-col items-center justify-start mt-0.5 px-2">
+                                            <span className="text-xs">✈️</span>
                                           </div>
-                                          <div className="flex-1 text-right">
-                                            <p className="font-black text-lg text-theme-text">
-                                              {seg.arrival_airport}
+
+                                          {/* UPDATED: Arrival Info (Responsive Wrapping) */}
+                                          <div className="flex-1 min-w-0 text-right">
+                                            <p className="font-black text-sm sm:text-base text-theme-text leading-tight break-words">
+                                              {seg.arrival_airport_name ||
+                                                "Airport"}
+                                              <span className="text-theme-muted font-bold text-[10px] ml-1 whitespace-nowrap">
+                                                ({seg.arrival_airport})
+                                              </span>
                                             </p>
-                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
+                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mt-1">
                                               {formatTime(seg.arrival_time)}
                                             </p>
                                           </div>

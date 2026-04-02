@@ -121,9 +121,17 @@ def build_pdf_content(payload_dict: dict) -> bytes:
                 bound = "Outbound" if i == 0 else "Return"
                 pdf.set_font("helvetica", "I", 9)
                 pdf.cell(0, 6, f"    --- {bound} ---", new_x="LMARGIN", new_y="NEXT")
-                pdf.set_font("helvetica", "", 10)
+                pdf.set_font("helvetica", "", 9) # slightly smaller font for long airport names
                 for seg in itin.get("segments", []):
-                    pdf.cell(0, 6, f"    {seg.get('departure_airport')} ({format_time(seg.get('departure_time'))}) -> {seg.get('arrival_airport')} ({format_time(seg.get('arrival_time'))}) | {format_date(seg.get('departure_time'))}", new_x="LMARGIN", new_y="NEXT")
+                    # --- UPDATED: Map the airport names and fallback to code ---
+                    dep_name = sanitize_text(seg.get('departure_airport_name') or seg.get('departure_airport', ''))
+                    arr_name = sanitize_text(seg.get('arrival_airport_name') or seg.get('arrival_airport', ''))
+                    dep_code = seg.get('departure_airport', '')
+                    arr_code = seg.get('arrival_airport', '')
+                    dep_time = format_time(seg.get('departure_time'))
+                    arr_time = format_time(seg.get('arrival_time'))
+                    
+                    pdf.cell(0, 6, f"    {dep_name} ({dep_code}) [{dep_time}] -> {arr_name} ({arr_code}) [{arr_time}]", new_x="LMARGIN", new_y="NEXT")
             pdf.ln(3)
         if drive:
             pdf.set_font("helvetica", "B", 11)

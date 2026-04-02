@@ -45,3 +45,4 @@ fastapi-cache2[redis]==0.2.2
 redis==4.6.0
 email-validator==2.1.1
 openai==2.24.0
+airportsdata==20260315
