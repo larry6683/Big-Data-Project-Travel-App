@@ -31,3 +31,5 @@ This project is structured as a monorepo containing two primary environments:
 
 ## 🐳 Docker Setup
 Both the frontend and backend include `Dockerfile` and `docker-compose.yml` configurations. You can spin up the individual services using Docker to ensure consistent environments.
+
+Alternatively you can spin up a singular Docker parent container using ./start.sh
