@@ -139,6 +139,7 @@ export default function SavedTripsPage() {
           Please login to view your saved trips
         </h1>
         <Link
+          id="link-login-redirect"
           href="/auth"
           className="bg-theme-primary text-theme-bg px-6 py-2 rounded-lg hover:bg-theme-secondary transition-colors"
         >
@@ -158,11 +159,12 @@ export default function SavedTripsPage() {
             <h1 className="text-3xl font-black text-theme-text tracking-tight">
               My Saved Itineraries
             </h1>
-            <p className="text-theme-text/70 font-medium mt-1">
+            <p id="saved-trips-count" className="text-theme-text/70 font-medium mt-1">
               You have {savedTrips.length} stored trips.
             </p>
           </div>
           <Link
+            id="link-plan-new-trip"
             href="/"
             className="bg-theme-surface text-theme-primary px-4 py-2 rounded-lg font-bold hover:bg-theme-muted/20 transition-colors"
           >
@@ -171,16 +173,17 @@ export default function SavedTripsPage() {
         </header>
 
         {loading ? (
-          <div className="flex justify-center py-20">
+          <div id="trips-loading-spinner" className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary"></div>
           </div>
         ) : savedTrips.length === 0 ? (
-          <div className="bg-theme-surface p-12 rounded-2xl shadow-sm text-center border border-theme-muted/30">
+          <div id="empty-trips-container" className="bg-theme-surface p-12 rounded-2xl shadow-sm text-center border border-theme-muted/30">
             <div className="text-6xl mb-4">🗺️</div>
             <h3 className="text-xl font-bold text-theme-text mb-2">
               No trips planned yet
             </h3>
             <Link
+              id="link-create-first-itinerary"
               href="/"
               className="bg-theme-primary text-theme-bg px-6 py-3 rounded-xl font-bold hover:bg-theme-secondary transition-colors"
             >
@@ -188,15 +191,17 @@ export default function SavedTripsPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div id="saved-trips-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {savedTrips.map((trip) => (
               <div
                 key={trip.id}
+                id={`trip-card-${trip.id}`}
                 className="bg-theme-surface rounded-2xl shadow-sm border border-theme-muted/30 overflow-hidden hover:shadow-md transition flex flex-col"
               >
                 <div className="p-6 flex-grow">
                   <div className="flex justify-between items-start mb-4">
                     <h2
+                      id={`trip-title-${trip.id}`}
                       className="text-xl font-black text-theme-text line-clamp-1"
                       title={getTripTitle(trip)}
                     >
@@ -241,12 +246,14 @@ export default function SavedTripsPage() {
                 </div>
                 <div className="p-4 bg-theme-bg border-t border-theme-muted/30 flex gap-2">
                   <button
+                    id={`btn-view-details-${trip.id}`}
                     onClick={() => setSelectedTrip(trip)}
                     className="flex-1 text-center bg-theme-surface border border-theme-muted/50 text-theme-text py-2 rounded-xl text-sm font-bold hover:bg-theme-muted/20 active:scale-95 transition"
                   >
                     View Details
                   </button>
                   <button
+                    id={`btn-delete-trip-${trip.id}`}
                     onClick={() => handleDelete(trip.id)}
                     className="bg-theme-surface border border-red-200 text-red-500 p-2 rounded-xl hover:bg-red-50 active:scale-95 transition"
                   >
@@ -261,16 +268,17 @@ export default function SavedTripsPage() {
 
       {/* ITINERARY DETAILS MODAL */}
       {selectedTrip && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div id="modal-trip-details-wrapper" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
+            id="modal-backdrop"
             className="absolute inset-0 bg-theme-text/60 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setSelectedTrip(null)}
           />
-          <div className="relative bg-theme-bg w-full max-w-2xl max-h-[85vh] rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div id="modal-trip-details" className="relative bg-theme-bg w-full max-w-2xl max-h-[85vh] rounded-[24px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-6 py-5 border-b border-theme-surface flex justify-between items-center bg-theme-surface/50">
               <div>
-                <h2 className="text-xl font-black text-theme-text line-clamp-1">
+                <h2 id="modal-trip-title" className="text-xl font-black text-theme-text line-clamp-1">
                   {getTripTitle(selectedTrip)}
                 </h2>
                 <p className="text-xs font-bold text-theme-text/60 uppercase tracking-widest mt-1">
@@ -291,6 +299,7 @@ export default function SavedTripsPage() {
                 </p>
               </div>
               <button
+                id="btn-close-modal-icon"
                 onClick={() => setSelectedTrip(null)}
                 className="p-2 hover:bg-theme-surface rounded-full transition bg-theme-bg text-theme-text/70"
               >
@@ -308,14 +317,14 @@ export default function SavedTripsPage() {
                     Total Estimated Cost
                   </span>
                 </div>
-                <span className="font-black text-xl text-theme-secondary">
+                <span id="modal-total-cost" className="font-black text-xl text-theme-secondary">
                   ${calculateTotal(selectedTrip).toFixed(2)}
                 </span>
               </div>
 
               {/* Transportation Info */}
               {(selectedTrip.data.flight || selectedTrip.data.drive) && (
-                <div>
+                <div id="modal-section-transportation">
                   <h3 className="text-sm font-black text-theme-text/80 uppercase tracking-wider mb-3 flex items-center gap-2">
                     {selectedTrip.data.flight ? (
                       <Plane size={16} className="text-theme-primary" />
@@ -327,7 +336,7 @@ export default function SavedTripsPage() {
                   {selectedTrip.data.flight ? (
                     <div className="bg-theme-primary/10 border border-theme-primary/20 rounded-xl p-4 space-y-4">
                       <div className="flex justify-between items-center">
-                        <p className="font-bold text-theme-text">
+                        <p id="modal-airline-name" className="font-bold text-theme-text">
                           {selectedTrip.data.flight.airline_name}
                         </p>
                         <span className="font-black text-theme-primary">
@@ -439,7 +448,7 @@ export default function SavedTripsPage() {
 
               {/* Hotel Info */}
               {selectedTrip.data.hotel && (
-                <div>
+                <div id="modal-section-hotel">
                   <h3 className="text-sm font-black text-theme-text/80 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Hotel size={16} className="text-theme-primary" />{" "}
                     Accommodation
@@ -447,7 +456,7 @@ export default function SavedTripsPage() {
                   <div className="bg-theme-primary/10 border border-theme-primary/20 rounded-xl p-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-bold text-theme-text">
+                        <p id="modal-hotel-name" className="font-bold text-theme-text">
                           {selectedTrip.data.hotel.name}
                         </p>
                         <p className="text-xs text-theme-text/60 mt-1 flex items-center gap-1">
@@ -467,7 +476,7 @@ export default function SavedTripsPage() {
               {/* Attractions Info */}
               {selectedTrip.data.attractions &&
                 selectedTrip.data.attractions.length > 0 && (
-                  <div>
+                  <div id="modal-section-attractions">
                     <h3 className="text-sm font-black text-theme-text/80 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <Map size={16} className="text-theme-secondary" /> Planned
                       Attractions
@@ -489,7 +498,7 @@ export default function SavedTripsPage() {
               {/* Tours & Activities Info */}
               {selectedTrip.data.activities &&
                 selectedTrip.data.activities.length > 0 && (
-                  <div>
+                  <div id="modal-section-activities">
                     <h3 className="text-sm font-black text-theme-text/80 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <Ticket size={16} className="text-theme-secondary" />{" "}
                       Tours & Activities
@@ -516,6 +525,7 @@ export default function SavedTripsPage() {
             {/* Modal Footer */}
             <div className="p-4 border-t border-theme-surface bg-theme-surface/30">
               <button
+                id="btn-close-modal-text"
                 onClick={() => setSelectedTrip(null)}
                 className="w-full bg-theme-text text-theme-bg font-bold py-3 rounded-xl hover:bg-theme-text/80 transition"
               >

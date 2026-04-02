@@ -44,6 +44,7 @@ export default function ProfilePage() {
           Please login to view your profile
         </h1>
         <Link
+          id="link-go-to-login"
           href="/auth"
           className="bg-theme-primary text-theme-bg px-6 py-2 rounded-lg hover:bg-theme-secondary transition-colors font-bold shadow-md"
         >
@@ -76,7 +77,7 @@ export default function ProfilePage() {
         </header>
 
         {loading ? (
-          <div className="flex justify-center items-center py-20">
+          <div id="profile-loading" className="flex justify-center items-center py-20">
             <Loader2 className="animate-spin text-theme-primary" size={40} />
           </div>
         ) : (
@@ -98,7 +99,7 @@ export default function ProfilePage() {
               </div>
               
               <div className="flex-1 text-center md:text-left">
-                <h2 className="text-2xl font-bold text-theme-text mb-1">
+                <h2 id="header-display-name" className="text-2xl font-bold text-theme-text mb-1">
                   {profileData?.full_name || profileData?.email?.split('@')[0] || "User"}
                 </h2>
                 <p className="text-theme-text/60 font-medium">
@@ -108,12 +109,14 @@ export default function ProfilePage() {
 
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
                 <button 
+                  id="btn-edit-profile"
                   onClick={() => setIsModalOpen(true)}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-theme-bg text-theme-text rounded-xl border border-theme-muted/30 hover:border-theme-primary transition-colors font-bold text-sm"
                 >
                   <Edit3 size={16} /> Edit Profile
                 </button>
                 <button
+                  id="btn-sign-out"
                   onClick={logout}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl border border-red-100 hover:bg-red-100 transition-colors font-bold text-sm shadow-sm"
                 >
@@ -131,19 +134,19 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">Full Name</label>
-                  <div className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
+                  <div id="display-full-name" className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
                     {profileData?.full_name || <span className="text-theme-text/40 italic">Not provided</span>}
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">Email Address</label>
-                  <div className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
+                  <div id="display-email" className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
                     {profileData?.email || <span className="text-theme-text/40 italic">Not provided</span>}
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">Mobile Number</label>
-                  <div className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
+                  <div id="display-mobile-number" className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
                     {profileData?.mobile_number || <span className="text-theme-text/40 italic">Not provided</span>}
                   </div>
                 </div>
@@ -157,7 +160,7 @@ export default function ProfilePage() {
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Link href="/savedtrips" className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-primary transition-colors group shadow-sm">
+                <Link id="link-saved-trips" href="/savedtrips" className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-primary transition-colors group shadow-sm">
                   <div className="p-2.5 bg-theme-primary/10 text-theme-primary rounded-lg group-hover:bg-theme-primary group-hover:text-theme-bg transition-colors">
                     <Bookmark size={22} />
                   </div>
@@ -167,7 +170,7 @@ export default function ProfilePage() {
                   </div>
                 </Link>
 
-                <Link href="/" className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-secondary transition-colors group shadow-sm">
+                <Link id="link-plan-new-trip" href="/" className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-secondary transition-colors group shadow-sm">
                   <div className="p-2.5 bg-theme-secondary/10 text-theme-secondary rounded-lg group-hover:bg-theme-secondary group-hover:text-theme-bg transition-colors">
                     <Settings size={22} />
                   </div>
