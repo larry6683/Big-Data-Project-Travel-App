@@ -7,8 +7,9 @@ test = [
     "pytest",
     "httpx",
     "pytest-asyncio",
-    # whatever your tests need to hit the API
+    "requests"
 ]                                                                                                                                                                                                                   
    
 [tool.pytest.ini_options]                                                                                                                                                                                           
 testpaths = ["tests"] 
+pythonpath = [".", "backend"]
