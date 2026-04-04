@@ -20,6 +20,9 @@ class searchPage:
     fly_selector = (By.XPATH, "//button[contains(text(), 'Fly')]")
     drive_selector = (By.XPATH, "//button[contains(text(), 'Drive')]")
     submit_selector = (By.XPATH, '//*[@id="submit-side"]')
+    drive_text_selector = (By.XPATH, "//div[@id='drive_text']")
+    destination_error_text_selector = (By.XPATH, "//span[@id='destination_error']")
+    start_date_error_text_selector = (By.XPATH, "//span[@id='start_date_error']")
     
     error_selector = (By.ID, "error-message")
     
@@ -94,7 +97,43 @@ class searchPage:
         except:
             return False
 
+    def is_destination_error_displayed(self, driver):
+        """Returns True if the destination error message is visible on the screen"""
+        try:
+            WebDriverWait(driver, 10).until(EC.visibility_of_element_located(self.destination_error_text_selector))
+            return True
+        except:
+            return False
+
     def get_options_text(self, driver):
         """Returns the actual text of the label for detailed assertion"""
         element = WebDriverWait(driver, 10).until(EC.visibility_of_element_located(self.options_label_selector))
         return element.text
+    
+    def is_drive_text_displayed(self, driver):
+        """Returns True if the drive text is visible on the screen (used for verifying Drive mode)"""
+        try:
+            WebDriverWait(driver, 10).until(EC.visibility_of_element_located(self.drive_text_selector))
+            return True
+        except:
+            return False
+        
+    def is_start_date_error_displayed(self, driver):
+        """Returns True if the start date error message is visible on the screen"""
+        try:
+            WebDriverWait(driver, 10).until(EC.visibility_of_element_located(self.start_date_error_text_selector))
+            return True
+        except:
+            return False
+    
+    
+    def get_error_message(self, driver):
+        """Attempts to find an error message on the screen and returns its text"""
+        try:
+            # Adjust the timeout to be short so the test fails fast if no error exists
+            element = WebDriverWait(driver, 3).until(
+                EC.visibility_of_element_located(self.error_selector)
+            )
+            return element.text
+        except:
+            return ""
