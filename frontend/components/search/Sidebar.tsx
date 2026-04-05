@@ -2,10 +2,64 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Loader2, X, Calendar } from "lucide-react";
+import { Search, Loader2, X, Calendar, TrendingUp } from "lucide-react";
 import LocationAutocomplete from "./LocationAutoComplete";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { travelApi } from "../../services/api";
+
+const stateAbbreviations: Record<string, string> = {
+  Alabama: "AL",
+  Alaska: "AK",
+  Arizona: "AZ",
+  Arkansas: "AR",
+  California: "CA",
+  Colorado: "CO",
+  Connecticut: "CT",
+  Delaware: "DE",
+  Florida: "FL",
+  Georgia: "GA",
+  Hawaii: "HI",
+  Idaho: "ID",
+  Illinois: "IL",
+  Indiana: "IN",
+  Iowa: "IA",
+  Kansas: "KS",
+  Kentucky: "KY",
+  Louisiana: "LA",
+  Maine: "ME",
+  Maryland: "MD",
+  Massachusetts: "MA",
+  Michigan: "MI",
+  Minnesota: "MN",
+  Mississippi: "MS",
+  Missouri: "MO",
+  Montana: "MT",
+  Nebraska: "NE",
+  Nevada: "NV",
+  "New Hampshire": "NH",
+  "New Jersey": "NJ",
+  "New Mexico": "NM",
+  "New York": "NY",
+  "North Carolina": "NC",
+  "North Dakota": "ND",
+  Ohio: "OH",
+  Oklahoma: "OK",
+  Oregon: "OR",
+  Pennsylvania: "PA",
+  "Rhode Island": "RI",
+  "South Carolina": "SC",
+  "South Dakota": "SD",
+  Tennessee: "TN",
+  Texas: "TX",
+  Utah: "UT",
+  Vermont: "VT",
+  Virginia: "VA",
+  Washington: "WA",
+  "West Virginia": "WV",
+  Wisconsin: "WI",
+  Wyoming: "WY",
+};
 
 interface SidebarProps {
   onSearch: (params: any) => void;
@@ -37,6 +91,20 @@ export default function Sidebar({
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [topDestinations, setTopDestinations] = useState<any[]>([]);
+
+  // 1. Reusable function to fetch top destinations instantly
+  const refreshTrending = async () => {
+    const data = await travelApi.getTopDestinations();
+    if (data && data.length > 0) {
+      setTopDestinations(data);
+    }
+  };
+
+  // 2. Fetch top destinations on initial load
+  useEffect(() => {
+    refreshTrending();
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("search_state");
@@ -64,14 +132,20 @@ export default function Sidebar({
     }
   }, []);
 
-  const getCoordinates = async (locationName: string) => {
+  // Updated function to handle tracking top destinations
+  const getCoordinates = async (
+    locationName: string,
+    isDestination: boolean = false
+  ) => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(
-        `${baseUrl}/locations/geocode?keyword=${encodeURIComponent(
-          locationName
-        )}`
-      );
+      // We add the is_destination flag to the URL if it's true
+      const url = `${baseUrl}/locations/geocode?keyword=${encodeURIComponent(
+        locationName
+      )}${isDestination ? "&is_destination=true" : ""}`;
+
+      const res = await fetch(url);
+
       if (res.ok) {
         const data = await res.json();
         if (data.lat && data.lon)
@@ -180,11 +254,15 @@ export default function Sidebar({
     if (onSearchStart) onSearchStart();
 
     setIsGeocoding(true);
+    // FIXED: Passed `true` to the destination geocode call to trigger backend Redis tracking
     const [srcCoords, dstCoords] = await Promise.all([
       getCoordinates(finalSource),
-      getCoordinates(finalDest),
+      getCoordinates(finalDest, true),
     ]);
     setIsGeocoding(false);
+
+    // 3. INSTANT REFRESH: Update the trending list immediately without reloading the page!
+    refreshTrending();
 
     if (!srcCoords) {
       setErrors({ source: "Could not find coordinates for this city." });
@@ -299,6 +377,42 @@ export default function Sidebar({
               <span className="text-red-400 text-[11px] mt-1 block font-medium">
                 {errors.destination}
               </span>
+            )}
+
+            {/* Trending Destinations UI */}
+            {topDestinations.length > 0 && (
+              <div className="mt-3">
+                <div className="text-[10px] font-bold tracking-[0.05em] uppercase text-theme-bg/50 mb-2 ml-1 flex items-center gap-1.5">
+                  <TrendingUp size={12} className="text-theme-primary" />{" "}
+                  Trending Searches
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {topDestinations.map((dest, idx) => {
+                    // NEW: Lookup the abbreviation. If it's not in the list, just use the original string.
+                    const stateAbbrev = dest.state
+                      ? stateAbbreviations[dest.state] || dest.state
+                      : "";
+
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setDestination(dest.full_name);
+                          setDestValid(true);
+                          if (errors.destination) {
+                            setErrors((prev) => ({ ...prev, destination: "" }));
+                          }
+                        }}
+                        className="px-2.5 py-1.5 rounded-[8px] border border-theme-secondary/20 bg-theme-bg/5 text-theme-bg/80 text-[11px] font-medium hover:bg-theme-primary hover:text-theme-bg hover:border-theme-primary transition-all duration-200"
+                      >
+                        {dest.city}
+                        {stateAbbrev ? `, ${stateAbbrev}` : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
 
