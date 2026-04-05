@@ -11,6 +11,8 @@ interface ProfileModalProps {
   onProfileUpdate: () => void;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string; 
+
 export default function ProfileModal({
   isOpen,
   onClose,
@@ -28,9 +30,6 @@ export default function ProfileModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
-    "http://localhost:8000";
 
   useEffect(() => {
     if (isOpen) {

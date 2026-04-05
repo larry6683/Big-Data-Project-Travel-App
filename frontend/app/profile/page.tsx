@@ -16,8 +16,7 @@ export default function ProfilePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
-    "http://localhost:8000";
+    process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "");
 
   const fetchProfile = async () => {
     setLoading(true);
