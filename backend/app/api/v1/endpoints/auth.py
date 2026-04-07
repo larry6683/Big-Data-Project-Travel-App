@@ -86,7 +86,7 @@ async def forgot_password(req: ForgotPassword, db: Session = Depends(get_db)):
     
     if not user:
         # We return a generic success message even if email doesn't exist to prevent email enumeration attacks
-        return {"message": "If that email is registered, a reset code has been sent."}
+        return {"message": "If that email is registered, a reset code has been sent.", "status_code": 200}
         
     # Generate 6-digit numeric code
     code = ''.join(random.choices(string.digits, k=6))
