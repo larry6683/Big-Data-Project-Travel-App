@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.main import app  # Adjust this to where your FastAPI 'app' is defined
+from app.main import app
 from app.db.database import Base, get_db
 from app.api.v1.deps import get_current_user
 from app.db.models import User
