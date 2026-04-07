@@ -66,7 +66,7 @@ async def sign_up(user_in: UserCreate, db: Session = Depends(get_db)):
         data={"sub": new_user.email}, 
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    return {"access_token": access_token, "token_type": "bearer", "email": new_user.email}
+    return {"access_token": access_token, "token_type": "bearer", "email": new_user.email, "status_code": 200}
 
 @router.post("/login", response_model=Token)
 async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
@@ -78,7 +78,7 @@ async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         data={"sub": db_user.email}, 
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    return {"access_token": access_token, "token_type": "bearer", "email": db_user.email}
+    return {"access_token": access_token, "token_type": "bearer", "email": db_user.email, "status_code": 200}
 
 @router.post("/forgot-password")
 async def forgot_password(req: ForgotPassword, db: Session = Depends(get_db)):
@@ -100,7 +100,7 @@ async def forgot_password(req: ForgotPassword, db: Session = Depends(get_db)):
     # Send email containing the code
     send_reset_email(user.email, code)
     
-    return {"message": "If that email is registered, a reset code has been sent."}
+    return {"message": "If that email is registered, a reset code has been sent.", "status_code": 200}
 
 
 @router.post("/reset-password")
@@ -124,4 +124,4 @@ async def reset_password(req: ResetPassword, db: Session = Depends(get_db)):
     user.reset_code_expires = None
     db.commit()
     
-    return {"message": "Password reset successfully. You can now log in."}
+    return {"message": "Password reset successfully. You can now log in.", "status_code": 200}
