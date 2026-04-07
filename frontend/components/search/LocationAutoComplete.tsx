@@ -155,7 +155,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, sho
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <div className="relative flex items-center">
+      <div id="location-autocomplete-input" className="relative flex items-center">
         <input
           className={`w-full p-3 rounded-xl outline-none transition-all duration-300 text-xs shadow-inner backdrop-blur-sm
             bg-theme-bg border border-theme-secondary/30 text-theme-text placeholder:text-theme-text/50 

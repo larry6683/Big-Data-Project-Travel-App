@@ -133,7 +133,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     <div className="flex flex-col gap-2">
       <div className="flex flex-col xl:flex-row justify-between xl:items-end border-b border-theme-secondary/20 pb-3 gap-2">
         <div>
-          <p className="align-items-center text-xs text-theme-text">
+          <p id="options_selector" className="align-items-center text-xs text-theme-text">
             Showing {Math.min(flights.length, 12)} of {flights.length} options
           </p>
         </div>
@@ -152,11 +152,11 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
         return (
           <div 
             key={uniqueKey} 
+            id={`flight-option-${flightIndex}`}
             className={`rounded-lg overflow-hidden transition-all duration-200 border ${
               isSelected ? 'border-theme-primary ring-1 ring-theme-primary bg-theme-surface/20 shadow-sm' : 'border-theme-secondary/20 bg-theme-surface/20 hover:shadow-md'
             }`}
           >
-            {/* Header */}
             <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-theme-bg/20 border-theme-secondary/20' : 'bg-theme-bg/20 border-theme-secondary/20'}`}>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 flex items-center justify-center overflow-hidden relative shrink-0">
@@ -180,9 +180,10 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
                   </p>
                 </div>
 
-                <label className="flex items-center gap-2 cursor-pointer bg-theme-bg text-theme-text px-4 py-2 rounded-lg hover:bg-theme-surface border border-theme-secondary transition-colors shadow-sm shrink-0">
+                <label htmlFor={`flight-select-${flightIndex}`} className="flex items-center gap-2 cursor-pointer bg-theme-bg text-theme-text px-4 py-2 rounded-lg hover:bg-theme-surface border border-theme-secondary transition-colors shadow-sm shrink-0">
                   <input 
                     type="checkbox" 
+                    id={`flight-select-${flightIndex}`}
                     checked={isSelected} 
                     onChange={() => toggleFlightSelection(flight, uniqueKey)} 
                     className="w-4 h-4 accent-theme-primary cursor-pointer" 

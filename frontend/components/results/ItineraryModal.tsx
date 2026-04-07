@@ -342,7 +342,6 @@ export default function ItineraryModal({
             }
           : null,
 
-        // Clean drive data saved into the database so the Saved Trips page can easily read it
         drive: drive
           ? {
               distance: displayDriveDistance,
@@ -392,7 +391,7 @@ export default function ItineraryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+    <div id="itinerary-modal-container" className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div
         className="absolute inset-0 bg-theme-text/60 backdrop-blur-xl animate-in fade-in duration-300"
         onClick={onClose}
@@ -411,6 +410,7 @@ export default function ItineraryModal({
             </p>
           </div>
           <button
+            id="close-itinerary-modal-btn"
             onClick={onClose}
             className="p-2 bg-theme-bg hover:bg-theme-surface rounded-full transition-colors border border-theme-surface shadow-sm shrink-0"
           >
@@ -480,9 +480,7 @@ export default function ItineraryModal({
               )}
             </div>
 
-            {/* Right Column (Details) */}
             <div className="lg:col-span-2 flex flex-col gap-8">
-              {/* Transport Section */}
               <section>
                 <SectionTitle
                   icon={flight ? <Plane size={18} /> : <Car size={18} />}
@@ -514,6 +512,7 @@ export default function ItineraryModal({
                           return (
                             <div
                               key={idx}
+                              id={`flight-itinerary-${idx}`} 
                               className="bg-theme-bg p-3.5 rounded-xl border border-theme-surface/60"
                             >
                               <div className="flex justify-between items-center mb-3 pb-2 border-b border-theme-surface/40">
@@ -553,7 +552,7 @@ export default function ItineraryModal({
                                           </div>
                                         )}
 
-                                        <div className="flex items-center gap-4 text-sm text-theme-text/80 my-1">
+                                        <div id={`flight-segment-${idx}-${sIdx}`} className="flex items-center gap-4 text-sm text-theme-text/80 my-1">
                                           <div className="flex-1">
                                             <p className="font-black text-lg text-theme-text">
                                               {seg.departure_airport}
@@ -627,14 +626,13 @@ export default function ItineraryModal({
                 )}
               </section>
 
-              {/* Stay Section */}
               <section>
                 <SectionTitle
                   icon={<Hotel size={18} />}
                   title="Accommodation"
                 />
                 {stay ? (
-                  <div className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
+                  <div id="planned-accommodation" className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
                     <div className="flex justify-between items-start gap-4">
                       <div>
                         <h4 className="font-black text-theme-text leading-tight">
@@ -665,7 +663,6 @@ export default function ItineraryModal({
                 )}
               </section>
 
-              {/* Attractions Section */}
               <section>
                 <SectionTitle
                   icon={<Camera size={18} />}
@@ -676,6 +673,7 @@ export default function ItineraryModal({
                     {attractions.map((attr: any, idx: number) => (
                       <div
                         key={idx}
+                        id={`planned-attraction-${idx}`}
                         className="bg-theme-bg rounded-xl p-3 border border-theme-surface shadow-sm flex items-center gap-3"
                       >
                         <div className="w-10 h-10 rounded-lg bg-theme-surface flex items-center justify-center shrink-0">
@@ -699,7 +697,6 @@ export default function ItineraryModal({
                 )}
               </section>
 
-              {/* Tours & Activities Section */}
               <section>
                 <SectionTitle
                   icon={<Ticket size={18} />}
@@ -710,6 +707,7 @@ export default function ItineraryModal({
                     {tours.map((tour: any, idx: number) => (
                       <div
                         key={idx}
+                        id={`planned-tour-${idx}`} 
                         className="bg-theme-bg rounded-xl p-3 sm:p-4 border border-theme-surface shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                       >
                         <div className="flex-1 min-w-0">
@@ -745,6 +743,7 @@ export default function ItineraryModal({
           <div className="flex flex-col sm:flex-row gap-3">
             {isLoggedIn && (
               <button
+                id="save-trip-btn"
                 onClick={handleSaveTrip}
                 disabled={
                   isSaving ||
@@ -783,6 +782,7 @@ export default function ItineraryModal({
             )}
 
             <button
+              id="export-pdf-btn"
               onClick={handleExportPdf}
               disabled={isExporting || isSharing || isSaving}
               className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${
@@ -800,6 +800,7 @@ export default function ItineraryModal({
             </button>
 
             <button
+              id="share-email-btn" 
               onClick={() => setShowEmailInput(!showEmailInput)}
               disabled={isExporting || isSharing || isSaving}
               className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 bg-theme-bg border-2 border-theme-surface text-theme-text hover:bg-theme-surface ${
@@ -815,6 +816,7 @@ export default function ItineraryModal({
           {showEmailInput && (
             <div className="flex flex-col sm:flex-row gap-2 animate-in slide-in-from-top-2 fade-in duration-200">
               <input
+                id="email-share-input"
                 type="email"
                 placeholder="Enter email address"
                 value={email}
@@ -822,6 +824,7 @@ export default function ItineraryModal({
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-theme-surface bg-theme-bg text-theme-text placeholder:text-theme-muted focus:outline-none focus:border-theme-primary transition-colors font-medium text-sm"
               />
               <button
+                id="send-email-btn"
                 onClick={handleSharePdf}
                 disabled={isSharing || !email}
                 className="px-6 py-3 bg-theme-text text-theme-bg font-black text-sm rounded-xl hover:bg-theme-text/80 disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md"

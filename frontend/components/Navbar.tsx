@@ -101,17 +101,18 @@ export default function Navbar({
             >
               <UserIcon size={16} />
               {/* Username hidden on very small screens, visible on sm and up */}
-              <span className="text-sm font-semibold hidden sm:block max-w-[120px] truncate">
+              <span id="profile_username" className="text-sm font-semibold hidden sm:block max-w-[120px] truncate">
                 {user}
               </span>
               <ChevronDown size={14} className={`transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-theme-bg rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-theme-surface py-1.5 z-[100] animate-in slide-in-from-top-2 fade-in duration-200">
+              <div id="dropdown_profile" className="absolute right-0 mt-2 w-48 bg-theme-bg rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-theme-surface py-1.5 z-[100] animate-in slide-in-from-top-2 fade-in duration-200">
                 <Link
                   href="/profile"
                   onClick={() => setIsDropdownOpen(false)}
+                  id="profile_link"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-theme-text hover:bg-theme-surface font-medium transition-colors"
                 >
                   <UserIcon size={16} className="text-theme-muted" />
@@ -119,6 +120,7 @@ export default function Navbar({
                 </Link>
                 <Link
                   href="/savedtrips"
+                  id="saved_trip_link"
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-theme-text hover:bg-theme-surface font-medium transition-colors"
                 >
@@ -135,7 +137,7 @@ export default function Navbar({
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors text-left"
                 >
-                  <LogOut size={16} className="text-red-500" />
+                  <LogOut id="logout-button" size={16} className="text-red-500" />
                   Logout
                 </button>
               </div>

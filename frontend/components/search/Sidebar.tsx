@@ -8,6 +8,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 interface SidebarProps {
+  id?: string;
   onSearch: (params: any) => void;
   onSearchStart?: () => void; 
   onCancel?: () => void;
@@ -224,6 +225,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
             <div className="text-[11px] text-theme-bg/70 mb-4">Plan Your Trip</div>
             <SbLabel>Source</SbLabel>
             <LocationAutocomplete 
+              id="source-input"
               placeholder="eg. NEW YORK, NY" 
               value={source} 
               onChange={(val, isValid) => {
@@ -240,7 +242,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
           <div>
             <SbLabel>Destination</SbLabel>
             <LocationAutocomplete 
-              placeholder="eg. LOS ANGELES, CA" 
+              placeholder="eg. LOS ANGELES, CA"
               value={destination} 
               onChange={(val, isValid) => {
                 setDestination(val);
@@ -250,7 +252,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
               isDark={false} 
               showGPS={false} 
             />
-            {errors.destination && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.destination}</span>}
+            {errors.destination && <span id="destination_error" className="text-red-400 text-[11px] mt-1 block font-medium">{errors.destination}</span>}
           </div>
 
           <div>
@@ -283,7 +285,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
                 />
                  <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-secondary pointer-events-none z-10" />
 
-                {errors.start && <span className="text-red-400 text-[11px] mt-1 block font-medium">{errors.start}</span>}
+                {errors.start && <span id="start_date_error" className="text-red-400 text-[11px] mt-1 block font-medium">{errors.start}</span>}
                 </div>
               
               <div className="flex-1 min-w-[120px] relative">
@@ -308,11 +310,11 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
           </div>
 
           <div className="flex flex-wrap gap-2.5">
-            <div className="flex-1 basis-[120px]">
+            <div id="num_adults" className="flex-1 basis-[120px]">
               <SbLabel>Adults</SbLabel>
               <SbCounter value={adults} min={1} max={9} onChange={setAdults} />
             </div>
-            <div className="flex-1 basis-[120px]">
+            <div id="num_children" className="flex-1 basis-[120px]">
               <SbLabel>Children</SbLabel>
               <SbCounter value={children} min={0} max={9} onChange={setChildren} />
             </div>
@@ -379,7 +381,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
         <div className="p-4 bg-theme-text border-t border-theme-secondary/20 shrink-0">
           {!isWorking ? (
             <button 
-              className="w-full p-4 rounded-2xl bg-theme-primary text-theme-bg text-sm font-bold flex items-center justify-center gap-2 hover:bg-theme-secondary transition-all shadow-[0_4px_15px_rgba(0,0,0,0.25)] active:scale-[0.98]"
+              id="submit-side" className="w-full p-4 rounded-2xl bg-theme-primary text-theme-bg text-sm font-bold flex items-center justify-center gap-2 hover:bg-theme-secondary transition-all shadow-[0_4px_15px_rgba(0,0,0,0.25)] active:scale-[0.98]"
               onClick={handleSearchSubmit} 
             >
               <Search size={17} /> SUBMIT

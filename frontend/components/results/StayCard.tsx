@@ -32,6 +32,7 @@ const StayRow = ({
   isSelected,
   toggleStaySelection,
   searchParams,
+  stayIndex,
 }: any) => {
   const offer = stay.roomDetails;
   const isUnavailable =
@@ -47,6 +48,7 @@ const StayRow = ({
 
   return (
     <div
+      id={`stay-option-${stayIndex}`} 
       className={`border rounded-xl p-4 transition-all duration-200 bg-theme-bg ${
         isSelected
           ? "border-theme-primary ring-1 ring-theme-primary bg-theme-primary/10 shadow-sm"
@@ -65,6 +67,7 @@ const StayRow = ({
 
         <div className="flex flex-col items-end gap-2.5 shrink-0 w-full sm:w-auto">
           <label
+            htmlFor={`stay-select-${stayIndex}`}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shadow-sm shrink-0 
             ${
               isUnavailable
@@ -74,6 +77,7 @@ const StayRow = ({
           >
             <input
               type="checkbox"
+              id={`stay-select-${stayIndex}`} 
               checked={isSelected}
               disabled={isUnavailable}
               onChange={() => {
@@ -113,6 +117,7 @@ const StayRow = ({
           {offer.rooms.map((room: any, i: number) => (
             <div
               key={i}
+              id={`stay-room-${stayIndex}-${i}`} 
               className="flex flex-col bg-theme-surface/50 p-3 rounded-xl border border-theme-surface gap-1.5 shadow-sm"
             >
               <div className="flex justify-between items-center w-full">
@@ -201,6 +206,7 @@ export default function StaysCard({
               isSelected={selectedStayKeys.includes(uniqueKey)}
               toggleStaySelection={toggleStaySelection}
               searchParams={searchParams}
+              stayIndex={idx} 
             />
           );
         })}

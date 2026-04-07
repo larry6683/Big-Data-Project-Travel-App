@@ -91,7 +91,7 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
             </label>
           </div>
 
-          <div className="flex items-center gap-2 text-sm font-bold mt-1">
+          <div id="drive_text" className="flex items-center gap-2 text-sm font-bold mt-1">
             <span className="bg-theme-muted/20 text-theme-primary border border-theme-muted px-3 py-1 rounded-lg shadow-sm">
               {sName}
             </span>

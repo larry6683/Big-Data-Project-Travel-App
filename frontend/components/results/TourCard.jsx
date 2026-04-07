@@ -56,6 +56,7 @@ export default function ToursCard({ tours }) {
           return (
             <div 
               key={uniqueKey} 
+              id={`tour-card-${idx}`}
               className={`group border rounded-xl p-4 transition-all duration-200 flex flex-col gap-4 ${isSelected ? 'border-theme-primary ring-1 ring-theme-primary bg-theme-bg/20 shadow-sm' : 'border-theme-surface bg-theme-bg/10 hover:border-theme-muted hover:shadow-md shadow-sm'}`}
             >
               
@@ -83,9 +84,10 @@ export default function ToursCard({ tours }) {
                       {tour.name}
                     </h4>
 
-                    <label className="flex items-center gap-2 cursor-pointer bg-theme-bg text-theme-text px-4 py-2 rounded-lg hover:bg-theme-surface border border-theme-surface transition-colors shadow-sm shrink-0">
+                    <label htmlFor={`tour-select-${idx}`} className="flex items-center gap-2 cursor-pointer bg-theme-bg text-theme-text px-4 py-2 rounded-lg hover:bg-theme-surface border border-theme-surface transition-colors shadow-sm shrink-0">
                       <input 
                         type="checkbox" 
+                        id={`tour-select-${idx}`} 
                         checked={isSelected} 
                         onChange={() => toggleTourSelection(tour, uniqueKey)} 
                         className="w-4 h-4 accent-theme-primary cursor-pointer" 
