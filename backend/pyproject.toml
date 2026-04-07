@@ -1,0 +1,16 @@
+[project]
+name = "wanderplan-tests"                                                                                                                                                                                         
+requires-python = ">=3.10"                                                                                                                                                                                          
+   
+[project.optional-dependencies]                                                                                                                                                                                     
+test = [                                                                                                                                                                                                          
+    "pytest",
+    "httpx",
+    "pytest-asyncio",
+    "requests"
+]                                                                                                                                                                                                                   
+   
+[tool.pytest.ini_options]                                                                                                                                                                                           
+testpaths = ["tests"] 
+pythonpath = ["."]
+asyncio_mode = "auto"
