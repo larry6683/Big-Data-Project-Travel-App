@@ -31,6 +31,8 @@ class Test_Frontend_Login():
         self.search_for_trip()
         self.select_itinerary()
         self.saved_trip_page.click_itin_button(self.driver)
+        self.saved_trip_page.click_save_trip_button(self.driver)
+        self.saved_trip_page.click_close_itinerary_button(self.driver)
                 
     def test_search(self):
         expected_result = "You have 1 stored trips."
@@ -42,6 +44,14 @@ class Test_Frontend_Login():
         assert saved_trip_count == expected_result, \
             f"Expected saved trip count to be '{expected_result}', but got '{saved_trip_count}'"
             
+    def delete_trip(self):
+        self.saved_trip_page.delete_first_saved_trip(self.driver)
+        expected_result = "You have 0 stored trips."
+        
+        saved_trip_count = self.saved_trip_page.get_saved_trip_count(self.driver)
+        
+        assert saved_trip_count == expected_result, \
+            f"Expected saved trip count to be '{expected_result}', but got '{saved_trip_count}'"
     
         
         

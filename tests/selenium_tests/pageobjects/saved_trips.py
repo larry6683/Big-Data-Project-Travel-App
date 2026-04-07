@@ -19,6 +19,9 @@ class Saved_Trips_Page:
     attractions_tab_selector = (By.XPATH, '//*[@id="tab-label-attractions"]')
     tours_tab_selector = (By.XPATH, '//*[@id="tab-icon-tours"]')
     
+    close_itinerary_btn_selector = (By.XPATH, '//*[@id="close-itinerary-modal-btn"]')
+    saved_trips_btn_selector = (By.XPATH, '//*[@id="save-trip-btn"]')
+    
     def click_flight_tab(self, driver):
         WebDriverWait(driver, 30).until(EC.element_to_be_clickable(self.flight_tab_selector)).click()
         
@@ -33,6 +36,12 @@ class Saved_Trips_Page:
     
     def click_itin_button(self, driver):
         WebDriverWait(driver, 10).until(EC.element_to_be_clickable(self.generate_itinerary_btn_selector)).click()
+        
+    def click_save_trip_button(self, driver):
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable(self.saved_trips_btn_selector)).click()
+        
+    def click_close_itinerary_button(self, driver):
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable(self.close_itinerary_btn_selector)).click()
     
     def get_saved_trip_count(self, driver):
         element = WebDriverWait(driver, 10).until(
