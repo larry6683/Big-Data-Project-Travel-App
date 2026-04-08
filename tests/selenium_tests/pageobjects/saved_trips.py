@@ -54,7 +54,6 @@ class Saved_Trips_Page:
             EC.element_to_be_clickable(self.delete_trip_selector)
         )
         delete_btn.click()
-        Keys.ENTER
         
     def select_first_flight(self, driver):
         self.click_flight_tab(driver)

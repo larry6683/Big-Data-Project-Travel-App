@@ -28,6 +28,7 @@ class searchPage:
     
     def enter_source(self, driver, location):
         el = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(self.source_selector))
+        el.clear()
         el.send_keys(location + Keys.ENTER)
         first_result_xpath = "//ul[contains(@class, 'max-h-[185px]')]//li[1]"
     
@@ -42,6 +43,7 @@ class searchPage:
 
     def enter_destination(self, driver, location):
         el = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(self.destination_selector))
+        el.clear()
         el.send_keys(location + Keys.ENTER)
         first_result_xpath = "//ul[contains(@class, 'max-h-[185px]')]//li[1]"
     

@@ -9,18 +9,21 @@ from pageobjects.auth_path import AuthPage
 from test_variables import test_variables
 
 @pytest.mark.usefixtures("login")
+@pytest.mark.regression
 class Test_Frontend_Login():
     @pytest.fixture(autouse=True)
     def setup_method(self, login):
         self.driver = login
-        
+    
+    @pytest.mark.smoke
     def test_login_success(self, login):
         expected_url = test_variables.test_url
         WebDriverWait(self.driver, 5).until(
             EC.url_to_be(expected_url),
             message=f"Expected URL to be {expected_url} within 5s, but was {self.driver.current_url}"
         )
-        
+    
+    @pytest.mark.smoke
     def test_profile_page(self):
         profile_btn = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable((By.ID, "profile_username"))
@@ -59,13 +62,14 @@ class Test_Frontend_Login():
         assert "Incorrect email or password" in error_message_element.text, \
             f"Expected error message not found. Got: {error_message_element.text}"
         
+@pytest.mark.regression
 @pytest.mark.usefixtures("webdriver_handler")
 class Test_Signup():
     @pytest.fixture(autouse=True)
     def setup_method(self, webdriver_handler):
         self.driver = webdriver_handler
         
-        
+    @pytest.mark.smoke
     def test_signup_success(self):
         auth_page = AuthPage()
         

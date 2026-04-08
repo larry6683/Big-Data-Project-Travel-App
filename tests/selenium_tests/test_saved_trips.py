@@ -8,6 +8,7 @@ from pageobjects.search import searchPage
 from pageobjects.saved_trips import Saved_Trips_Page
 
 @pytest.mark.usefixtures("login")
+@pytest.mark.regression
 class Test_Frontend_Login():
     @pytest.fixture(autouse=True)
     def setup_method(self, login):
@@ -33,9 +34,24 @@ class Test_Frontend_Login():
         self.saved_trip_page.click_itin_button(self.driver)
         self.saved_trip_page.click_save_trip_button(self.driver)
         self.saved_trip_page.click_close_itinerary_button(self.driver)
-                
+        
+        
+    def test_initial_saved_trips_count_is_zero(self):
+        """Verify that a fresh user starts with 0 saved trips."""
+        expected_result = "You have 0 stored trips."
+        
+        self.saved_trip_page.switch_to_saved_trips_tab(self.driver)
+        saved_trip_count = self.saved_trip_page.get_saved_trip_count(self.driver)
+        
+        assert saved_trip_count == expected_result, \
+            f"Expected initial count to be '{expected_result}', got '{saved_trip_count}'"
+        
+    @pytest.mark.smoke
     def test_search(self):
         expected_result = "You have 1 stored trips."
+        test_url = "http://localhost:3000/"
+        
+        self.driver.get(test_url)
         self.generate_itinerary()
         self.saved_trip_page.switch_to_saved_trips_tab(self.driver)
         
@@ -52,6 +68,37 @@ class Test_Frontend_Login():
         
         assert saved_trip_count == expected_result, \
             f"Expected saved trip count to be '{expected_result}', but got '{saved_trip_count}'"
+            
+            
+    def test_save_multiple_trips(self):
+        """Verify that saving multiple trips increments the counter accurately."""
+        expected_result = "You have 2 stored trips."
+        test_url = "http://localhost:3000/"
+        
+        self.driver.get(test_url)
+        
+        self.generate_itinerary()
+        
+        self.driver.get(test_url)
+        
+        self.generate_itinerary()
+        
+        self.saved_trip_page.switch_to_saved_trips_tab(self.driver)
+        saved_trip_count = self.saved_trip_page.get_saved_trip_count(self.driver)
+        
+        assert saved_trip_count == expected_result, \
+            f"Expected count to be '{expected_result}', got '{saved_trip_count}'"
+            
+    def test_delete_multiple(self):
+        self.saved_trip_page.delete_first_saved_trip(self.driver)
+        self.saved_trip_page.delete_first_saved_trip(self.driver)
+        
+        expected_result = "You have 0 stored trips."
+        
+        saved_trip_count = self.saved_trip_page.get_saved_trip_count(self.driver)
+        
+        assert saved_trip_count == expected_result, \
+            f"Expected count to be '{expected_result}', got '{saved_trip_count}'"
     
         
         

@@ -7,12 +7,14 @@ import pytest
 from pageobjects.search import searchPage
 
 @pytest.mark.usefixtures("login")
+@pytest.mark.regression
 class Test_Frontend_Login():
     @pytest.fixture(autouse=True)
     def setup_method(self, login):
         self.driver = login
         self.search_page=searchPage()
-                
+        
+    @pytest.mark.smoke        
     def test_search(self):
         self.search_page.enter_source(self.driver, "New York, New York")
         self.search_page.enter_destination(self.driver, "Denver, Colorado")
