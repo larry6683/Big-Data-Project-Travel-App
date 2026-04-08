@@ -32,4 +32,21 @@ This project is structured as a monorepo containing two primary environments:
 ## 🐳 Docker Setup
 Both the frontend and backend include `Dockerfile` and `docker-compose.yml` configurations. You can spin up the individual services using Docker to ensure consistent environments.
 
-Alternatively you can spin up a singular Docker parent container using ./start.sh
+## Testing
+
+### Backend Endpoint Testing
+Spin up app using `./start.sh` in the `root`. Once built, type:  
+```
+cd ./backend  
+docker compose exec backend pytest -m regression
+```
+
+### Frontend Selenium Testing
+Spin up app using `./start.sh` in the `root`. Pip install dependencies, which can be checked by running `pytest -m regression` in tests folder in `root`. Once installed run:  
+```
+pytest -m regression
+```
+Alternatively for a short testing suite:
+```
+pytest -m smoke
+```
