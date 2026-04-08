@@ -1,4 +1,12 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+node_modules
+__pycache__
+tests/selenium_tests/__pycache__
+
+.vscode/
+frontend/.dockerignore
+frontend/package-lock.json
+package-lock.json
+package.json# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # frontend/.gitignore
 
