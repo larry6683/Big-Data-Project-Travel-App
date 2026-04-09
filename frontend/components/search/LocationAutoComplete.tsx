@@ -6,6 +6,7 @@ import { MapPin, Navigation, Loader2, X } from 'lucide-react';
 import { travelApi } from '@/services/api';
 
 interface Props {
+  id?: string;
   placeholder: string;
   value: string;
   onChange: (val: string, isValid: boolean) => void;
