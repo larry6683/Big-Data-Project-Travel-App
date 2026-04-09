@@ -1,0 +1,83 @@
+substitutions:
+  _REGION: us-central1
+  _PROJECT_ID: wanderplanus
+  _ENVIRONMENT: prod
+  _REPO: travel-app
+
+steps:
+  # ── 1. Build backend image ───────────────────────────────────────────────
+  - name: "gcr.io/cloud-builders/docker"
+    id: build-backend
+    args:
+      - build
+      - -t
+      - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/backend:latest"
+      - -f
+      - backend/Dockerfile
+      - ./backend
+    waitFor: ["-"]
+
+  # ── 2. Build frontend image ──────────────────────────────────────────────
+  - name: "gcr.io/cloud-builders/docker"
+    id: build-frontend
+    args:
+      - build
+      - --build-arg
+      - NEXT_PUBLIC_API_URL=https://prod-travel-backend-n2yisjprxa-uc.a.run.app/api/v1
+      - -t
+      - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/frontend:latest"
+      - -f
+      - frontend/Dockerfile
+      - ./frontend
+
+  # ── 3. Push backend image ────────────────────────────────────────────────
+  - name: "gcr.io/cloud-builders/docker"
+    id: push-backend
+    args:
+      - push
+      - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/backend:latest"
+    waitFor: ["build-backend"]
+
+  # ── 4. Push frontend image ───────────────────────────────────────────────
+  - name: "gcr.io/cloud-builders/docker"
+    id: push-frontend
+    args:
+      - push
+      - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/frontend:latest"
+    waitFor: ["build-frontend"]
+
+  # ── 5. Deploy backend to Cloud Run ──────────────────────────────────────
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: deploy-backend
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update
+      - "${_ENVIRONMENT}-travel-backend"
+      - --image=${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/backend:latest
+      - --region=${_REGION}
+      - --platform=managed
+    waitFor: ["push-backend"]
+
+  # ── 6. Deploy frontend to Cloud Run ─────────────────────────────────────
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: deploy-frontend
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update
+      - "${_ENVIRONMENT}-travel-frontend"
+      - --image=${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/frontend:latest
+      - --region=${_REGION}
+      - --platform=managed
+    waitFor: ["push-frontend", "deploy-backend"]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_MEDIUM
+
+images:
+  - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/backend:latest"
+  - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPO}/frontend:latest"
