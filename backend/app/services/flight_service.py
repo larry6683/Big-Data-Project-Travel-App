@@ -1,15 +1,19 @@
+import os
+from app.core.config import settings
 import httpx
 import asyncio
 import airportsdata
 from app.services.base_client import BaseAmadeusClient
 from app.schemas.flight import FlightOffer, FlightSegment, FlightItinerary
 
+# Put your Duffel token here, or better, add DUFFEL_API_KEY to your .env file
+DUFFEL_API_KEY = settings.DUFFEL_API_KEY
+
 class FlightService(BaseAmadeusClient):
     
     def __init__(self):
         super().__init__()
         # Load the 28,000+ airport database into memory instantly when the service starts
-        # Using 'IATA' makes the 3-letter code the dictionary key
         self.airports_dict = airportsdata.load('IATA')
 
     def get_airport_name(self, iata_code: str) -> str:
@@ -18,8 +22,6 @@ class FlightService(BaseAmadeusClient):
             return "Airport"
             
         code_upper = iata_code.upper()
-        
-        # Look up the code in the local dictionary
         airport_info = self.airports_dict.get(code_upper)
         
         if airport_info:
@@ -28,84 +30,75 @@ class FlightService(BaseAmadeusClient):
         return code_upper
 
     def _parse_flight_data(self, raw_data: dict) -> list[FlightOffer]:
+        """Parses Duffel's specific JSON structure into our custom Pydantic schemas"""
         clean_results = []
-        if "data" not in raw_data:
+        offers = raw_data.get("data", {}).get("offers", [])[:50]
+        
+        if not offers:
             return []
 
-        carriers_dict = raw_data.get("dictionaries", {}).get("carriers", {})
-
-        for offer in raw_data["data"]:
+        for offer in offers:
             try:
-                price = float(offer.get("price", {}).get("grandTotal", 0.0))
-                currency = offer.get("price", {}).get("currency", "USD")
+                # 1. Extract Price and Airline
+                price = float(offer.get("total_amount", 0.0))
+                currency = offer.get("total_currency", "USD")
                 
-                val_codes = offer.get("validatingAirlineCodes", [])
-                main_carrier_code = val_codes[0] if val_codes else "UNKNOWN"
-                main_carrier_name = carriers_dict.get(main_carrier_code, main_carrier_code)
-
-                cabin_class = "ECONOMY"
-                traveler_pricings = offer.get("travelerPricings", [])
-                
-                bags_by_seg = {}
-                if traveler_pricings:
-                    fare_details = traveler_pricings[0].get("fareDetailsBySegment", [])
-                    if fare_details:
-                        cabin_class = fare_details[0].get("cabin", "ECONOMY")
-                        for fd in fare_details:
-                            seg_id = fd.get("segmentId")
-                            
-                            checked = 0
-                            cabin = 0
-                            personal = 1
-                            
-                            if "includedCheckedBags" in fd:
-                                bags_info = fd["includedCheckedBags"]
-                                if "quantity" in bags_info:
-                                    checked = bags_info["quantity"]
-                                elif "weight" in bags_info:
-                                    checked = 1 
-                                    
-                            amenities = fd.get("amenities", [])
-                            for am in amenities:
-                                desc = am.get("description", "").upper()
-                                if "CARRY" in desc or "CABIN" in desc:
-                                    cabin = 1
-                                if "CHECKED" in desc and checked == 0:
-                                    checked = 1
-                            
-                            bags_by_seg[seg_id] = {
-                                "personal": personal,
-                                "cabin": cabin,
-                                "checked": checked
-                            }
+                owner = offer.get("owner", {})
+                main_carrier_code = owner.get("iata_code", "UNKNOWN")
+                main_carrier_name = owner.get("name", main_carrier_code)
 
                 clean_itineraries = []
-                for itinerary in offer.get("itineraries", []):
-                    itin_duration = itinerary.get("duration", "").replace("PT", "")
+                overall_cabin_class = "ECONOMY"
+                
+                # 2. Extract Slices (Itineraries like Outbound / Inbound)
+                for slice_data in offer.get("slices", []):
+                    itin_duration = slice_data.get("duration", "").replace("PT", "")
                     clean_segments = []
                     
-                    for seg in itinerary.get("segments", []):
-                        seg_carrier_code = seg.get("carrierCode", "UNKNOWN")
-                        seg_carrier_name = carriers_dict.get(seg_carrier_code, seg_carrier_code)
+                    # 3. Extract Segments for each Slice
+                    segments = slice_data.get("segments", [])
+                    for seg in segments:
+                        op_carrier = seg.get("operating_carrier", {})
+                        if not op_carrier:
+                            op_carrier = seg.get("marketing_carrier", {})
+                            
+                        seg_carrier_code = op_carrier.get("iata_code", "UNKNOWN")
+                        seg_carrier_name = op_carrier.get("name", seg_carrier_code)
                         
-                        departure = seg.get("departure", {})
-                        arrival = seg.get("arrival", {})
+                        departure = seg.get("origin", {})
+                        arrival = seg.get("destination", {})
                         
-                        bag_data = bags_by_seg.get(seg.get("id"), {"personal": 1, "cabin": 0, "checked": 0})
+                        # 4. Extract Baggage Allowance and Cabin Class
+                        personal = 1
+                        cabin = 0
+                        checked = 0
                         
+                        passengers = seg.get("passengers", [])
+                        if passengers:
+                            p = passengers[0]
+                            overall_cabin_class = p.get("cabin_class", "economy").upper()
+                            bags = p.get("baggages", [])
+                            for bag in bags:
+                                b_type = bag.get("type")
+                                qty = bag.get("quantity", 1)
+                                if b_type == "carry_on":
+                                    cabin += qty
+                                elif b_type == "checked":
+                                    checked += qty
+
                         clean_segments.append(FlightSegment(
-                            departure_airport=departure.get("iataCode", "TBA"),
+                            departure_airport=departure.get("iata_code", "TBA"),
                             departure_airport_name=None, 
-                            departure_time=departure.get("at", "TBA"),
-                            arrival_airport=arrival.get("iataCode", "TBA"),
+                            departure_time=seg.get("departing_at", "TBA"),
+                            arrival_airport=arrival.get("iata_code", "TBA"),
                             arrival_airport_name=None, 
-                            arrival_time=arrival.get("at", "TBA"),
+                            arrival_time=seg.get("arriving_at", "TBA"),
                             carrier_code=seg_carrier_code,
                             carrier_name=seg_carrier_name,  
-                            flight_number=seg.get("number", "TBA"),
-                            personal_item=bag_data["personal"],
-                            cabin_bags=bag_data["cabin"],
-                            checked_bags=bag_data["checked"]
+                            flight_number=seg.get("operating_carrier_flight_number", "TBA"),
+                            personal_item=personal,
+                            cabin_bags=cabin,
+                            checked_bags=checked
                         ))
                     
                     clean_itineraries.append(FlightItinerary(
@@ -114,53 +107,67 @@ class FlightService(BaseAmadeusClient):
                         segments=clean_segments
                     ))
 
+                # 5. Build final Object
                 flight_obj = FlightOffer(
                     id=offer.get("id", "0"),
                     price=price,
                     currency=currency,
                     airline_code=main_carrier_code,
                     airline_name=main_carrier_name,    
-                    cabin_class=cabin_class,        
+                    cabin_class=overall_cabin_class,        
                     itineraries=clean_itineraries 
                 )
                 clean_results.append(flight_obj)
 
             except Exception as e:
+                print(f"Error parsing an individual Duffel offer: {e}")
                 continue
         
         return clean_results
 
     async def search_flights(self, origin: str, destination: str, date: str, return_date: str, adults: int, travel_class: str = "ECONOMY", children: int = 0):
-        print(f"🔍 CACHE MISS: Fetching real-time flight data for {origin} -> {destination}")
-        token = await self.get_token()
-        if not token:
-            return {"error": "Authentication Failed"}
-
-        classes_to_search = [c.strip().upper() for c in travel_class.split(",")]
+        print(f"🔍 [DUFFEL] CACHE MISS: Fetching real-time flight data for {origin} -> {destination}")
+        
+        # Amadeus uses "ECONOMY", Duffel needs "economy"
+        classes_to_search = [c.strip().lower() for c in travel_class.split(",")]
         
         async def fetch_for_class(t_class):
-            url = f"{self.base_url}/v2/shopping/flight-offers"
-            headers = {"Authorization": f"Bearer {token}"}
-            params = {
-                "originLocationCode": origin,
-                "destinationLocationCode": destination,
-                "departureDate": date,
-                "returnDate": return_date, 
-                "adults": adults,
-                "travelClass": t_class,
-                "max": 50,  
-                "currencyCode": "USD"
-            }
+            url = "https://api.duffel.com/air/offer_requests"
+            # Change this inside the fetch_for_class function
+            headers = {
+    "Duffel-Version": "v2",  # Updated from "v1" to "v2"
+    "Authorization": f"Bearer {DUFFEL_API_KEY}",
+    "Content-Type": "application/json"
+               }
+            
+            # Form slices (One Way vs Round Trip)
+            slices = [{"origin": origin, "destination": destination, "departure_date": date}]
+            if return_date and return_date.strip():
+                slices.append({"origin": destination, "destination": origin, "departure_date": return_date})
+                
+            # Form passengers array
+            passengers = [{"type": "adult"} for _ in range(adults)]
             if children > 0:
-                params["children"] = children
+                passengers.extend([{"type": "child"} for _ in range(children)])
+                
+            payload = {
+                "data": {
+                    "slices": slices,
+                    "passengers": passengers,
+                    "cabin_class": t_class
+                }
+            }
 
             async with httpx.AsyncClient() as client:
                 try:
-                    response = await client.get(url, headers=headers, params=params, timeout=30.0)
-                    if response.status_code == 200:
+                    response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                    if response.status_code in (200, 201):
                         return self._parse_flight_data(response.json())
-                    return []
+                    else:
+                        print(f"❌ Duffel API Error ({response.status_code}): {response.text}")
+                        return []
                 except Exception as e:
+                    print(f"❌ Connection Error: {e}")
                     return []
 
         tasks = [fetch_for_class(c) for c in classes_to_search]
@@ -183,7 +190,7 @@ class FlightService(BaseAmadeusClient):
                         flight.id = f"flight_{len(seen_signatures)}"
                         clean_data.append(flight)
         
-        # --- INSTANT NAME RESOLUTION --- 
+        # --- INSTANT NAME RESOLUTION (Still works perfectly with Duffel!) --- 
         unique_iata_codes = set()
         for flight in clean_data:
             for itin in flight.itineraries:
@@ -193,7 +200,6 @@ class FlightService(BaseAmadeusClient):
                     if seg.arrival_airport and seg.arrival_airport != "TBA":
                         unique_iata_codes.add(seg.arrival_airport)
 
-        # Because we are using a local dictionary, we don't need async/await here anymore!
         resolved_names = {code: self.get_airport_name(code) for code in unique_iata_codes}
 
         for flight in clean_data:
