@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     BDC_API_KEY: str  
 
     POSTGRES_URL: str 
+    DUFFEL_API_KEY: str
     
     # Email Settings
     SMTP_SERVER: str = "smtp.gmail.com" # Default for Gmail
