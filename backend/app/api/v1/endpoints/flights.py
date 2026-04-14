@@ -9,7 +9,7 @@ from fastapi_cache.decorator import cache
 router = APIRouter()
 
 @router.get("/search", response_model=List[FlightOffer])
-@cache(expire=3600)
+@cache(expire=86400) # Cache flight search results for 24 hours (86400 seconds)
 async def search_flights(
     origin: str = Query(..., description="Departure airport IATA code (e.g., JFK)"),
     destination: str = Query(..., description="Arrival airport IATA code (e.g., LHR)"),
