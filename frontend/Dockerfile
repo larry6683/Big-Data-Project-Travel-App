@@ -12,6 +12,10 @@ RUN npm install
 
 # Copy code and BUILD
 COPY . .
+# Add these lines
+ARG NEXT_PUBLIC_PROTOMAPS_KEY
+ENV NEXT_PUBLIC_PROTOMAPS_KEY=$NEXT_PUBLIC_PROTOMAPS_KEY
+
 RUN npm run build
 
 EXPOSE 3000
