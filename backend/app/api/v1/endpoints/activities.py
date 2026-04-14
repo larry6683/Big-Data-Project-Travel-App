@@ -7,7 +7,7 @@ from fastapi_cache.decorator import cache
 router = APIRouter()
 
 @router.get("/nearby", response_model=List[Activity])
-@cache(expire=3600)
+@cache(expire=None)
 async def get_nearby_activities(
     lat: float = Query(..., description="Destination Latitude from global state"),
     lon: float = Query(..., description="Destination Longitude from global state"),

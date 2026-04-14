@@ -95,8 +95,7 @@ export default function LoginPage() {
       try {
         // Fetch the full profile so the Navbar displays the user's real name instead of 'undefined'
         const profile = await travelApi.getProfile();
-        displayUsername =
-          profile.full_name || profile.name || profile.email || email;
+        displayUsername = profile.full_name || profile.name || profile.email || email;
       } catch (profileErr) {
         console.warn("Could not fetch profile, falling back to email");
       }
@@ -107,9 +106,7 @@ export default function LoginPage() {
     } catch (err: any) {
       localStorage.removeItem("token"); // Clean up if failed
       setGlobalError(
-        err.response?.data?.detail ||
-          err.message ||
-          "Authentication failed. Please check your credentials."
+        err.response?.data?.detail || err.message || "Authentication failed. Please check your credentials."
       );
     } finally {
       setIsLoading(false);
@@ -188,8 +185,8 @@ export default function LoginPage() {
             <span className="text-theme-accent">planned in seconds.</span>
           </h1>
           <p className="text-lg text-theme-bg/80 font-medium">
-            Discover optimal routes, live weather forecasts, and local
-            attractions powered by real-time data.
+            Let our AI craft the perfect itinerary tailored to your unique
+            travel style.
           </p>
         </div>
       </div>
@@ -241,7 +238,6 @@ export default function LoginPage() {
                   }`}
                 ></div>
                 <button
-                  id="toggle-signin"
                   type="button"
                   onClick={() => {
                     setIsLogin(true);
@@ -257,7 +253,6 @@ export default function LoginPage() {
                   Sign In
                 </button>
                 <button
-                  id="toggle-signup"
                   type="button"
                   onClick={() => {
                     setIsLogin(false);
@@ -276,24 +271,17 @@ export default function LoginPage() {
             )}
 
             <form
-              id="auth-form"
               onSubmit={isForgotMode ? handleForgotSubmit : handleAuthSubmit}
               className="flex flex-col gap-5"
             >
               {/* Status Bubbles */}
               {globalError && (
-                <div 
-                  id="error-message" 
-                  className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-xl text-center animate-in fade-in zoom-in-95 duration-200 flex items-center justify-center gap-2"
-                >
+                <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-xl text-center animate-in fade-in zoom-in-95 duration-200 flex items-center justify-center gap-2">
                   <span>⚠️</span> {globalError}
                 </div>
               )}
               {successMessage && (
-                <div 
-                  id="success-message" 
-                  className="p-3 bg-green-50 border border-green-100 text-green-700 text-xs font-bold rounded-xl text-center animate-in fade-in zoom-in-95 duration-200 flex items-center justify-center gap-2"
-                >
+                <div className="p-3 bg-green-50 border border-green-100 text-green-700 text-xs font-bold rounded-xl text-center animate-in fade-in zoom-in-95 duration-200 flex items-center justify-center gap-2">
                   <CheckCircle2 size={16} /> {successMessage}
                 </div>
               )}
@@ -312,7 +300,6 @@ export default function LoginPage() {
                       <UserIcon size={18} />
                     </div>
                     <input
-                      id="input-name"
                       type="text"
                       placeholder="Full Name"
                       value={name}
@@ -325,7 +312,7 @@ export default function LoginPage() {
                     />
                   </div>
                   {fieldErrors.name && (
-                    <p id="error-name" className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
+                    <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
                       {fieldErrors.name}
                     </p>
                   )}
@@ -345,7 +332,6 @@ export default function LoginPage() {
                     <Mail size={18} />
                   </div>
                   <input
-                    id="input-email"
                     type="text"
                     placeholder="Email Address"
                     value={email}
@@ -363,7 +349,7 @@ export default function LoginPage() {
                   />
                 </div>
                 {fieldErrors.email && (
-                  <p id="error-email" className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
+                  <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
                     {fieldErrors.email}
                   </p>
                 )}
@@ -383,7 +369,6 @@ export default function LoginPage() {
                       <Lock size={18} />
                     </div>
                     <input
-                      id="input-password"
                       type="password"
                       placeholder={
                         isForgotMode ? "Enter New Password" : "Password"
@@ -398,7 +383,7 @@ export default function LoginPage() {
                     />
                   </div>
                   {fieldErrors.password && (
-                    <p id="error-password" className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
+                    <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
                       {fieldErrors.password}
                     </p>
                   )}
@@ -413,7 +398,6 @@ export default function LoginPage() {
                       <Key size={18} />
                     </div>
                     <input
-                      id="input-reset-code"
                       type="text"
                       placeholder="6-Digit Code from Email"
                       value={resetCode}
@@ -428,7 +412,6 @@ export default function LoginPage() {
               {isLogin && !isForgotMode && (
                 <div className="flex justify-end mt-[-8px] animate-in fade-in duration-300">
                   <button
-                    id="link-forgot-password"
                     type="button"
                     onClick={() => {
                       setIsForgotMode(true);
@@ -442,7 +425,6 @@ export default function LoginPage() {
               )}
 
               <button
-                id="btn-submit-auth"
                 type="submit"
                 disabled={isLoading}
                 className="w-full mt-2 py-3.5 px-4 bg-theme-primary hover:bg-theme-secondary text-theme-bg rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-theme-primary/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed group"
@@ -469,7 +451,6 @@ export default function LoginPage() {
               {isForgotMode && (
                 <div className="flex justify-center mt-2 animate-in fade-in duration-300">
                   <button
-                    id="link-back-login"
                     type="button"
                     onClick={() => {
                       setIsForgotMode(false);
@@ -495,7 +476,6 @@ export default function LoginPage() {
                 </div>
                 <div className="mt-6">
                   <button
-                    id="btn-google-login"
                     type="button"
                     className="w-full flex items-center justify-center gap-3 py-3 bg-theme-bg border border-theme-secondary/30 hover:bg-theme-surface hover:border-theme-secondary/50 rounded-xl text-sm font-bold text-theme-text transition-all shadow-sm active:scale-[0.98]"
                   >

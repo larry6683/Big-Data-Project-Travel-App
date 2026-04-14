@@ -82,13 +82,14 @@ export default function ItineraryModal({
     ? selections.flights[0]
     : selections?.flights;
 
+  // FIXED: Properly extract driving data by checking for the .data property
   let rawDrive = selections?.drive || selections?.driving;
   let drive = null;
   if (rawDrive) {
     if (Array.isArray(rawDrive)) {
       drive = rawDrive[0];
     } else if (rawDrive.data) {
-      drive = rawDrive.data;
+      drive = rawDrive.data; // This is how DriveCard.tsx saves it!
     } else {
       drive = rawDrive;
     }
@@ -103,19 +104,21 @@ export default function ItineraryModal({
   // Check if Weather was actually selected on the home page
   const isWeatherSelected = selections?.weather?.selected === true;
 
-  // Helper to calculate fuel cost dynamically
+  // Helper to calculate fuel cost dynamically (just like DriveCard.tsx)
   const getFuelCost = () => {
     if (!drive) return 0;
     if (drive.distance_km) {
       const miles = drive.distance_km * 0.621371;
       const gallons = miles / 25;
-      return gallons * 3.35;
+      return gallons * 3.35; // Standard fuel price used in DriveCard
     }
+    // Fallback for older formats
     const fuel = drive.fuelEstimate || drive.fuel_estimate || drive.price || 0;
     if (typeof fuel === "string") return Number(fuel.replace(/[^0-9.-]+/g, ""));
     return Number(fuel);
   };
 
+  // Safe display helpers for driving distance and duration
   let displayDriveDuration = "N/A";
   if (drive?.duration_mins) {
     const hrs = Math.floor(drive.duration_mins / 60);
@@ -138,7 +141,7 @@ export default function ItineraryModal({
   if (flight) {
     totalCost += Number(flight.price?.total || flight.price || 0);
   } else if (drive) {
-    totalCost += getFuelCost();
+    totalCost += getFuelCost(); // Adds driving fuel cost to the top total!
   }
 
   if (stay) totalCost += Number(stay.offerDetails?.price || stay.price || 0);
@@ -148,6 +151,7 @@ export default function ItineraryModal({
     }
   });
 
+  // Extract first day weather for summary ONLY if selected
   let firstDayWeather = null;
   if (isWeatherSelected) {
     const activeWeatherData = selections?.weather?.data || weatherData;
@@ -330,9 +334,7 @@ export default function ItineraryModal({
               itineraries: (flight.itineraries || []).map((itin: any) => ({
                 segments: (itin.segments || []).map((seg: any) => ({
                   departure_airport: seg.departure_airport,
-                  departure_airport_name: seg.departure_airport_name, // UPDATED: Ensure name is saved
                   arrival_airport: seg.arrival_airport,
-                  arrival_airport_name: seg.arrival_airport_name, // UPDATED: Ensure name is saved
                   departure_time: seg.departure_time,
                   arrival_time: seg.arrival_time,
                 })),
@@ -340,6 +342,7 @@ export default function ItineraryModal({
             }
           : null,
 
+        // Clean drive data saved into the database so the Saved Trips page can easily read it
         drive: drive
           ? {
               distance: displayDriveDistance,
@@ -389,7 +392,7 @@ export default function ItineraryModal({
   };
 
   return (
-    <div id="itinerary-modal-container" className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div
         className="absolute inset-0 bg-theme-text/60 backdrop-blur-xl animate-in fade-in duration-300"
         onClick={onClose}
@@ -408,7 +411,6 @@ export default function ItineraryModal({
             </p>
           </div>
           <button
-            id="close-itinerary-modal-btn"
             onClick={onClose}
             className="p-2 bg-theme-bg hover:bg-theme-surface rounded-full transition-colors border border-theme-surface shadow-sm shrink-0"
           >
@@ -478,7 +480,9 @@ export default function ItineraryModal({
               )}
             </div>
 
+            {/* Right Column (Details) */}
             <div className="lg:col-span-2 flex flex-col gap-8">
+              {/* Transport Section */}
               <section>
                 <SectionTitle
                   icon={flight ? <Plane size={18} /> : <Car size={18} />}
@@ -510,7 +514,6 @@ export default function ItineraryModal({
                           return (
                             <div
                               key={idx}
-                              id={`flight-itinerary-${idx}`} 
                               className="bg-theme-bg p-3.5 rounded-xl border border-theme-surface/60"
                             >
                               <div className="flex justify-between items-center mb-3 pb-2 border-b border-theme-surface/40">
@@ -550,36 +553,25 @@ export default function ItineraryModal({
                                           </div>
                                         )}
 
-                                        <div id={`flight-segment-${idx}-${sIdx}`} className="flex items-start gap-3 text-sm text-theme-text/80 my-2">
-                                          {/* UPDATED: Departure Info (Responsive Wrapping) */}
-                                          <div className="flex-1 min-w-0">
-                                            <p className="font-black text-sm sm:text-base text-theme-text leading-tight break-words">
-                                              {seg.departure_airport_name ||
-                                                "Airport"}
-                                              <span className="text-theme-muted font-bold text-[10px] ml-1 whitespace-nowrap">
-                                                ({seg.departure_airport})
-                                              </span>
+                                        <div className="flex items-center gap-4 text-sm text-theme-text/80 my-1">
+                                          <div className="flex-1">
+                                            <p className="font-black text-lg text-theme-text">
+                                              {seg.departure_airport}
                                             </p>
-                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mt-1">
+                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
                                               {formatTime(seg.departure_time)}
                                             </p>
                                           </div>
-
-                                          {/* Simplified Airplane Icon for multiline support */}
-                                          <div className="flex flex-col items-center justify-start mt-0.5 px-2">
-                                            <span className="text-xs">✈️</span>
+                                          <div className="h-px flex-1 bg-theme-surface relative">
+                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-theme-bg px-1 text-[10px]">
+                                              ✈️
+                                            </div>
                                           </div>
-
-                                          {/* UPDATED: Arrival Info (Responsive Wrapping) */}
-                                          <div className="flex-1 min-w-0 text-right">
-                                            <p className="font-black text-sm sm:text-base text-theme-text leading-tight break-words">
-                                              {seg.arrival_airport_name ||
-                                                "Airport"}
-                                              <span className="text-theme-muted font-bold text-[10px] ml-1 whitespace-nowrap">
-                                                ({seg.arrival_airport})
-                                              </span>
+                                          <div className="flex-1 text-right">
+                                            <p className="font-black text-lg text-theme-text">
+                                              {seg.arrival_airport}
                                             </p>
-                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mt-1">
+                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
                                               {formatTime(seg.arrival_time)}
                                             </p>
                                           </div>
@@ -635,13 +627,14 @@ export default function ItineraryModal({
                 )}
               </section>
 
+              {/* Stay Section */}
               <section>
                 <SectionTitle
                   icon={<Hotel size={18} />}
                   title="Accommodation"
                 />
                 {stay ? (
-                  <div id="planned-accommodation" className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
+                  <div className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
                     <div className="flex justify-between items-start gap-4">
                       <div>
                         <h4 className="font-black text-theme-text leading-tight">
@@ -672,6 +665,7 @@ export default function ItineraryModal({
                 )}
               </section>
 
+              {/* Attractions Section */}
               <section>
                 <SectionTitle
                   icon={<Camera size={18} />}
@@ -682,7 +676,6 @@ export default function ItineraryModal({
                     {attractions.map((attr: any, idx: number) => (
                       <div
                         key={idx}
-                        id={`planned-attraction-${idx}`}
                         className="bg-theme-bg rounded-xl p-3 border border-theme-surface shadow-sm flex items-center gap-3"
                       >
                         <div className="w-10 h-10 rounded-lg bg-theme-surface flex items-center justify-center shrink-0">
@@ -706,6 +699,7 @@ export default function ItineraryModal({
                 )}
               </section>
 
+              {/* Tours & Activities Section */}
               <section>
                 <SectionTitle
                   icon={<Ticket size={18} />}
@@ -716,7 +710,6 @@ export default function ItineraryModal({
                     {tours.map((tour: any, idx: number) => (
                       <div
                         key={idx}
-                        id={`planned-tour-${idx}`} 
                         className="bg-theme-bg rounded-xl p-3 sm:p-4 border border-theme-surface shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                       >
                         <div className="flex-1 min-w-0">
@@ -752,7 +745,6 @@ export default function ItineraryModal({
           <div className="flex flex-col sm:flex-row gap-3">
             {isLoggedIn && (
               <button
-                id="save-trip-btn"
                 onClick={handleSaveTrip}
                 disabled={
                   isSaving ||
@@ -791,7 +783,6 @@ export default function ItineraryModal({
             )}
 
             <button
-              id="export-pdf-btn"
               onClick={handleExportPdf}
               disabled={isExporting || isSharing || isSaving}
               className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${
@@ -809,7 +800,6 @@ export default function ItineraryModal({
             </button>
 
             <button
-              id="share-email-btn" 
               onClick={() => setShowEmailInput(!showEmailInput)}
               disabled={isExporting || isSharing || isSaving}
               className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 bg-theme-bg border-2 border-theme-surface text-theme-text hover:bg-theme-surface ${
@@ -825,7 +815,6 @@ export default function ItineraryModal({
           {showEmailInput && (
             <div className="flex flex-col sm:flex-row gap-2 animate-in slide-in-from-top-2 fade-in duration-200">
               <input
-                id="email-share-input"
                 type="email"
                 placeholder="Enter email address"
                 value={email}
@@ -833,7 +822,6 @@ export default function ItineraryModal({
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-theme-surface bg-theme-bg text-theme-text placeholder:text-theme-muted focus:outline-none focus:border-theme-primary transition-colors font-medium text-sm"
               />
               <button
-                id="send-email-btn"
                 onClick={handleSharePdf}
                 disabled={isSharing || !email}
                 className="px-6 py-3 bg-theme-text text-theme-bg font-black text-sm rounded-xl hover:bg-theme-text/80 disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md"

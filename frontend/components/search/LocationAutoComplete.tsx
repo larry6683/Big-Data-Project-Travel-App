@@ -6,7 +6,6 @@ import { MapPin, Navigation, Loader2, X } from 'lucide-react';
 import { travelApi } from '@/services/api';
 
 interface Props {
-  id?: string;
   placeholder: string;
   value: string;
   onChange: (val: string, isValid: boolean) => void;
@@ -156,7 +155,7 @@ export default function LocationAutocomplete({ placeholder, value, onChange, sho
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <div id="location-autocomplete-input" className="relative flex items-center">
+      <div className="relative flex items-center">
         <input
           className={`w-full p-3 rounded-xl outline-none transition-all duration-300 text-xs shadow-inner backdrop-blur-sm
             bg-theme-bg border border-theme-secondary/30 text-theme-text placeholder:text-theme-text/50 

@@ -320,7 +320,8 @@ export default function Sidebar({
         <div className="p-4 border-b border-theme-secondary/20 shadow-md flex justify-between items-start shrink-0">
           <div>
             <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
-              WanderPlan <span className="text-theme-muted">US</span>
+              {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
+              <span className="text-theme-bg">Wanderplan</span><span className="text-theme-accent">US</span>
             </div>
           </div>
 

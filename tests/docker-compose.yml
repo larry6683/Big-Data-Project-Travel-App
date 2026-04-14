@@ -1,0 +1,76 @@
+services:
+  backend-test:
+    build:
+      context: ../backend # Goes up one level to the backend root directory
+      dockerfile: Dockerfile
+    container_name: travel-backend-test
+    env_file:
+      - .env.test 
+    ports:
+      - "8001:8000" 
+    environment:
+      - ELASTICSEARCH_URL=http://travel-elasticsearch-test:9200
+      - REDIS_URL=redis://travel-redis-test:6379
+    networks:
+      - wanderplan-test-network
+    depends_on:
+      elasticsearch-test:
+        condition: service_healthy
+
+  elasticsearch-test:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+    container_name: travel-elasticsearch-test
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    networks:
+      - wanderplan-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis-test:
+    image: redis:alpine
+    container_name: travel-redis-test
+    networks:
+      - wanderplan-test-network
+
+  frontend-test:
+    build:
+      context: ../frontend # Goes up twice (out of tests, out of backend) to the frontend directory
+      dockerfile: Dockerfile 
+    container_name: travel-frontend-test
+    env_file:
+      - .env.test
+    ports:
+      - "3001:3000" 
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001/api/v1
+      - BACKEND_URL=http://travel-backend-test:8000/api/v1
+    networks:
+      - wanderplan-test-network
+    depends_on:
+      - backend-test
+
+  test-runner:
+    build:
+      context: ../backend # Must build from the backend root so it can copy your app code
+      dockerfile: Dockerfile # Points to the new Dockerfile you just made
+    container_name: travel-test-runner
+    env_file:
+      - .env.test
+    environment:
+      - ELASTICSEARCH_URL=http://travel-elasticsearch-test:9200
+      - REDIS_URL=redis://travel-redis-test:6379
+    networks:
+      - wanderplan-test-network
+    depends_on:
+      backend-test:
+        condition: service_started
+
+networks:
+  wanderplan-test-network:
+    name: wanderplan-test-network 
+    driver: bridge

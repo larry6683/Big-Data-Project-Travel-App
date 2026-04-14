@@ -10,8 +10,6 @@ interface Message {
   content: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string; 
-
 export default function Chatbot({
   currentDestination,
 }: {
@@ -33,8 +31,7 @@ export default function Chatbot({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage 
-  = async () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
     const userMsg: Message = { role: "user", content: input };
@@ -46,7 +43,7 @@ export default function Chatbot({
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/chatbot`,
+        "http://localhost:8000/api/v1/chatbot/",
         {
           messages: newMessages,
           context: currentDestination

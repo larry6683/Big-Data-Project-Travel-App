@@ -1,13 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Add this line to ensure Turbopack correctly resolves and transpiles the library
   transpilePackages: ['react-datepicker'],
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.kiwi.com',
+        port: '',
+        pathname: '/airlines/**',
+      },
+    ],
   },
 };
 

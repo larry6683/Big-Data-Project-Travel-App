@@ -206,15 +206,6 @@ resetPassword: async (email: string, code: string, newPassword: string) => {
       return null;
     }
   },
-  getTopDestinations: async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/locations/top`);
-      return response.data;
-    } catch (error) {
-      console.error("Failed to fetch top destinations:", error);
-      return [];
-    }
-  },
 
   deleteTrip: async (tripId: number) => {
     const response = await axios.delete(`${API_BASE_URL}/trips/${tripId}`, {
@@ -351,6 +342,20 @@ resetPassword: async (email: string, code: string, newPassword: string) => {
         console.error("Failed to generate PDF:", error);
       }
       return null;
+    }
+  },
+
+  getTopDestinations: async (signal?: AbortSignal): Promise<any[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/destinations/top`, {
+        signal
+      });
+      const responseData = response.data;
+      return Array.isArray(responseData) ? responseData : (responseData?.data || []);
+    } catch (error) {
+      if (axios.isCancel(error)) return [];
+      console.error("Failed to fetch top destinations:", error);
+      return [];
     }
   }
 };

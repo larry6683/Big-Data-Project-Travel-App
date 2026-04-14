@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     BDC_API_KEY: str  
 
     POSTGRES_URL: str 
+    DUFFEL_API_KEY: str
     
     # Email Settings
     SMTP_SERVER: str = "smtp.gmail.com" # Default for Gmail
@@ -33,6 +34,8 @@ class Settings(BaseSettings):
     
     # 🌟 NEW: Added Mapbox API Key
     MAPBOX_API_KEY: str = "" 
+    SERPAPI_KEY: str = "" 
+    AIRLABS_API_KEY: str = ""
 
     # Use SettingsConfigDict for Pydantic V2 instead of the inner Config class
     model_config = SettingsConfigDict(

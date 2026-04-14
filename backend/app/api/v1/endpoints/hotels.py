@@ -7,7 +7,7 @@ from fastapi_cache.decorator import cache
 router = APIRouter()
 
 @router.get("/nearby", response_model=List[Hotel])
-@cache(expire=3600)
+@cache(expire=None) # Cache hotel search results persistently in Redis to prevent redundant API calls for the same destination and dates
 async def get_nearby_hotels(
     lat: float = Query(..., description="Destination Latitude from global state"),
     lon: float = Query(..., description="Destination Longitude from global state"),
@@ -31,7 +31,7 @@ async def get_nearby_hotels(
     return result
 
 @router.get("/offer", response_model=HotelOffer)
-@cache(expire=3600)
+@cache(expire=86400) # Cache hotel offer results for 7 days (604800 seconds)
 async def get_hotel_price(
     hotel_id: str = Query(..., description="The Amadeus Hotel ID from the clicked checkbox"),
     check_in_date: str = Query(..., description="Arrival Date YYYY-MM-DD"),

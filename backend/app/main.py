@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles # 🌟 NEW IMPORT
 from app.core.config import settings
 from app.db.database import engine, Base 
 # 🌟 ADD "users" to the imports below
-from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips, users, chatbot
+from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips, users, chatbot, destinations
 
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
@@ -67,6 +67,7 @@ def get_application():
     # Core Routes
     _app.include_router(flights.router, prefix="/api/v1/flights", tags=["flights"])
     _app.include_router(locations.router, prefix="/api/v1/locations", tags=["locations"])
+    _app.include_router(destinations.router, prefix="/api/v1/destinations", tags=["destinations"])
     
     # Feature Tab Routes
     _app.include_router(driving.router, prefix="/api/v1/driving", tags=["driving"])

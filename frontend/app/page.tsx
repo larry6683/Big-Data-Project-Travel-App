@@ -334,7 +334,6 @@ export default function Dashboard() {
                 {tripData && !loading && (
                   <button
                     onClick={() => setIsItineraryOpen(true)}
-                    id="generate_itinerary_btn"
                     className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-theme-primary hover:bg-theme-secondary text-theme-bg text-xs md:text-sm font-bold rounded-xl transition-all shadow-md active:scale-95"
                   >
                     Generate Itinerary

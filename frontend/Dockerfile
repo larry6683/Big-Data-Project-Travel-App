@@ -1,35 +1,17 @@
-# Stage 1 — build
-FROM node:20-slim AS builder
+# Use Node.js 20 to satisfy Next.js >=20.9.0 requirement
+FROM node:20-alpine
+
 WORKDIR /app
 
+# Copy package files first to leverage Docker layer caching
 COPY package.json package-lock.json* ./
 RUN npm install
 
+# Copy the rest of the frontend code
 COPY . .
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
-
-# Stage 2 — run
-FROM node:20-slim AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
+# Expose port 3000 for local access
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Run Next.js in development mode with 0.0.0.0 binding so it is accessible outside the container
+CMD ["npm", "run", "dev"]

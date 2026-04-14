@@ -1,0 +1,20 @@
+services:
+  terraform:
+    image: hashicorp/terraform:latest
+    container_name: travel-terraform
+    working_dir: /workspace
+    volumes:
+      - .:/workspace # Mounts your local terraform folder into the container
+      
+      # IMPORTANT: If you are using Google Cloud (GCP) or AWS, uncomment 
+      # the line below that matches your OS to pass your local cloud credentials into the container
+      
+      # For Mac/Linux using GCP:
+      # - ~/.config/gcloud:/root/.config/gcloud:ro 
+      
+      # For Windows using GCP:
+      # - %APPDATA%/gcloud:/root/.config/gcloud:ro
+    env_file:
+      - .env.terraform
+    # Keeps the container running indefinitely so you can execute commands inside it
+    entrypoint: ["tail", "-f", "/dev/null"]

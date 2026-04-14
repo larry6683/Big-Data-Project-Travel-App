@@ -58,7 +58,7 @@ export default function Navbar({
         {/* Hamburger/Close Menu (Only visible on Home Page for mobile/tablet) */}
         <button
           onClick={onMenuClick}
-          className={`p-2 rounded-xl bg-theme-text text-theme-bg lg:hidden hover:bg-theme-text/80 transition-colors ${!isHomePage ? 'hidden lg:hidden' : ''}`}
+          className={`p-2 rounded-xl bg-theme-text text-theme-bg lg:hidden hover:bg-theme-text/80 transition-colors}`}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
           {/* Toggle between X and Menu icons */}
@@ -68,9 +68,12 @@ export default function Navbar({
         {/* Logo and Conditional Return Home Button */}
         {!isHomePage ? (
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link href="/" className="text-lg sm:text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
-              WanderPlan <span className="text-theme-primary">US</span>
-            </Link>
+            <Link href="/" className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
+            <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
+              {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
+              <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>
+            </div>
+           </Link>        
             <Link 
               href="/"
               title="Return Home"
@@ -84,8 +87,11 @@ export default function Navbar({
         ) : (
           <div className="flex flex-col lg:hidden">
             <Link href="/" className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
-              WanderPlan <span className="text-theme-primary">US</span>
-            </Link>
+            <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
+              {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
+              <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>
+            </div>
+           </Link>
           </div>
         )}
       </div>
@@ -97,30 +103,28 @@ export default function Navbar({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-theme-surface text-theme-text rounded-lg border border-theme-surface hover:bg-theme-secondary/20 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-theme-primary text-theme-bg rounded-lg border border-theme-primary hover:bg-theme-primary/90 transition-colors"
             >
               <UserIcon size={16} />
               {/* Username hidden on very small screens, visible on sm and up */}
-              <span id="profile_username" className="text-sm font-semibold hidden sm:block max-w-[120px] truncate">
+              <span className="text-sm font-semibold hidden sm:block max-w-[120px] truncate">
                 {user}
               </span>
               <ChevronDown size={14} className={`transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isDropdownOpen && (
-              <div id="dropdown_profile" className="absolute right-0 mt-2 w-48 bg-theme-bg rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-theme-surface py-1.5 z-[100] animate-in slide-in-from-top-2 fade-in duration-200">
+              <div className="absolute right-0 mt-2 w-48 bg-theme-bg rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-theme-surface py-1.5 z-[100] animate-in slide-in-from-top-2 fade-in duration-200">
                 <Link
                   href="/profile"
                   onClick={() => setIsDropdownOpen(false)}
-                  id="profile_link"
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-theme-text hover:bg-theme-surface font-medium transition-colors"
                 >
-                  <UserIcon size={16} className="text-theme-muted" />
+                  <UserIcon size={16} className="text-theme-primary" />
                   Profile
                 </Link>
                 <Link
                   href="/savedtrips"
-                  id="saved_trip_link"
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-theme-text hover:bg-theme-surface font-medium transition-colors"
                 >
@@ -137,7 +141,7 @@ export default function Navbar({
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors text-left"
                 >
-                  <LogOut id="logout-button" size={16} className="text-red-500" />
+                  <LogOut size={16} className="text-red-500" />
                   Logout
                 </button>
               </div>
@@ -146,7 +150,7 @@ export default function Navbar({
         ) : (
           <Link
             href="/auth"
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-theme-primary text-theme-bg rounded-xl hover:bg-theme-secondary transition-colors shadow-md shadow-theme-primary/30 text-sm font-bold"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-theme-primary text-theme-bg rounded-xl hover:bg-theme-primary/80 transition-colors shadow-md shadow-theme-primary/30 text-sm font-bold"
           >
             <UserIcon size={18} />
             <span className="hidden sm:inline">Login / Sign Up</span>
