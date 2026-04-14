@@ -127,7 +127,11 @@ export default function ProfileModal({
                   />
                 ) : profile.profile_picture_url ? (
                   <img
-                    src={`${API_BASE_URL}${profile.profile_picture_url}`}
+                    src={
+                      profile.profile_picture_url.startsWith("http")
+                        ? profile.profile_picture_url
+                        : `${API_BASE_URL}${profile.profile_picture_url}`
+                    }
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />

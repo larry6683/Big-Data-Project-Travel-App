@@ -10,7 +10,7 @@ import { travelApi } from "@/services/api";
 
 export default function ProfilePage() {
   const { logout, isLoggedIn } = useAuth();
-  
+
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,10 +57,10 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-theme-bg relative flex flex-col">
       <Navbar />
 
-      <ProfileModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onProfileUpdate={fetchProfile} 
+      <ProfileModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onProfileUpdate={fetchProfile}
       />
 
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-8 animate-in fade-in duration-300">
@@ -81,33 +81,35 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="bg-theme-surface rounded-2xl border border-theme-muted/30 shadow-sm overflow-hidden">
-            
             {/* Section 1: User Profile Header */}
             <div className="p-4 md:p-8 border-b border-theme-muted/80 flex flex-col md:flex-row items-center md:items-center gap-6">
-              
               <div className="w-24 h-24 bg-theme-primary/10 text-theme-primary border-2 border-theme-surface rounded-full flex items-center justify-center overflow-hidden shadow-sm shrink-0">
                 {profileData?.profile_picture_url ? (
-                  <img 
-                    src={`${API_BASE_URL}${profileData.profile_picture_url}`} 
-                    alt="Profile" 
+                  <img
+                    src={
+                      profileData.profile_picture_url.startsWith("http")
+                        ? profileData.profile_picture_url
+                        : `${API_BASE_URL}${profileData.profile_picture_url}`
+                    }
+                    alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <User size={48} />
                 )}
               </div>
-              
+
               <div className="flex-1 text-center md:text-left">
                 <h2 className="text-2xl font-bold text-theme-text mb-1">
-                  {profileData?.full_name || profileData?.email?.split('@')[0] || "User"}
+                  {profileData?.full_name ||
+                    profileData?.email?.split("@")[0] ||
+                    "User"}
                 </h2>
-                <p className="text-theme-text/60 font-medium">
-                  Adventurer
-                </p>
+                <p className="text-theme-text/60 font-medium">Adventurer</p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-                <button 
+                <button
                   onClick={() => setIsModalOpen(true)}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-theme-bg text-theme-text rounded-xl border border-theme-muted/30 hover:border-theme-primary transition-colors font-bold text-sm"
                 >
@@ -125,26 +127,45 @@ export default function ProfilePage() {
             {/* Section 2: Account Details */}
             <div className="p-4 md:p-8 border-b border-theme-muted/80">
               <h3 className="text-lg font-black text-theme-text mb-6 flex items-center gap-2">
-                <Settings size={20} className="text-theme-muted" /> Account Details
+                <Settings size={20} className="text-theme-muted" /> Account
+                Details
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">Full Name</label>
+                  <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">
+                    Full Name
+                  </label>
                   <div className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
-                    {profileData?.full_name || <span className="text-theme-text/40 italic">Not provided</span>}
+                    {profileData?.full_name || (
+                      <span className="text-theme-text/40 italic">
+                        Not provided
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">Email Address</label>
+                  <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">
+                    Email Address
+                  </label>
                   <div className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
-                    {profileData?.email || <span className="text-theme-text/40 italic">Not provided</span>}
+                    {profileData?.email || (
+                      <span className="text-theme-text/40 italic">
+                        Not provided
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">Mobile Number</label>
+                  <label className="block text-xs font-bold text-theme-text/60 uppercase tracking-widest mb-1">
+                    Mobile Number
+                  </label>
                   <div className="w-full p-3 bg-theme-bg border border-theme-muted/30 rounded-xl text-theme-text font-medium shadow-inner">
-                    {profileData?.mobile_number || <span className="text-theme-text/40 italic">Not provided</span>}
+                    {profileData?.mobile_number || (
+                      <span className="text-theme-text/40 italic">
+                        Not provided
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -153,32 +174,46 @@ export default function ProfilePage() {
             {/* Section 3: Quick Links */}
             <div className="p-4 md:p-8 bg-theme-surface/50">
               <h3 className="text-lg font-black text-theme-text mb-6 flex items-center gap-2">
-                <Bookmark size={20} className="text-theme-primary" /> Quick Links
+                <Bookmark size={20} className="text-theme-primary" /> Quick
+                Links
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Link href="/savedtrips" className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-primary transition-colors group shadow-sm">
+                <Link
+                  href="/savedtrips"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-primary transition-colors group shadow-sm"
+                >
                   <div className="p-2.5 bg-theme-primary/10 text-theme-primary rounded-lg group-hover:bg-theme-primary group-hover:text-theme-bg transition-colors">
                     <Bookmark size={22} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-theme-text group-hover:text-theme-primary transition-colors">Saved Trips</h4>
-                    <p className="text-xs text-theme-text/60 mt-0.5">View your planned itineraries</p>
+                    <h4 className="font-bold text-theme-text group-hover:text-theme-primary transition-colors">
+                      Saved Trips
+                    </h4>
+                    <p className="text-xs text-theme-text/60 mt-0.5">
+                      View your planned itineraries
+                    </p>
                   </div>
                 </Link>
 
-                <Link href="/" className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-secondary transition-colors group shadow-sm">
+                <Link
+                  href="/"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-theme-bg border border-theme-muted/30 hover:border-theme-secondary transition-colors group shadow-sm"
+                >
                   <div className="p-2.5 bg-theme-secondary/10 text-theme-secondary rounded-lg group-hover:bg-theme-secondary group-hover:text-theme-bg transition-colors">
                     <Settings size={22} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-theme-text group-hover:text-theme-secondary transition-colors">Plan New Trip</h4>
-                    <p className="text-xs text-theme-text/60 mt-0.5">Start a brand new adventure</p>
+                    <h4 className="font-bold text-theme-text group-hover:text-theme-secondary transition-colors">
+                      Plan New Trip
+                    </h4>
+                    <p className="text-xs text-theme-text/60 mt-0.5">
+                      Start a brand new adventure
+                    </p>
                   </div>
                 </Link>
               </div>
             </div>
-
           </div>
         )}
       </main>
