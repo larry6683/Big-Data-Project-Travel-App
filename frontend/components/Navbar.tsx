@@ -68,8 +68,12 @@ export default function Navbar({
         {/* Logo and Conditional Return Home Button */}
         {!isHomePage ? (
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link href="/" className="text-lg sm:text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
-              <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>            </Link>
+            <Link href="/" className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
+            <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
+              {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
+              <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>
+            </div>
+           </Link>        
             <Link 
               href="/"
               title="Return Home"
@@ -83,8 +87,11 @@ export default function Navbar({
         ) : (
           <div className="flex flex-col lg:hidden">
             <Link href="/" className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
+            <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
+              {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
               <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>
-            </Link>
+            </div>
+           </Link>
           </div>
         )}
       </div>

@@ -2,20 +2,19 @@ version: '3.8'
 
 services:
   frontend: 
-    build: .
+    build: 
+      context: .
+      dockerfile: devDockerfile
     container_name: travel-frontend
     env_file:
-      - .env.local # 🌟 Loads the Next.js env file
+      - .env.local 
     ports:
       - "3000:3000"
     volumes:
       - .:/app
       - frontend_node_modules:/app/node_modules
-    environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
-      - BACKEND_URL=${BACKEND_URL:-http://travel-backend:8000/api/v1}
     networks:
-      - travel-app-network
+      - wanderplan-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
       interval: 10s
@@ -23,8 +22,9 @@ services:
       retries: 10
 
 networks:
-  travel-app-network:
-    external: true
+  wanderplan-network:
+    name: wanderplan-network # Explicitly names the network so other compose files can join it
+    driver: bridge
 
 volumes:
   frontend_node_modules:

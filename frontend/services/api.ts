@@ -343,5 +343,19 @@ resetPassword: async (email: string, code: string, newPassword: string) => {
       }
       return null;
     }
+  },
+
+  getTopDestinations: async (signal?: AbortSignal): Promise<any[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/destinations/top`, {
+        signal
+      });
+      const responseData = response.data;
+      return Array.isArray(responseData) ? responseData : (responseData?.data || []);
+    } catch (error) {
+      if (axios.isCancel(error)) return [];
+      console.error("Failed to fetch top destinations:", error);
+      return [];
+    }
   }
 };

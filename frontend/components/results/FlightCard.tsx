@@ -159,7 +159,7 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
             {/* Header */}
             <div className={`px-3 py-1 border-b flex justify-between items-center ${isSelected ? 'bg-theme-bg/20 border-theme-secondary/20' : 'bg-theme-bg/20 border-theme-secondary/20'}`}>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 flex items-center justify-center overflow-hidden relative shrink-0">
+               <div className="w-12 h-12 flex items-center justify-center overflow-hidden relative shrink-0">
                   <img src={`https://images.kiwi.com/airlines/64/${flight.airline_code}.png`} alt={flight.airline_code} className="max-w-[80%] max-h-[80%] object-contain" />
                 </div>
                 <div>
