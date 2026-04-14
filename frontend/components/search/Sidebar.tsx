@@ -204,8 +204,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
         <div className="p-4 border-b border-theme-secondary/20 shadow-md flex justify-between items-start shrink-0">          
           <div>
             <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
-              WanderPlan <span className="text-theme-muted">US</span>
-            </div>
+              <span className="text-theme-bg">Wanderplan</span><span className="text-theme-primary">US</span>            </div>
           </div>
 
           {onClose && (
@@ -322,6 +321,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
             <SbLabel>Budget Category</SbLabel>
             <div className="flex bg-theme-bg rounded-[10px] p-[3px] gap-[3px]">
               {(["budget", "luxury"] as const).map((opt) => (
+<<<<<<< Updated upstream
                   <button 
                     key={opt} 
                     onClick={() => setBudget(opt)} 
@@ -329,6 +329,19 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
                   >
                     {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
                   </button>
+=======
+                <button
+                  key={opt}
+                  onClick={() => setBudget(opt)}
+                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:bg-theme-primary/80 ${
+                    budget === opt
+                      ? "bg-theme-primary font-bold text-theme-bg shadow-[0_1px_4px_rgba(0,0,0,0.1)]"
+                      : "bg-transparent font-normal text-theme-text/70"
+                  }`}
+                >
+                  {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
+                </button>
+>>>>>>> Stashed changes
               ))}
             </div>
           </div>
@@ -337,6 +350,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
             <SbLabel>Travel Mode</SbLabel>
             <div className="flex bg-theme-bg rounded-[10px] p-[3px] gap-[3px]">
               {(["fly", "drive"] as const).map((opt) => (
+<<<<<<< Updated upstream
                   <button 
                     key={opt} 
                     onClick={() => setTravelMode(opt)} 
@@ -344,6 +358,19 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
                   >
                     {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
                   </button>
+=======
+                <button
+                  key={opt}
+                  onClick={() => setTravelMode(opt)}
+                  className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:bg-theme-primary/80 ${
+                    travelMode === opt
+                      ? "bg-theme-primary font-bold text-theme-bg shadow-[0_1px_4px_rgba(0,0,0,0.1)]"
+                      : "bg-transparent font-normal text-theme-text/70"
+                  }`}
+                >
+                  {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
+                </button>
+>>>>>>> Stashed changes
               ))}
             </div>
           </div>
@@ -379,7 +406,11 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
         <div className="p-4 bg-theme-text border-t border-theme-secondary/20 shrink-0">
           {!isWorking ? (
             <button 
+<<<<<<< Updated upstream
               className="w-full p-4 rounded-2xl bg-theme-primary text-theme-bg text-sm font-bold flex items-center justify-center gap-2 hover:bg-theme-secondary transition-all shadow-[0_4px_15px_rgba(0,0,0,0.25)] active:scale-[0.98]"
+=======
+              id="submit-side" className="w-full p-4 rounded-2xl bg-theme-primary text-theme-bg text-sm font-bold flex items-center justify-center gap-2 hover:opacity-85 transition-all shadow-[0_4px_15px_rgba(0,0,0,0.25)] active:scale-[0.98]"
+>>>>>>> Stashed changes
               onClick={handleSearchSubmit} 
             >
               <Search size={17} /> SUBMIT
@@ -393,7 +424,7 @@ export default function Sidebar({ onSearch, onSearchStart, onCancel, loading, on
               <button 
                 onClick={onCancel}
                 title="Cancel Search"
-                className="w-[52px] rounded-2xl bg-red-500/90 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg active:scale-95"
+                className="w-[52px] rounded-2xl bg-red-500/90 hover:bg-theme-primary/80 text-white flex items-center justify-center transition-all shadow-lg active:scale-95"
               >
                 <X size={20} />
               </button>

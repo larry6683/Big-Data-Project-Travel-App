@@ -12,7 +12,7 @@
 @theme inline {
   /* Generalized Semantic Color Palette */
   --color-theme-text: #0C1208;      /* Main text / Darkest color (Formerly deep-forest) */
-  --color-theme-primary: #3A6432;   /* Main brand color (Formerly forest-green) */
+  --color-theme-primary: #00820f;   /* Main brand color (Formerly forest-green) */
   --color-theme-secondary: #4A7C40; /* Supporting brand color (Formerly canopy) */
   --color-theme-muted: #8FB87A;     /* Borders, inactive states, soft accents (Formerly sage) */
   --color-theme-accent: #C8A84A;    /* Highlights, warnings, callouts (Formerly antique-gold) */
@@ -79,7 +79,7 @@ body {
   @apply bg-theme-secondary/20! text-theme-text! rounded-full!;
 }
 .react-datepicker__day--selected, .react-datepicker__day--keyboard-selected {
-  @apply bg-theme-secondary! text-theme-bg! font-bold! rounded-full!;
+  @apply bg-theme-primary! text-theme-bg! font-bold! rounded-full!;
 }
 .react-datepicker__current-month, .react-datepicker-time__header, .react-datepicker-year-header, .react-datepicker__day-name {
   @apply text-theme-text!;

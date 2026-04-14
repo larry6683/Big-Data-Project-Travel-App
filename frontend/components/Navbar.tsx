@@ -58,7 +58,7 @@ export default function Navbar({
         {/* Hamburger/Close Menu (Only visible on Home Page for mobile/tablet) */}
         <button
           onClick={onMenuClick}
-          className={`p-2 rounded-xl bg-theme-text text-theme-bg lg:hidden hover:bg-theme-text/80 transition-colors ${!isHomePage ? 'hidden lg:hidden' : ''}`}
+          className={`p-2 rounded-xl bg-theme-text text-theme-bg lg:hidden hover:bg-theme-text/80 transition-colors}`}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
           {/* Toggle between X and Menu icons */}
@@ -69,8 +69,7 @@ export default function Navbar({
         {!isHomePage ? (
           <div className="flex items-center gap-3 sm:gap-4">
             <Link href="/" className="text-lg sm:text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
-              WanderPlan <span className="text-theme-primary">US</span>
-            </Link>
+              <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>            </Link>
             <Link 
               href="/"
               title="Return Home"
@@ -84,7 +83,7 @@ export default function Navbar({
         ) : (
           <div className="flex flex-col lg:hidden">
             <Link href="/" className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
-              WanderPlan <span className="text-theme-primary">US</span>
+              <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>
             </Link>
           </div>
         )}
@@ -97,7 +96,7 @@ export default function Navbar({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-theme-surface text-theme-text rounded-lg border border-theme-surface hover:bg-theme-secondary/20 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-theme-primary text-theme-bg rounded-lg border border-theme-primary hover:bg-theme-primary/90 transition-colors"
             >
               <UserIcon size={16} />
               {/* Username hidden on very small screens, visible on sm and up */}
@@ -114,7 +113,7 @@ export default function Navbar({
                   onClick={() => setIsDropdownOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-theme-text hover:bg-theme-surface font-medium transition-colors"
                 >
-                  <UserIcon size={16} className="text-theme-muted" />
+                  <UserIcon size={16} className="text-theme-primary" />
                   Profile
                 </Link>
                 <Link
@@ -144,7 +143,7 @@ export default function Navbar({
         ) : (
           <Link
             href="/auth"
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-theme-primary text-theme-bg rounded-xl hover:bg-theme-secondary transition-colors shadow-md shadow-theme-primary/30 text-sm font-bold"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-theme-primary text-theme-bg rounded-xl hover:bg-theme-primary/80 transition-colors shadow-md shadow-theme-primary/30 text-sm font-bold"
           >
             <UserIcon size={18} />
             <span className="hidden sm:inline">Login / Sign Up</span>
