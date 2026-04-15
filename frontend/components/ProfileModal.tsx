@@ -1,4 +1,3 @@
-// frontend/components/ProfileModal.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -38,7 +37,7 @@ export default function ProfileModal({
     } else {
       setSelectedFile(null);
       if (previewUrl) {
-        URL.revokeObjectURL(previewUrl); // Cleanup memory leak
+        URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
       }
     }

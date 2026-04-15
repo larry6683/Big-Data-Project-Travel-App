@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: travel-backend
     env_file:
-      - .env.backend # Ensure you have a .env.backend file with your environment variables
+      - .env.backend 
     ports:
       - "8000:8000"
     volumes:
@@ -64,7 +64,7 @@ services:
 
 networks:
   wanderplan-network:
-    name: wanderplan-network # Explicitly named to match the frontend network
+    name: wanderplan-network 
     driver: bridge
 
 volumes:

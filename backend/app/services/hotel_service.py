@@ -1,4 +1,3 @@
-# backend/app/services/hotel_service.py
 import httpx
 import math
 import base64
@@ -7,7 +6,7 @@ from app.core.config import settings
 from app.schemas.hotel import Hotel, HotelOffer
 from app.services.location_service import location_service 
 
-# Helper function to calculate distance
+
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
@@ -16,13 +15,10 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
-# 🌟 FIXED: Now using the BDC_API_KEY and the correct Pro endpoint to bypass production rate limits
 async def get_address_from_coords(client: httpx.AsyncClient, lat: float, lon: float) -> str:
     try:
-        # Use the BDC_API_KEY from your settings and the professional domain (api-bdc.net)
         url = f"https://api-bdc.net/data/reverse-geocode?latitude={lat}&longitude={lon}&localityLanguage=en&key={settings.BDC_API_KEY}"
         
-        # Increased timeout slightly for production network stability
         resp = await client.get(url, timeout=5.0)
         
         if resp.status_code == 200:
@@ -32,7 +28,6 @@ async def get_address_from_coords(client: httpx.AsyncClient, lat: float, lon: fl
             principal = data.get("principalSubdivision", "")
             country = data.get("countryName", "")
             
-            # Builds a descriptive address string
             parts = []
             if locality and locality != city: parts.append(locality)
             if city: parts.append(city)
@@ -42,7 +37,6 @@ async def get_address_from_coords(client: httpx.AsyncClient, lat: float, lon: fl
             if parts:
                 return ", ".join(parts)
         else:
-            # Logging the specific error code to help you debug in Cloud Run Logs
             print(f"⚠️ Reverse Geocode Failed (Status {resp.status_code}): {resp.text}")
     except Exception as e:
         print(f"❌ Geocoding Error: {str(e)}")
@@ -63,13 +57,12 @@ class HotelService:
 
         async with httpx.AsyncClient() as client:
             try:
-                # Convert lat/lon to a real location string using your API Key
                 location_name = await get_address_from_coords(client, lat, lon)
                 
                 if location_name:
                     query = f"Hotels in {location_name}"
                 else:
-                    query = f"{lat},{lon}" # Fallback
+                    query = f"{lat},{lon}" 
                 
                 print(f"🔍 SerpApi Query: {query}")
                 
@@ -101,7 +94,6 @@ class HotelService:
                         fallback_response = await client.get(self.base_url, params=params, timeout=30.0)
                         properties = fallback_response.json().get("properties", [])
 
-                # Concurrently enrich missing addresses using the authenticated geocoder
                 async def enrich_property(prop):
                     address_text = prop.get("address") or prop.get("neighborhood")
                     if not address_text:
@@ -127,7 +119,6 @@ class HotelService:
                     prop_lon = coords.get("longitude")
                     
                     address_text = prop.get("address")
-                    # Clearer fallback for production debugging
                     amadeus_formatted_address = {"lines": [address_text]} if address_text else {"lines": ["Location provided upon booking"]}
 
                     raw_rating = prop.get("overall_rating")

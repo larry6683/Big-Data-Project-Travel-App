@@ -1,4 +1,3 @@
-// frontend/components/results/ItineraryModal.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -38,20 +37,16 @@ export default function ItineraryModal({
 }: ItineraryModalProps) {
   const [selections, setSelections] = useState<any>({});
 
-  // PDF Download State
   const [isExporting, setIsExporting] = useState(false);
 
-  // PDF Share State
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [email, setEmail] = useState("");
   const [isSharing, setIsSharing] = useState(false);
 
-  // Save Trip State
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isAlreadySaved, setIsAlreadySaved] = useState(false);
 
-  // Grab user and isLoggedIn from AuthContext
   const { user, isLoggedIn } = useAuth();
 
   useEffect(() => {
@@ -67,7 +62,6 @@ export default function ItineraryModal({
         setSelections({});
       }
 
-      // Reset states when opened
       setShowEmailInput(false);
       setEmail("");
       setIsSaved(false);
@@ -77,19 +71,17 @@ export default function ItineraryModal({
 
   if (!isOpen) return null;
 
-  // Extract selected items
   const flight = Array.isArray(selections?.flights)
     ? selections.flights[0]
     : selections?.flights;
 
-  // FIXED: Properly extract driving data by checking for the .data property
   let rawDrive = selections?.drive || selections?.driving;
   let drive = null;
   if (rawDrive) {
     if (Array.isArray(rawDrive)) {
       drive = rawDrive[0];
     } else if (rawDrive.data) {
-      drive = rawDrive.data; // This is how DriveCard.tsx saves it!
+      drive = rawDrive.data;
     } else {
       drive = rawDrive;
     }
@@ -101,24 +93,20 @@ export default function ItineraryModal({
   const attractions = selections?.attractions || [];
   const tours = selections?.tours || selections?.activities || [];
 
-  // Check if Weather was actually selected on the home page
   const isWeatherSelected = selections?.weather?.selected === true;
 
-  // Helper to calculate fuel cost dynamically (just like DriveCard.tsx)
   const getFuelCost = () => {
     if (!drive) return 0;
     if (drive.distance_km) {
       const miles = drive.distance_km * 0.621371;
       const gallons = miles / 25;
-      return gallons * 3.35; // Standard fuel price used in DriveCard
+      return gallons * 3.35;
     }
-    // Fallback for older formats
     const fuel = drive.fuelEstimate || drive.fuel_estimate || drive.price || 0;
     if (typeof fuel === "string") return Number(fuel.replace(/[^0-9.-]+/g, ""));
     return Number(fuel);
   };
 
-  // Safe display helpers for driving distance and duration
   let displayDriveDuration = "N/A";
   if (drive?.duration_mins) {
     const hrs = Math.floor(drive.duration_mins / 60);
@@ -136,12 +124,11 @@ export default function ItineraryModal({
     displayDriveDistance = drive.distance.text || drive.distance;
   }
 
-  // Calculate Total Cost
   let totalCost = 0;
   if (flight) {
     totalCost += Number(flight.price?.total || flight.price || 0);
   } else if (drive) {
-    totalCost += getFuelCost(); // Adds driving fuel cost to the top total!
+    totalCost += getFuelCost();
   }
 
   if (stay) totalCost += Number(stay.offerDetails?.price || stay.price || 0);
@@ -151,7 +138,6 @@ export default function ItineraryModal({
     }
   });
 
-  // Extract first day weather for summary ONLY if selected
   let firstDayWeather = null;
   if (isWeatherSelected) {
     const activeWeatherData = selections?.weather?.data || weatherData;
@@ -342,7 +328,6 @@ export default function ItineraryModal({
             }
           : null,
 
-        // Clean drive data saved into the database so the Saved Trips page can easily read it
         drive: drive
           ? {
               distance: displayDriveDistance,

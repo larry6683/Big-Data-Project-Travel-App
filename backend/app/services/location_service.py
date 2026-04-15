@@ -1,16 +1,12 @@
-# larry6683/big-data-project-travel-app/backend/app/services/location_service.py
-
 import httpx
 from app.services.base_client import BaseAmadeusClient
-from app.core.config import settings  # 👈 Import settings here
-
+from app.core.config import settings  
 class LocationService(BaseAmadeusClient):
     async def search_locations(self, keyword: str):
         token = await self.get_token()
         if not token:
             return []
 
-        # Updated to the specific City Search endpoint
         url = f"{self.base_url}/v1/reference-data/locations/cities"
         headers = {"Authorization": f"Bearer {token}"}
         params = {
@@ -34,7 +30,6 @@ class LocationService(BaseAmadeusClient):
         
         url = "https://airlabs.co/api/v9/nearby"
         
-        # 👈 Use the secure config variable here
         params = {
             "lat": lat,
             "lng": lon,
@@ -52,7 +47,6 @@ class LocationService(BaseAmadeusClient):
                     if not airports:
                         return None
 
-                    # 1. Filter: Keep only airports with valid IATA codes
                     valid_airports = [
                         apt for apt in airports 
                         if apt.get("iata_code") is not None
@@ -61,13 +55,10 @@ class LocationService(BaseAmadeusClient):
                     if not valid_airports:
                         return None
                         
-                    # 2. Sort by distance (closest first) to ensure we stay local
                     valid_airports.sort(key=lambda x: x.get("distance", float('inf')))
                     
-                    # 3. Take the 10 closest airports
                     nearby_pool = valid_airports[:10]
                     
-                    # 4. From those 10 local airports, pick the most popular one
                     nearby_pool.sort(key=lambda x: x.get("popularity", 0), reverse=True)
                     
                     best_match = nearby_pool[0]

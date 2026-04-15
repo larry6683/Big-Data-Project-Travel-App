@@ -1,13 +1,11 @@
-# larry6683/big-data-project-travel-app/backend/app/api/v1/endpoints/driving.py
-
 from fastapi import APIRouter, Query, Depends
 from app.services.driving_service import DrivingService
-from fastapi_cache.decorator import cache # 🌟 NEW: Imported the Redis cache decorator
+from fastapi_cache.decorator import cache 
 
 router = APIRouter()
 
 @router.get("/route")
-@cache(expire=None) # 🌟 NEW: Cache the driving route in Redis for 1 hour (3600 seconds)
+@cache(expire=None) 
 async def get_driving_route(
     origin_lat: float,
     origin_lon: float,

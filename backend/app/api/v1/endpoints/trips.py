@@ -1,4 +1,3 @@
-# backend/app/api/v1/endpoints/trips.py
 import json
 import base64
 from fastapi import APIRouter, Depends, Response, HTTPException
@@ -17,7 +16,6 @@ import smtplib
 from email.message import EmailMessage
 from app.core.config import settings
 
-# --- NEW IMPORT FOR PUB/SUB ---
 from google.cloud import pubsub_v1 
 
 router = APIRouter()
@@ -25,7 +23,6 @@ router = APIRouter()
 def sanitize_text(text) -> str:
     if text is None:
         return ""
-    # Replace symbols that crash FPDF Helvetica
     clean_text = str(text).replace("°", " deg").replace("\u00b0", " deg").replace("\u2013", "-").replace("\u2014", "-")
     return clean_text.encode('latin-1', 'ignore').decode('latin-1')
 
@@ -63,7 +60,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
     pdf = FPDF()
     pdf.add_page()
     
-    # --- HEADER ---
     pdf.set_font("helvetica", "B", 22)
     pdf.cell(0, 12, "Your Custom Itinerary", align="C", new_x="LMARGIN", new_y="NEXT")
     
@@ -76,7 +72,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
     pdf.cell(0, 8, f"Prepared for: {sanitize_text(payload_dict.get('username'))} | {payload_dict.get('check_in_date')} - {payload_dict.get('check_out_date')}", align="C", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(5)
 
-    # --- TOTAL COST (FLIGHT/DRIVE + HOTEL ONLY) ---
     total_cost = 0.0
     
     flight = payload_dict.get("flight")
@@ -92,7 +87,7 @@ def build_pdf_content(payload_dict: dict) -> bytes:
         total_cost += safe_float(hotel_price)
     
     pdf.set_font("helvetica", "B", 13)
-    pdf.set_text_color(34, 197, 94) # Green
+    pdf.set_text_color(34, 197, 94) 
     pdf.cell(0, 10, f"TOTAL ESTIMATED COST: ${total_cost:,.2f}", align="C", new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
@@ -103,7 +98,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
         pdf.cell(0, 10, f"  {title}", fill=True, new_x="LMARGIN", new_y="NEXT")
         pdf.ln(2)
 
-    # Weather
     weather = payload_dict.get("weather")
     if weather:
         draw_section_header("Expected Weather")
@@ -112,7 +106,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
         pdf.multi_cell(0, 7, f"  {sanitize_text(summary)}")
         pdf.ln(4)
 
-    # Transportation
     if flight or drive:
         draw_section_header("Transportation")
         if flight:
@@ -144,7 +137,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
             pdf.cell(0, 6, f"    Estimated Fuel Cost: ${safe_float(drive.get('fuelEstimate')):,.2f}", new_x="LMARGIN", new_y="NEXT")
             pdf.ln(3)
 
-    # Accommodation
     if hotel:
         draw_section_header("Accommodation")
         pdf.set_font("helvetica", "B", 11)
@@ -156,7 +148,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
         pdf.cell(0, 6, f"    Total Price: ${safe_float(hp):,.2f}", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(4)
 
-    # Planned Attractions
     attractions = payload_dict.get("attractions", [])
     if attractions:
         draw_section_header("Planned Attractions")
@@ -165,7 +156,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
             pdf.cell(0, 7, f"   - {sanitize_text(attr.get('name'))}", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(4)
 
-    # Tours & Activities
     activities = payload_dict.get("activities", [])
     if activities:
         draw_section_header("Tours & Activities")
@@ -212,7 +202,6 @@ async def share_trip_pdf(payload: TripGenerateRequest):
         print(f"Email Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to send email")
 
-# --- UPDATED PUBLISHER: Send message when trip is saved ---
 @router.post("/save")
 async def save_trip(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     existing = db.query(SavedTrip).filter(SavedTrip.user_id == current_user.id).all()
@@ -224,12 +213,10 @@ async def save_trip(payload: dict, db: Session = Depends(get_db), current_user: 
     db.commit()
     db.refresh(new_trip)
 
-    # 🚀 NEW: Drop a message into Pub/Sub (This is instantly fast!)
     try:
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path(settings.GCP_PROJECT_ID, settings.PUBSUB_TOPIC_NAME)
         
-        # Package the data we want to send to the background worker
         message_payload = {
             "user_email": current_user.email,
             "user_name": current_user.full_name,
@@ -237,7 +224,6 @@ async def save_trip(payload: dict, db: Session = Depends(get_db), current_user: 
             "trip_id": new_trip.id
         }
         
-        # Convert it to a string and send it
         message_data = json.dumps(message_payload).encode("utf-8")
         publisher.publish(topic_path, data=message_data)
         print("Message dropped in Pub/Sub successfully!")
@@ -261,9 +247,6 @@ async def delete_trip(trip_id: int, db: Session = Depends(get_db), current_user:
     return {"message": "Trip deleted successfully"}
 
 
-# --- 2. NEW WORKER: Receive the message in the background ---
-
-# Pub/Sub sends data in this specific JSON format
 class PubSubMessage(BaseModel):
     message: dict
     subscription: str
@@ -271,14 +254,13 @@ class PubSubMessage(BaseModel):
 @router.post("/notification-worker")
 async def process_notification(
     payload: PubSubMessage, 
-    db: Session = Depends(get_db) # <-- Added the database connection here
+    db: Session = Depends(get_db) 
 ):
     """
     This endpoint is invisible to the user. 
     Google Cloud Pub/Sub calls this automatically in the background!
     """
     try:
-        # 1. Unpack the hidden message
         encoded_data = payload.message.get("data")
         decoded_data = base64.b64decode(encoded_data).decode("utf-8")
         trip_info = json.loads(decoded_data)
@@ -291,18 +273,15 @@ async def process_notification(
         print("==================================================")
         print(f"BACKGROUND JOB TRIGGERED for {user_email}")
         
-        # 2. Look up the saved trip in the database to get the full itinerary data
         saved_trip = db.query(SavedTrip).filter(SavedTrip.id == trip_id).first()
         
         if not saved_trip:
             print("Trip not found in database. Aborting email.")
             return {"status": "error", "detail": "Trip not found"}
 
-        # 3. Generate the PDF silently in the background
         print(f"Generating PDF for {destination}...")
         pdf_bytes = build_pdf_content(saved_trip.data)
 
-        # 4. Create and send the actual Email
         print("Sending email via SMTP...")
         msg = EmailMessage()
         msg['Subject'] = f"Your Wanderplan Itinerary: {destination}!"
@@ -320,10 +299,8 @@ The Wanderplan Team
 """
         msg.set_content(email_body)
         
-        # Attach the PDF
         msg.add_attachment(pdf_bytes, maintype='application', subtype='pdf', filename=f"{destination}_Itinerary.pdf")
         
-        # Connect to Gmail and send it
         with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
             server.starttls()
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
@@ -336,5 +313,4 @@ The Wanderplan Team
     
     except Exception as e:
         print(f"Worker failed: {e}")
-        # Returning a 500 tells Pub/Sub to try sending the message again later!
         raise HTTPException(status_code=500, detail="Failed to process notification")

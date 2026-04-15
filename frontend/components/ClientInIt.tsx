@@ -1,17 +1,19 @@
-// frontend/components/ClientInit.tsx
 "use client";
 
 import { useEffect } from "react";
 
 export default function ClientInit() {
   useEffect(() => {
-    // 1. Detect Platform Type
     const detectPlatform = () => {
       const ua = navigator.userAgent;
       if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
         return "tablet";
       }
-      if (/Mobile|iP(hone|od)|Android|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+      if (
+        /Mobile|iP(hone|od)|Android|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(
+          ua
+        )
+      ) {
         return "mobile";
       }
       return "pc";
@@ -20,7 +22,6 @@ export default function ClientInit() {
     const platform = detectPlatform();
     localStorage.setItem("app_platform", platform);
 
-    // 2. Get GPS Coordinates (Geocodes)
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -36,14 +37,14 @@ export default function ClientInit() {
           console.warn("Could not get GPS location:", error.message);
           localStorage.setItem("user_gps_error", error.message);
         },
-        { 
-          enableHighAccuracy: false, 
-          timeout: 10000, 
-          maximumAge: 300000 
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000,
         }
       );
     }
   }, []);
 
-  return null; 
+  return null;
 }

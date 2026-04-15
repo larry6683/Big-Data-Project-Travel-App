@@ -1,5 +1,3 @@
-# larry6683/big-data-project-travel-app/backend/app/services/weather_service.py
-
 import httpx
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, Counter
@@ -43,7 +41,6 @@ class WeatherService:
                 
                 forecast_data = forecast_response.json()
                 
-                # ✨ TIMEZONE FIX: Extract the destination's actual timezone offset from UTC
                 tz_offset = forecast_data.get("city", {}).get("timezone", 0)
 
                 if days_until_trip <= 30:
@@ -53,8 +50,6 @@ class WeatherService:
                 historical_check_in = check_in - timedelta(days=365)
                 historical_check_out = check_out - timedelta(days=365)
 
-                # Pad the unix timestamps by 24 hours on each side to ensure we capture 
-                # all the hours needed after applying the timezone shift!
                 start_unix = int(historical_check_in.timestamp()) - 86400
                 end_unix = int((historical_check_out + timedelta(days=1)).timestamp()) + 86400
 
@@ -98,7 +93,6 @@ class WeatherService:
         if not days:
             return {"error": "Dates not found in 30-day forecast range."}
 
-        # ✨ BUG FIX 2: Calculate the true average for the summary instead of just grabbing Day 0
         all_weathers = [d.weather.lower() for d in days]
         most_common_overall = Counter(all_weathers).most_common(1)[0][0]
         avg_high = sum([d.max_temp for d in days]) / len(days)
@@ -120,8 +114,6 @@ class WeatherService:
             daily_data[date_str]["humidity"].append(item["main"]["humidity"])
             daily_data[date_str]["pressure"].append(item["main"]["pressure"])
             
-            # ✨ BUG FIX 1: Use 'main' instead of 'description'. This groups "scattered clouds", 
-            # "broken clouds", and "clear sky" together so they don't split votes against "rain".
             daily_data[date_str]["weather"].append(item["weather"][0]["main"])
 
         days = []
@@ -141,7 +133,6 @@ class WeatherService:
         if not days:
             return {"error": "Could not calculate historical forecast for these dates."}
 
-        # Calculate a true average for the historical summary too
         avg_high = sum([d.max_temp for d in days]) / len(days)
 
         return WeatherSummary(

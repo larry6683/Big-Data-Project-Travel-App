@@ -1,5 +1,3 @@
-# larry6683/big-data-project-travel-app/backend/app/api/v1/endpoints/flights.py
-
 from fastapi import APIRouter, HTTPException, Query
 from typing import List
 from app.services.flight_service import flight_service
@@ -9,7 +7,7 @@ from fastapi_cache.decorator import cache
 router = APIRouter()
 
 @router.get("/search", response_model=List[FlightOffer])
-@cache(expire=86400) # Cache flight search results for 24 hours (86400 seconds)
+@cache(expire=86400) 
 async def search_flights(
     origin: str = Query(..., description="Departure airport IATA code (e.g., JFK)"),
     destination: str = Query(..., description="Arrival airport IATA code (e.g., LHR)"),

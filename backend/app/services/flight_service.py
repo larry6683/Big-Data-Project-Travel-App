@@ -7,8 +7,6 @@ from app.schemas.flight import FlightOffer, FlightSegment, FlightItinerary
 class FlightService:
     
     def __init__(self):
-        # Load the 28,000+ airport database into memory instantly when the service starts
-        # Using 'IATA' makes the 3-letter code the dictionary key
         self.airports_dict = airportsdata.load('IATA')
         self.api_key = settings.SERPAPI_KEY
         self.base_url = "https://serpapi.com/search.json"
@@ -30,7 +28,6 @@ class FlightService:
         """Parses a ONE-WAY Google Flights JSON from SerpApi into our Pydantic schemas."""
         clean_results = []
         
-        # Google Flights separates results into 'best' and 'other'
         raw_flights = raw_data.get("best_flights", []) + raw_data.get("other_flights", [])
 
         for idx, offer in enumerate(raw_flights):
@@ -51,10 +48,10 @@ class FlightService:
 
                     flight_seg = FlightSegment(
                         departure_airport=dep.get("id", "TBA"),
-                        departure_airport_name=None, # Resolved later in search_flights
+                        departure_airport_name=None, 
                         departure_time=dep.get("time", "TBA"),
                         arrival_airport=arr.get("id", "TBA"),
-                        arrival_airport_name=None, # Resolved later in search_flights
+                        arrival_airport_name=None, 
                         arrival_time=arr.get("time", "TBA"),
                         carrier_code=airline_name, 
                         carrier_name=airline_name,  
@@ -99,14 +96,12 @@ class FlightService:
         if not self.api_key:
             return {"error": "SerpApi Key not configured in .env"}
 
-        # Supports searching multiple classes concurrently (e.g., "ECONOMY,BUSINESS")
         classes_to_search = [c.strip().upper() for c in travel_class.split(",")]
         travel_class_map = {"ECONOMY": "1", "PREMIUM_ECONOMY": "2", "BUSINESS": "3", "FIRST": "4"}
         
         async def fetch_for_class(t_class):
             mapped_class = travel_class_map.get(t_class, "1")
             
-            # Common parameters for both legs
             base_params = {
                 "engine": "google_flights",
                 "currency": "USD",
@@ -114,11 +109,10 @@ class FlightService:
                 "adults": adults,
                 "travel_class": mapped_class,
                 "api_key": self.api_key,
-                "type": "2" # Force strictly one-way search for both legs
+                "type": "2" 
             }
             if children > 0: base_params["children"] = children
 
-            # Build concurrent outbound and return requests
             outbound_params = {**base_params, "departure_id": origin, "arrival_id": destination, "outbound_date": date}
             
             async with httpx.AsyncClient() as client:
@@ -128,35 +122,29 @@ class FlightService:
                     return_params = {**base_params, "departure_id": destination, "arrival_id": origin, "outbound_date": return_date}
                     requests.append(client.get(self.base_url, params=return_params, timeout=30.0))
 
-                # Fire outbound and return searches at the same time
                 responses = await asyncio.gather(*requests, return_exceptions=True)
                 
                 outbound_offers = []
                 if not isinstance(responses[0], Exception) and responses[0].status_code == 200:
                     outbound_offers = self._parse_flight_data(responses[0].json(), t_class)
 
-                # Combine legs for round trips
                 if return_date and len(responses) == 2:
                     return_offers = []
                     if not isinstance(responses[1], Exception) and responses[1].status_code == 200:
                         return_offers = self._parse_flight_data(responses[1].json(), t_class)
                     
                     combined_results = []
-                    # Stitching: Match outbound options with return options
-                    # This pairs top outbound choices with top return choices
                     for outbound, inbound in zip(outbound_offers, return_offers):
-                        outbound.price += inbound.price # Add prices together
-                        outbound.itineraries.extend(inbound.itineraries) # Append return itinerary
+                        outbound.price += inbound.price 
+                        outbound.itineraries.extend(inbound.itineraries) 
                         combined_results.append(outbound)
                     return combined_results
 
                 return outbound_offers
 
-        # Search for all requested cabin classes concurrently
         tasks = [fetch_for_class(c) for c in classes_to_search]
         class_results = await asyncio.gather(*tasks)
 
-        # Flatten, Deduplicate, and resolve names
         final_flights = []
         seen_signatures = set()
 
@@ -164,7 +152,6 @@ class FlightService:
             if isinstance(res_list, list):
                 for flight in res_list:
                     try:
-                        # Create a signature to avoid returning the exact same flight twice
                         first_fn = flight.itineraries[0].segments[0].flight_number
                         signature = f"{flight.price}_{flight.airline_code}_{first_fn}_{flight.cabin_class}"
                     except (IndexError, AttributeError):
@@ -175,7 +162,6 @@ class FlightService:
                         flight.id = f"flight_{len(seen_signatures)}"
                         final_flights.append(flight)
         
-        # Instant resolution of all airport names in memory
         unique_iata = {seg.departure_airport for f in final_flights for i in f.itineraries for seg in i.segments if seg.departure_airport and seg.departure_airport != "TBA"}
         unique_iata.update({seg.arrival_airport for f in final_flights for i in f.itineraries for seg in i.segments if seg.arrival_airport and seg.arrival_airport != "TBA"})
         

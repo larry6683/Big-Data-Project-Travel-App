@@ -23,7 +23,7 @@ services:
 
 networks:
   wanderplan-network:
-    name: wanderplan-network # Explicitly names the network so other compose files can join it
+    name: wanderplan-network 
     driver: bridge
 
 volumes:

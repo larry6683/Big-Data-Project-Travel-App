@@ -45,7 +45,6 @@ class BaseAmadeusClient:
         """🌟 ADDED: Generic request helper that works with Redis Caching"""
         url = f"{self.base_url}{endpoint}"
         
-        # Ensure we always have the latest token
         token = await self.get_token()
         if not headers:
             headers = {}
@@ -61,7 +60,6 @@ class BaseAmadeusClient:
                     json=json_data
                 )
                 response.raise_for_status()
-                # Redis will store this returned JSON
                 return response.json()
             except httpx.HTTPStatusError as e:
                 return {"error": f"API Error: {e.response.status_code}", "detail": e.response.text}

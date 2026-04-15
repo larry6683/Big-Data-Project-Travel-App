@@ -1,4 +1,3 @@
-// frontend/app/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -86,7 +85,7 @@ export default function Dashboard() {
         console.error("Failed to parse cached trip data", err);
       }
     }
-    
+
     setLoading(false);
   }, []);
 
@@ -301,9 +300,9 @@ export default function Dashboard() {
           onMenuClick={() => {
             if (!sidebarOpen) {
               setSidebarOpen(true);
-              setMapOpen(false); // Close map if sidebar is opening
+              setMapOpen(false);
             } else {
-              setSidebarOpen(false); // Just close sidebar if it's already open
+              setSidebarOpen(false);
             }
           }}
           menuOpen={sidebarOpen}
@@ -311,9 +310,9 @@ export default function Dashboard() {
           onMapToggle={() => {
             if (!mapOpen) {
               setMapOpen(true);
-              setSidebarOpen(false); // Close sidebar if map is opening
+              setSidebarOpen(false);
             } else {
-              setMapOpen(false); // Just close map if it's already open
+              setMapOpen(false);
             }
           }}
         />

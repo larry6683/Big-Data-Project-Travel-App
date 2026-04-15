@@ -1,4 +1,3 @@
-// frontend/components/search/Sidebar.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -94,7 +93,6 @@ export default function Sidebar({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [topDestinations, setTopDestinations] = useState<any[]>([]);
 
-  // 1. Reusable function to fetch top destinations instantly
   const refreshTrending = async () => {
     const data = await travelApi.getTopDestinations();
     if (data && data.length > 0) {
@@ -102,7 +100,6 @@ export default function Sidebar({
     }
   };
 
-  // 2. Fetch top destinations on initial load
   useEffect(() => {
     refreshTrending();
   }, []);
@@ -133,14 +130,12 @@ export default function Sidebar({
     }
   }, []);
 
-  // Updated function to handle tracking top destinations
   const getCoordinates = async (
     locationName: string,
     isDestination: boolean = false
   ) => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      // We add the is_destination flag to the URL if it's true
       const url = `${baseUrl}/locations/geocode?keyword=${encodeURIComponent(
         locationName
       )}${isDestination ? "&is_destination=true" : ""}`;
@@ -255,14 +250,12 @@ export default function Sidebar({
     if (onSearchStart) onSearchStart();
 
     setIsGeocoding(true);
-    // FIXED: Passed `true` to the destination geocode call to trigger backend Redis tracking
     const [srcCoords, dstCoords] = await Promise.all([
       getCoordinates(finalSource),
       getCoordinates(finalDest, true),
     ]);
     setIsGeocoding(false);
 
-    // 3. INSTANT REFRESH: Update the trending list immediately without reloading the page!
     refreshTrending();
 
     if (!srcCoords) {
@@ -316,12 +309,11 @@ export default function Sidebar({
   return (
     <>
       <div className="w-[20vw] lg:w-[20vw] min-w-[300px] h-[100dvh] bg-theme-text border-r border-theme-secondary/20 flex flex-col font-sans text-theme-bg">
-        {/* FIXED HEADER */}
         <div className="p-4 border-b border-theme-secondary/20 shadow-md flex justify-between items-start shrink-0">
           <div>
             <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
-              {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
-              <span className="text-theme-bg">Wanderplan</span><span className="text-theme-accent">US</span>
+              <span className="text-theme-bg">Wanderplan</span>
+              <span className="text-theme-accent">US</span>
             </div>
           </div>
 
@@ -335,17 +327,16 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* SCROLLABLE CONTENT */}
         <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-5 custom-scrollbar pb-6">
           <div>
             <div className="text-[11px] text-theme-bg/70 mb-4">
               Plan Your Trip
             </div>
             <SbLabel>Source</SbLabel>
-            <LocationAutocomplete 
+            <LocationAutocomplete
               id="source-input"
-              placeholder="eg. NEW YORK, NY" 
-              value={source} 
+              placeholder="eg. NEW YORK, NY"
+              value={source}
               onChange={(val, isValid) => {
                 setSource(val);
                 setSourceValid(isValid);
@@ -364,9 +355,9 @@ export default function Sidebar({
 
           <div>
             <SbLabel>Destination</SbLabel>
-            <LocationAutocomplete 
+            <LocationAutocomplete
               placeholder="eg. LOS ANGELES, CA"
-              value={destination} 
+              value={destination}
               onChange={(val, isValid) => {
                 setDestination(val);
                 setDestValid(isValid);
@@ -377,12 +368,14 @@ export default function Sidebar({
               showGPS={false}
             />
             {errors.destination && (
-              <span id="destination_error" className="text-red-400 text-[11px] mt-1 block font-medium">
+              <span
+                id="destination_error"
+                className="text-red-400 text-[11px] mt-1 block font-medium"
+              >
                 {errors.destination}
               </span>
             )}
 
-            {/* Trending Destinations UI */}
             {topDestinations.length > 0 && (
               <div className="mt-3">
                 <div className="text-[10px] font-bold tracking-[0.05em] uppercase text-theme-bg/50 mb-2 ml-1 flex items-center gap-1.5">
@@ -391,7 +384,6 @@ export default function Sidebar({
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {topDestinations.map((dest, idx) => {
-                    // NEW: Lookup the abbreviation. If it's not in the list, just use the original string.
                     const stateAbbrev = dest.state
                       ? stateAbbreviations[dest.state] || dest.state
                       : "";
@@ -470,9 +462,16 @@ export default function Sidebar({
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-secondary pointer-events-none z-10"
                 />
 
-                {errors.start && <span id="start_date_error" className="text-red-400 text-[11px] mt-1 block font-medium">{errors.start}</span>}
-                </div>
-              
+                {errors.start && (
+                  <span
+                    id="start_date_error"
+                    className="text-red-400 text-[11px] mt-1 block font-medium"
+                  >
+                    {errors.start}
+                  </span>
+                )}
+              </div>
+
               <div className="flex-1 min-w-[120px] relative">
                 <DatePicker
                   selected={
@@ -582,12 +581,12 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* FIXED FOOTER WITH SUBMIT BUTTON */}
         <div className="p-4 bg-theme-text border-t border-theme-secondary/20 shrink-0">
           {!isWorking ? (
-            <button 
-              id="submit-side" className="w-full p-4 rounded-2xl bg-theme-primary text-theme-bg text-sm font-bold flex items-center justify-center gap-2 hover:bg-theme-secondary transition-all shadow-[0_4px_15px_rgba(0,0,0,0.25)] active:scale-[0.98]"
-              onClick={handleSearchSubmit} 
+            <button
+              id="submit-side"
+              className="w-full p-4 rounded-2xl bg-theme-primary text-theme-bg text-sm font-bold flex items-center justify-center gap-2 hover:bg-theme-secondary transition-all shadow-[0_4px_15px_rgba(0,0,0,0.25)] active:scale-[0.98]"
+              onClick={handleSearchSubmit}
             >
               <Search size={17} /> SUBMIT
             </button>

@@ -1,4 +1,3 @@
-# backend/app/api/v1/endpoints/chatbot.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
@@ -15,25 +14,22 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[Message]
-    context: Optional[str] = None  # E.g., "User is looking at trips to Tokyo"
+    context: Optional[str] = None  
 
 @router.post("/")
 async def chat_with_ai(request: ChatRequest):
     try:
-        # Define the system prompt aligned with your travel app
         system_content = (
             "You are WanderBot, an expert travel assistant for the WanderPlan app. "
             "Help users plan trips, suggest local attractions, give weather advice, "
             "and create day-by-day itineraries. Keep responses concise and engaging."
         )
         
-        # Inject dynamic app context if the frontend sends it
         if request.context:
             system_content += f"\n\nCurrent Context: {request.context}"
             
         system_prompt = {"role": "system", "content": system_content}
         
-        # Format messages for the OpenAI API
         api_messages = [system_prompt] + [{"role": m.role, "content": m.content} for m in request.messages]
         
         response = client.chat.completions.create(

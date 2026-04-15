@@ -1,4 +1,3 @@
-// frontend/components/search/LocationAutoComplete.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -6,7 +5,7 @@ import { MapPin, Navigation, Loader2, X } from "lucide-react";
 import { travelApi } from "@/services/api";
 
 interface Props {
-  id?: string; // Fixed: Added id property
+  id?: string;
   placeholder: string;
   value: string;
   onChange: (val: string, isValid: boolean) => void;

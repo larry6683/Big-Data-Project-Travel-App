@@ -19,7 +19,6 @@ import Link from "next/link";
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
 
-  // --- Password Reset States ---
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [resetStep, setResetStep] = useState<"email" | "verify">("email");
   const [resetCode, setResetCode] = useState("");
@@ -77,7 +76,7 @@ export default function LoginPage() {
 
     try {
       let token = "";
-      let displayUsername = email; // Fallback
+      let displayUsername = email;
 
       if (isLogin) {
         const res = await travelApi.login(email, password);
@@ -89,31 +88,30 @@ export default function LoginPage() {
 
       if (!token) throw new Error("No access token received from server.");
 
-      // Temporarily store token so getProfile can use it in its headers
       localStorage.setItem("token", token);
 
       try {
-        // Fetch the full profile so the Navbar displays the user's real name instead of 'undefined'
         const profile = await travelApi.getProfile();
-        displayUsername = profile.full_name || profile.name || profile.email || email;
+        displayUsername =
+          profile.full_name || profile.name || profile.email || email;
       } catch (profileErr) {
         console.warn("Could not fetch profile, falling back to email");
       }
 
-      // Complete the login sequence
       auth.login(token, displayUsername);
       router.push("/");
     } catch (err: any) {
-      localStorage.removeItem("token"); // Clean up if failed
+      localStorage.removeItem("token");
       setGlobalError(
-        err.response?.data?.detail || err.message || "Authentication failed. Please check your credentials."
+        err.response?.data?.detail ||
+          err.message ||
+          "Authentication failed. Please check your credentials."
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- Password Reset Handler ---
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGlobalError("");
@@ -123,14 +121,12 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       if (resetStep === "email") {
-        // Step 1: Send Code
         await travelApi.forgotPassword(email);
         setSuccessMessage(
           "If an account exists, a code was sent to your email!"
         );
         setResetStep("verify");
       } else {
-        // Step 2: Verify and Reset
         if (!resetCode || password.length < 6) {
           throw new Error(
             "Please enter the code and a new password (min 6 chars)."
@@ -497,7 +493,6 @@ export default function LoginPage() {
   );
 }
 
-// Simple internal icon for the image overlay
 function SparkleIcon() {
   return (
     <svg

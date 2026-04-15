@@ -7,7 +7,7 @@ from datetime import date
 router = APIRouter()
 
 @router.get("/forecast", response_model=WeatherSummary)
-@cache(expire=None) # Cache weather results persistently in Redis to prevent redundant API calls for the same destination and dates
+@cache(expire=None) 
 async def get_trip_weather(
     lat: float = Query(..., ge= -90, le= 90, description="Latitude must be between -90 and 90"),
     lon: float = Query(..., ge= -180, le= 180, description="Longitude must be between -180 and 180"),

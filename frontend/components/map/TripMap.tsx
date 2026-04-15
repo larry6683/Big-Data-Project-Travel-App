@@ -18,12 +18,10 @@ export default function TripMap({ mapData }: TripMapProps) {
 
   const [radiusValue, setRadiusValue] = useState<number>(10);
 
-  // Helper to dynamically calculate zoom based on radius miles
   const calculateZoomFromRadius = (miles: number) => {
     return 14.5 - Math.log2(Math.max(1, miles));
   };
 
-  // 1. Initialize MapLibre with PMTiles support and Protomaps Layers
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -38,7 +36,6 @@ export default function TripMap({ mapData }: TripMapProps) {
 
     mapRef.current = new maplibregl.Map({
       container: mapContainer.current,
-      // This single link replaces everything and includes all the labels/names
       style: `https://api.protomaps.com/styles/v5/light/en.json?key=${process.env.NEXT_PUBLIC_PROTOMAPS_KEY}`,
       center: [-105.2705, 40.015],
       zoom: 15,
@@ -58,7 +55,6 @@ export default function TripMap({ mapData }: TripMapProps) {
     };
   }, []);
 
-  // 2. Initial Data Sync
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -88,7 +84,6 @@ export default function TripMap({ mapData }: TripMapProps) {
     syncWithSearchState();
   }, [mapData]);
 
-  // Handle immediate visual slider drag (Smooth Zooming)
   const handleRadiusSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     setRadiusValue(val);
@@ -109,7 +104,6 @@ export default function TripMap({ mapData }: TripMapProps) {
     } catch (e) {}
   };
 
-  // Handle saving the state ONLY when slider drag is released
   const handleRadiusDrop = () => {
     const savedData = localStorage.getItem("search_state");
     if (!savedData) return;

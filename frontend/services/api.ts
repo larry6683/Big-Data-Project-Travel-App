@@ -1,5 +1,3 @@
-// frontend/services/api.ts
-
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
@@ -119,7 +117,6 @@ resetPassword: async (email: string, code: string, newPassword: string) => {
   });
   return response.data;
 },
-  // --- NEW PROFILE METHODS ---
   getProfile: async () => {
     const response = await axios.get(`${API_BASE_URL}/users/me`, {
       headers: getAuthHeaders()
@@ -128,7 +125,6 @@ resetPassword: async (email: string, code: string, newPassword: string) => {
   },
 
   updateProfile: async (formData: FormData) => {
-    // Note: We pass the raw FormData object here so axios correctly sets multipart/form-data headers
     const response = await axios.put(`${API_BASE_URL}/users/me`, formData, {
       headers: {
         ...getAuthHeaders(),

@@ -1,4 +1,3 @@
-// frontend/app/savedtrips/page.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
@@ -27,7 +26,7 @@ interface SavedTrip {
     endDate?: string;
     rawParams?: any;
     flight?: any;
-    drive?: any; // Added drive support
+    drive?: any;
     hotel?: any;
     weather?: any;
     activities?: any[];
@@ -67,7 +66,6 @@ export default function SavedTripsPage() {
     }
   };
 
-  // --- HELPER FUNCTIONS (MATCHING ITINERARY MODAL) ---
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "N/A";
     const parts = dateStr.split("-");

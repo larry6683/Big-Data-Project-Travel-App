@@ -1,10 +1,9 @@
 import os
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles # 🌟 NEW IMPORT
+from fastapi.staticfiles import StaticFiles 
 from app.core.config import settings
 from app.db.database import engine, Base 
-# 🌟 ADD "users" to the imports below
 from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips, users, chatbot, destinations
 
 from fastapi_cache import FastAPICache
@@ -19,20 +18,18 @@ def custom_key_builder(
     namespace: str = "",
     request: Request = None,
     response: Response = None,
-    args: tuple = (),       # 🌟 REMOVED the '*'
-    kwargs: dict = None,    # 🌟 REMOVED the '**'
+    args: tuple = (),       
+    kwargs: dict = None,    
 ):
     prefix = FastAPICache.get_prefix()
-    kwargs = kwargs or {}   # Ensure it's a dict
+    kwargs = kwargs or {}   
     
-    # 1. Now we are looping through the ACTUAL dictionary of parameters
     clean_params = [
         f"{k}={v}" for k, v in kwargs.items() 
         if k not in ["request", "response", "db", "self"]
     ]
     params_str = ",".join(clean_params)
     
-    # 2. Build the key parts
     key_parts = [prefix]
     
     if namespace and namespace != prefix:
@@ -43,7 +40,6 @@ def custom_key_builder(
     if params_str:
         key_parts.append(params_str)
         
-    # 3. Join with colons and fix formatting
     final_key = ":".join(key_parts)
     final_key = final_key.replace(f"{prefix}:{prefix}", prefix)
     
@@ -60,16 +56,13 @@ def get_application():
         allow_headers=["*"],
     )
 
-    # 🌟 NEW: Serve the static files (images) so the frontend can display them
     os.makedirs("static/profiles", exist_ok=True)
     _app.mount("/static", StaticFiles(directory="static"), name="static")
 
-    # Core Routes
     _app.include_router(flights.router, prefix="/api/v1/flights", tags=["flights"])
     _app.include_router(locations.router, prefix="/api/v1/locations", tags=["locations"])
     _app.include_router(destinations.router, prefix="/api/v1/destinations", tags=["destinations"])
     
-    # Feature Tab Routes
     _app.include_router(driving.router, prefix="/api/v1/driving", tags=["driving"])
     _app.include_router(hotels.router, prefix="/api/v1/hotels", tags=["hotels"])
     _app.include_router(activities.router, prefix="/api/v1/activities", tags=["activities"])

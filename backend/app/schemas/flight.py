@@ -3,11 +3,11 @@ from typing import List, Optional
 
 class FlightSegment(BaseModel):
     departure_airport: str
-    departure_airport_name: Optional[str] = None  # New field for the full departure name
+    departure_airport_name: Optional[str] = None  
     departure_time: str
     
     arrival_airport: str
-    arrival_airport_name: Optional[str] = None    # New field for the full arrival name
+    arrival_airport_name: Optional[str] = None    
     arrival_time: str
     
     carrier_code: str

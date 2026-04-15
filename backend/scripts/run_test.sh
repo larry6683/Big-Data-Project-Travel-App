@@ -31,5 +31,4 @@ else
     echo "❌ Failure: Tests failed with exit code $TEST_EXIT_CODE."
 fi
 
-# The 'trap' handles 'docker compose down' automatically
 exit $TEST_EXIT_CODE

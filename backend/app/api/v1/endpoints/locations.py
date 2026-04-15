@@ -193,7 +193,6 @@ async def search_locations(keyword: str):
     
     return unique[:5]
 
-# 🌟 NEW: Added is_destination flag to strictly separate source vs destination
 @router.get("/geocode")
 async def geocode_location(
     request: Request, 
@@ -225,8 +224,6 @@ async def geocode_location(
                 if match:
                     us = match
 
-            # --- TOP 5 DESTINATION TRACKING ---
-            # 🌟 ONLY track this search in Redis if the frontend explicitly flagged it as the destination!
             if is_destination:
                 try:
                     found_city = us[0].get("name", city_name)
@@ -236,7 +233,6 @@ async def geocode_location(
                     await request.app.state.redis.zincrby("top_destinations", 1, destination_key)
                 except Exception as redis_err:
                     print(f"[Redis] Failed to track destination: {redis_err}")
-            # -----------------------------------
 
             return {"lat": float(us[0]["latitude"]), "lon": float(us[0]["longitude"])}
         except Exception as e:

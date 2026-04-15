@@ -1,4 +1,3 @@
-// frontend/components/Chatbot.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -26,11 +25,9 @@ export default function Chatbot({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Set up the dynamic API URL
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-  // Auto-scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -46,7 +43,6 @@ export default function Chatbot({
     setIsLoading(true);
 
     try {
-      // Replaced localhost with the dynamic API_BASE_URL
       const response = await axios.post(`${API_BASE_URL}/chatbot/`, {
         messages: newMessages,
         context: currentDestination
@@ -144,7 +140,6 @@ export default function Chatbot({
         </div>
       )}
 
-      {/* Toggle Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
