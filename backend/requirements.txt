@@ -52,3 +52,4 @@ psycopg2-binary
 pytest
 pytest-asyncio
 google-cloud-storage
+google-cloud-pubsub

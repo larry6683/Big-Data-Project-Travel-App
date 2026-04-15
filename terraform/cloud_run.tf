@@ -87,6 +87,17 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
 
+      # Add this inside the env {} sections in cloud_run.tf for the backend
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+
+      env {
+        name  = "PUBSUB_TOPIC_NAME"
+        value = "${var.environment}-trip-notifications"
+      }
+
       env {
         name = "WEATHER_API_KEY"
         value_source {

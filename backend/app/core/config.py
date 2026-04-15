@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = "" # Add to your .env (Use App Passwords for Gmail)
     FROM_EMAIL: str = ""    # Add to your .env
     OPENAI_API_KEY: str = ""
+
+    GCP_PROJECT_ID: str = "big-data-project-spring-2026"
+    PUBSUB_TOPIC_NAME: str = "prod-trip-notifications"
     
     # 🌟 NEW: Added Mapbox API Key
     MAPBOX_API_KEY: str = "" 

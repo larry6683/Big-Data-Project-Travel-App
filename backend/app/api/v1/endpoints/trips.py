@@ -1,9 +1,12 @@
 # backend/app/api/v1/endpoints/trips.py
+import json
+import base64
 from fastapi import APIRouter, Depends, Response, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from fpdf import FPDF
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.db.database import get_db
 from app.db.models import User, SavedTrip
@@ -13,6 +16,9 @@ from app.schemas.trip import TripGenerateRequest
 import smtplib
 from email.message import EmailMessage
 from app.core.config import settings
+
+# --- NEW IMPORT FOR PUB/SUB ---
+from google.cloud import pubsub_v1 
 
 router = APIRouter()
 
@@ -85,8 +91,6 @@ def build_pdf_content(payload_dict: dict) -> bytes:
         hotel_price = hotel.get('price') or hotel.get('offerDetails', {}).get('price')
         total_cost += safe_float(hotel_price)
     
-    # NOTE: Activities and Tours cost are SKIPPED in this total calculation per request
-
     pdf.set_font("helvetica", "B", 13)
     pdf.set_text_color(34, 197, 94) # Green
     pdf.cell(0, 10, f"TOTAL ESTIMATED COST: ${total_cost:,.2f}", align="C", new_x="LMARGIN", new_y="NEXT")
@@ -121,9 +125,8 @@ def build_pdf_content(payload_dict: dict) -> bytes:
                 bound = "Outbound" if i == 0 else "Return"
                 pdf.set_font("helvetica", "I", 9)
                 pdf.cell(0, 6, f"    --- {bound} ---", new_x="LMARGIN", new_y="NEXT")
-                pdf.set_font("helvetica", "", 9) # slightly smaller font for long airport names
+                pdf.set_font("helvetica", "", 9)
                 for seg in itin.get("segments", []):
-                    # --- UPDATED: Map the airport names and fallback to code ---
                     dep_name = sanitize_text(seg.get('departure_airport_name') or seg.get('departure_airport', ''))
                     arr_name = sanitize_text(seg.get('arrival_airport_name') or seg.get('arrival_airport', ''))
                     dep_code = seg.get('departure_airport', '')
@@ -153,7 +156,7 @@ def build_pdf_content(payload_dict: dict) -> bytes:
         pdf.cell(0, 6, f"    Total Price: ${safe_float(hp):,.2f}", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(4)
 
-    # Planned Attractions (Separate Section)
+    # Planned Attractions
     attractions = payload_dict.get("attractions", [])
     if attractions:
         draw_section_header("Planned Attractions")
@@ -162,14 +165,13 @@ def build_pdf_content(payload_dict: dict) -> bytes:
             pdf.cell(0, 7, f"   - {sanitize_text(attr.get('name'))}", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(4)
 
-    # Tours & Activities (Separate Section)
+    # Tours & Activities
     activities = payload_dict.get("activities", [])
     if activities:
         draw_section_header("Tours & Activities")
         pdf.set_font("helvetica", "", 11)
         for act in activities:
             name = act.get('name') or act.get('title')
-            # Only showing names here to keep it clean, as costs aren't added to total
             pdf.cell(0, 7, f"   - {sanitize_text(name)}", new_x="LMARGIN", new_y="NEXT")
 
     return bytes(pdf.output())
@@ -210,15 +212,40 @@ async def share_trip_pdf(payload: TripGenerateRequest):
         print(f"Email Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to send email")
 
+# --- UPDATED PUBLISHER: Send message when trip is saved ---
 @router.post("/save")
 async def save_trip(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     existing = db.query(SavedTrip).filter(SavedTrip.user_id == current_user.id).all()
     for trip in existing:
         if trip.data == payload: return {"message": "Trip already saved!"}
+        
     new_trip = SavedTrip(destination=payload.get("destination", "My Trip"), data=payload, user_id=current_user.id)
     db.add(new_trip)
     db.commit()
-    return {"message": "Trip saved successfully"}
+    db.refresh(new_trip)
+
+    # 🚀 NEW: Drop a message into Pub/Sub (This is instantly fast!)
+    try:
+        publisher = pubsub_v1.PublisherClient()
+        topic_path = publisher.topic_path(settings.GCP_PROJECT_ID, settings.PUBSUB_TOPIC_NAME)
+        
+        # Package the data we want to send to the background worker
+        message_payload = {
+            "user_email": current_user.email,
+            "user_name": current_user.full_name,
+            "destination": new_trip.destination,
+            "trip_id": new_trip.id
+        }
+        
+        # Convert it to a string and send it
+        message_data = json.dumps(message_payload).encode("utf-8")
+        publisher.publish(topic_path, data=message_data)
+        print("Message dropped in Pub/Sub successfully!")
+        
+    except Exception as e:
+        print(f"Pub/Sub error (non-fatal): {e}")
+
+    return {"message": "Trip saved successfully", "trip_id": new_trip.id}
 
 @router.get("/me", response_model=List[dict])
 async def get_my_trips(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -232,3 +259,82 @@ async def delete_trip(trip_id: int, db: Session = Depends(get_db), current_user:
     db.delete(trip)
     db.commit()
     return {"message": "Trip deleted successfully"}
+
+
+# --- 2. NEW WORKER: Receive the message in the background ---
+
+# Pub/Sub sends data in this specific JSON format
+class PubSubMessage(BaseModel):
+    message: dict
+    subscription: str
+
+@router.post("/notification-worker")
+async def process_notification(
+    payload: PubSubMessage, 
+    db: Session = Depends(get_db) # <-- Added the database connection here
+):
+    """
+    This endpoint is invisible to the user. 
+    Google Cloud Pub/Sub calls this automatically in the background!
+    """
+    try:
+        # 1. Unpack the hidden message
+        encoded_data = payload.message.get("data")
+        decoded_data = base64.b64decode(encoded_data).decode("utf-8")
+        trip_info = json.loads(decoded_data)
+        
+        user_email = trip_info.get("user_email")
+        user_name = trip_info.get("user_name")
+        destination = trip_info.get("destination")
+        trip_id = trip_info.get("trip_id")
+
+        print("==================================================")
+        print(f"BACKGROUND JOB TRIGGERED for {user_email}")
+        
+        # 2. Look up the saved trip in the database to get the full itinerary data
+        saved_trip = db.query(SavedTrip).filter(SavedTrip.id == trip_id).first()
+        
+        if not saved_trip:
+            print("Trip not found in database. Aborting email.")
+            return {"status": "error", "detail": "Trip not found"}
+
+        # 3. Generate the PDF silently in the background
+        print(f"Generating PDF for {destination}...")
+        pdf_bytes = build_pdf_content(saved_trip.data)
+
+        # 4. Create and send the actual Email
+        print("Sending email via SMTP...")
+        msg = EmailMessage()
+        msg['Subject'] = f"Your Wanderplan Itinerary: {destination}!"
+        msg['From'] = settings.FROM_EMAIL
+        msg['To'] = user_email
+        
+        email_body = f"""Hi {user_name},
+
+Great news! Your trip to {destination} has been successfully saved to your Wanderplan account.
+
+We have attached a custom PDF of your itinerary to this email so you can view it offline or print it out for your travels.
+
+Safe travels!
+The Wanderplan Team
+"""
+        msg.set_content(email_body)
+        
+        # Attach the PDF
+        msg.add_attachment(pdf_bytes, maintype='application', subtype='pdf', filename=f"{destination}_Itinerary.pdf")
+        
+        # Connect to Gmail and send it
+        with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            server.send_message(msg)
+            
+        print("Email sent successfully!")
+        print("==================================================")
+        
+        return {"status": "success"}
+    
+    except Exception as e:
+        print(f"Worker failed: {e}")
+        # Returning a 500 tells Pub/Sub to try sending the message again later!
+        raise HTTPException(status_code=500, detail="Failed to process notification")
