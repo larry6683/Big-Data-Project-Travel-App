@@ -1,0 +1,41 @@
+name: AWS-integrated-github-actions
+on: # Trigger the workflow on push or pull request to the specified branch
+  push:
+    branches: [ feature/aws-integration ]
+  pull_request:
+    branches: [ feature/aws-integration ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6 # Can find these versions on GitHub Marketplace
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform Format and Validate
+        run: | # Specify the commands to format and validate Terraform configuration
+          terraform fmt -check
+          terraform validate
+        working-directory: ./infrastructure/aws
+
+      - name: Terraform Init and Plan
+        run: | # Specify the commands to initialize Terraform configuration
+          terraform init
+          terraform plan -out=tfplan
+        working-directory: ./infrastructure/aws
+
+      - name: Terraform Apply
+        if: github.event_name == 'push' # Only apply on push events, not on pull requests
+        run: | # Specify the commands to apply Terraform configuration
+          terraform apply -auto-approve
+        working-directory: ./infrastructure/aws
