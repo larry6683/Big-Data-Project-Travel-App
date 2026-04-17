@@ -12,6 +12,7 @@ class TestAuth():
     api_path_forgot_password = api_path + "/forgot-password"
     api_path_reset_password = api_path + "/reset-password"
 
+    @pytest.mark.smoke
     async def test_new_user_signup(self, auth_client, db):
         new_user_email = "newuser@test.com"
         new_user_password = "password123"
@@ -34,6 +35,7 @@ class TestAuth():
         assert new_user.full_name == new_user_full_name
         assert new_user.hashed_password != new_user_password
 
+    @pytest.mark.smoke
     async def test_duplicate_user_signup(self, auth_client):
         response = auth_client.post(
             self.api_path_signup,
@@ -117,6 +119,7 @@ class TestAuth():
 
         assert response.status_code == 422
 
+    @pytest.mark.smoke
     async def test_forgot_password_existing_user(self, auth_client, db):
         response = auth_client.post(
             self.api_path_forgot_password,
@@ -142,6 +145,7 @@ class TestAuth():
         assert response.status_code == 200
         assert response.json()["message"] == "If that email is registered, a reset code has been sent."
 
+    @pytest.mark.smoke
     async def test_reset_password_pass(self, auth_client, db):
         # First, trigger forgot-password to generate a code
         auth_client.post(

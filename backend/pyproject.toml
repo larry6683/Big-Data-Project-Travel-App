@@ -14,6 +14,9 @@ test = [
 testpaths = ["tests"] 
 pythonpath = ["."]
 asyncio_mode = "auto"
+env_files = [
+    "backend/.env"
+]
 
 # Modern, readable list format
 addopts = [
@@ -23,6 +26,6 @@ addopts = [
 ]
 
 markers = [
-    "smoke: Critical heart-rate and GPS parsing checks",
-    "regression: Full multi-sport analysis suite",
+    "smoke: Critical login and auth checkers",
+    "regression: Full testing suite",
 ]
