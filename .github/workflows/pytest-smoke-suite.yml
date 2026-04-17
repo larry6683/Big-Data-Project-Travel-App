@@ -13,6 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6 # Can find these versions on GitHub Marketplace
 
+      - name: Create empty env file
+        run: touch ./backend/.env
+        working-directory: ./backend
+
       - name: Start Services with Docker Compose
         run: |
           docker compose up -d redis elasticsearch --wait
