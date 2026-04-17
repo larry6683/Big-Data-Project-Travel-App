@@ -66,6 +66,6 @@ report.html
 # Pytest cache
 .pytest_cache
 
-terraform/*.tfvars
+infrastructure/gcp/*.tfvars
 .terraform/
 .terraform.lock.hcl
