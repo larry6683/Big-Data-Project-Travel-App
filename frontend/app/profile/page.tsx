@@ -1,7 +1,7 @@
 // frontend/app/profile/page.tsx
 "use client";
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../components/context/AuthContext";
 import Navbar from "../../components/Navbar";
 import ProfileModal from "../../components/ProfileModal";
 import Link from "next/link";
@@ -16,8 +16,8 @@ export default function ProfilePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
-    "http://localhost:8000";
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
 
   const fetchProfile = async () => {
     setLoading(true);

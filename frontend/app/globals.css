@@ -11,19 +11,21 @@
 
 @theme inline {
   /* Generalized Semantic Color Palette */
-  --color-theme-text: #0C1208;      /* Main text / Darkest color (Formerly deep-forest) */
-  --color-theme-primary: #00820f;   /* Main brand color (Formerly forest-green) */
-  --color-theme-secondary: #4A7C40; /* Supporting brand color (Formerly canopy) */
-  --color-theme-muted: #8FB87A;     /* Borders, inactive states, soft accents (Formerly sage) */
-  --color-theme-accent: #C8A84A;    /* Highlights, warnings, callouts (Formerly antique-gold) */
-  --color-theme-bg: #F5F2EC;        /* Main application background (Formerly parchment) */
-  --color-theme-surface: #E8DFC8;   /* Cards, modals, secondary backgrounds (Formerly linen) */
+  --color-theme-text:#090D18;      
+  --color-theme-primary:#00820E;   
+  --color-theme-secondary:#A0B293; 
+  --color-theme-muted: #A0B293;     
+  --color-theme-accent: #FDE047;    
+  --color-theme-bg: #F6F7F9;        
+  --color-theme-surface:#A0B293;   
 
   /* Map base variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  
+  /* Map loaded CSS variables to Tailwind UI fonts */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-menlo), ui-monospace, SFMono-Regular, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -37,7 +39,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-dm-sans);
+  font-family: var(--font-sans);
 }
 
 /* Minimalist Custom Scrollbar matching the Nature Theme */
@@ -51,12 +53,12 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(74, 124, 64, 0.3); /* Secondary color with opacity */
+  background-color: rgba(74, 124, 64, 0.3);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(58, 100, 50, 0.6); /* Primary color on hover */
+  background-color: rgba(58, 100, 50, 0.6);
 }
 
 /* Firefox Support */

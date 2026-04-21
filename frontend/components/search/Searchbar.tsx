@@ -61,7 +61,7 @@ const stateAbbreviations: Record<string, string> = {
   Wyoming: "WY",
 };
 
-interface SidebarProps {
+interface SearchbarProps {
   id?: string;
   onSearch: (params: any) => void;
   onSearchStart?: () => void;
@@ -70,13 +70,13 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export default function Sidebar({
+export default function Searchbar({
   onSearch,
   onSearchStart,
   onCancel,
   loading,
   onClose,
-}: SidebarProps) {
+}: SearchbarProps) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
 
@@ -139,8 +139,12 @@ export default function Sidebar({
     isDestination: boolean = false
   ) => {
     try {
+<<<<<<< Updated upstream:frontend/components/search/Sidebar.tsx
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
       // We add the is_destination flag to the URL if it's true
+=======
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+>>>>>>> Stashed changes:frontend/components/search/Searchbar.tsx
       const url = `${baseUrl}/locations/geocode?keyword=${encodeURIComponent(
         locationName
       )}${isDestination ? "&is_destination=true" : ""}`;
@@ -319,10 +323,37 @@ export default function Sidebar({
         {/* FIXED HEADER */}
         <div className="p-4 border-b border-theme-secondary/20 shadow-md flex justify-between items-start shrink-0">
           <div>
+<<<<<<< Updated upstream:frontend/components/search/Sidebar.tsx
             <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
               {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
               <span className="text-theme-bg">Wanderplan</span><span className="text-theme-accent">US</span>
             </div>
+=======
+<div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center">
+<svg className="w-12 h-12 text-theme-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <g strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="7.5" strokeWidth={1.5} />
+    
+    <line x1="12" y1="4.5" x2="12" y2="6.3" strokeWidth={1}/>
+    <line x1="19.5" y1="12" x2="17.7" y2="12" strokeWidth={1}/>
+    <line x1="12" y1="19.5" x2="12" y2="17.7" strokeWidth={1}/>
+    <line x1="4.5" y1="12" x2="6.3" y2="12" strokeWidth={1}/>
+    
+    {/* Uses --color-theme-primary (#00820E) */}
+    <circle cx="12" cy="12" r="1.1" className="fill-theme-primary stroke-none" />
+        
+    <line x1="12" y1="12" x2="16" y2="5.5" strokeWidth={2} />
+  </g>
+  
+  {/* Uses --color-theme-accent (#FDE047) */}
+  <g className="stroke-theme-accent" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="17.7" cy="2.3" r="1.4" className="fill-theme-primary stroke-none" />
+  </g>
+</svg>
+  <span className="text-theme-bg">minute</span>
+  <span className="text-theme-primary">bound</span>
+</div>
+>>>>>>> Stashed changes:frontend/components/search/Searchbar.tsx
           </div>
 
           {onClose && (
@@ -534,7 +565,7 @@ export default function Sidebar({
                   onClick={() => setBudget(opt)}
                   className={`flex-1 py-[7px] rounded-lg border-none font-inherit text-[12.5px] cursor-pointer transition-all duration-150 hover:opacity-85 ${
                     budget === opt
-                      ? "bg-theme-primary font-bold text-theme-bg shadow-[0_1px_4px_rgba(0,0,0,0.1)]"
+                      ? "bg-theme-primary font-bold text-theme-bg]"
                       : "bg-transparent font-normal text-theme-text/70"
                   }`}
                 >

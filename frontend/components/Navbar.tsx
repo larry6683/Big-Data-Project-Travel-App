@@ -68,6 +68,7 @@ export default function Navbar({
         {/* Logo and Conditional Return Home Button */}
         {!isHomePage ? (
           <div className="flex items-center gap-3 sm:gap-4">
+<<<<<<< Updated upstream
             <Link href="/" className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
             <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
               {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
@@ -75,6 +76,37 @@ export default function Navbar({
             </div>
            </Link>        
             <Link 
+=======
+            <Link
+              href="/"
+              className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2"
+            >
+<div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center">
+<svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#148A4B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="7.5" strokeWidth={1.5} />
+    
+    <line x1="12" y1="4.5" x2="12" y2="6.3" strokeWidth={1}/>
+    <line x1="19.5" y1="12" x2="17.7" y2="12" strokeWidth={1}/>
+    <line x1="12" y1="19.5" x2="12" y2="17.7" strokeWidth={1}/>
+    <line x1="4.5" y1="12" x2="6.3" y2="12" strokeWidth={1}/>
+    
+    <circle cx="12" cy="12" r="1.1" fill="#148A4B" stroke="none" />
+        
+    <line x1="12" y1="12" x2="16" y2="5.5" strokeWidth={2} />
+  </g>
+  
+  <g stroke="#CFA035" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    
+    <circle cx="17.7" cy="2.3" r="1.4" fill="#CFA035" stroke="none" />
+  </g>
+</svg>
+  <span className="text-theme-text">minute</span>
+  <span className="text-theme-primary">bound</span>
+</div>
+            </Link>
+            <Link
+>>>>>>> Stashed changes
               href="/"
               title="Return Home"
               className="flex items-center justify-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm font-semibold text-theme-text bg-theme-surface rounded-lg hover:bg-theme-secondary/20 transition-colors border border-theme-surface"
@@ -86,12 +118,43 @@ export default function Navbar({
           </div>
         ) : (
           <div className="flex flex-col lg:hidden">
+<<<<<<< Updated upstream
             <Link href="/" className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2">
             <div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center gap-2">
               {/* <img src="/logo.svg" alt="Wanderplan logo" className="w-10 h-10" /> */}
               <span className="text-theme-text">Wanderplan</span><span className="text-theme-primary">US</span>
             </div>
            </Link>
+=======
+            <Link
+              href="/"
+              className="text-xl md:text-2xl font-extrabold text-theme-text tracking-tight flex items-center gap-1.5 md:gap-2"
+            >
+<div className="text-2xl font-extrabold text-theme-bg tracking-tight flex items-center">
+<svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#148A4B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="7.5" strokeWidth={1.5} />
+    
+    <line x1="12" y1="4.5" x2="12" y2="6.3" strokeWidth={1}/>
+    <line x1="19.5" y1="12" x2="17.7" y2="12" strokeWidth={1}/>
+    <line x1="12" y1="19.5" x2="12" y2="17.7" strokeWidth={1}/>
+    <line x1="4.5" y1="12" x2="6.3" y2="12" strokeWidth={1}/>
+    
+    <circle cx="12" cy="12" r="1.1" fill="#148A4B" stroke="none" />
+        
+    <line x1="12" y1="12" x2="16" y2="5.5" strokeWidth={2} />
+  </g>
+  
+  <g stroke="#CFA035" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    
+    <circle cx="17.7" cy="2.3" r="1.4" fill="#CFA035" stroke="none" />
+  </g>
+</svg>
+  <span className="text-theme-text">minute</span>
+  <span className="text-theme-primary">bound</span>
+</div>
+            </Link>
+>>>>>>> Stashed changes
           </div>
         )}
       </div>

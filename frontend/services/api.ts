@@ -10,7 +10,7 @@ const getAuthHeaders = () => {
 };
 
 if (!API_BASE_URL) {
-  console.error("🚨 NEXT_PUBLIC_API_URL is missing! Please check your frontend/.env.local file.");
+  console.error("🚨 NEXT_PUBLIC_API_URL is missing! Please check your frontend/.env.frontend file.");
 }
 
 export interface LocationResult {

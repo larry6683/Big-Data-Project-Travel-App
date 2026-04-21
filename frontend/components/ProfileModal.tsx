@@ -29,8 +29,8 @@ export default function ProfileModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
-    "http://localhost:8000";
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
 
   useEffect(() => {
     if (isOpen) {

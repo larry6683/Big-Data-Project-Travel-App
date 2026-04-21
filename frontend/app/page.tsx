@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Sidebar from "@/components/search/Sidebar";
+import Searchbar from "@/components/search/Searchbar";
 import TripResults from "@/components/results/TripResults";
 import Navbar from "@/components/Navbar";
 import ItineraryModal from "@/components/results/ItineraryModal";
@@ -70,7 +70,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [tripData, setTripData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [SearchbarOpen, setSearchbarOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [isItineraryOpen, setIsItineraryOpen] = useState(false);
 
@@ -93,7 +93,7 @@ export default function Dashboard() {
   const handleSearch = async (params: TripSearchParams) => {
     setLoading(true);
     setError(null);
-    setSidebarOpen(false);
+    setSearchbarOpen(false);
 
     sessionStorage.removeItem("active_tab");
     sessionStorage.removeItem("drive_intermediates_open");
@@ -272,46 +272,58 @@ export default function Dashboard() {
         weatherData={tripData?.weather}
       />
 
-      {sidebarOpen && (
+      {SearchbarOpen && (
         <div
           className="fixed inset-0 bg-theme-text/50 backdrop-blur-sm z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => setSearchbarOpen(false)}
         />
       )}
 
       <div
         className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300 lg:relative lg:translate-x-0 lg:z-auto lg:flex-shrink-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          SearchbarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <Sidebar
+        <Searchbar
           onSearch={handleSearch}
           onSearchStart={() => {
             setTripData(null);
             setLoading(true);
-            setSidebarOpen(false);
+            setSearchbarOpen(false);
           }}
           loading={loading}
-          onClose={() => setSidebarOpen(false)}
+          onClose={() => setSearchbarOpen(false)}
         />
       </div>
 
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Navbar
           onMenuClick={() => {
+<<<<<<< Updated upstream
             if (!sidebarOpen) {
               setSidebarOpen(true);
               setMapOpen(false); // Close map if sidebar is opening
             } else {
               setSidebarOpen(false); // Just close sidebar if it's already open
+=======
+            if (!SearchbarOpen) {
+              setSearchbarOpen(true);
+              setMapOpen(false);
+            } else {
+              setSearchbarOpen(false);
+>>>>>>> Stashed changes
             }
           }}
-          menuOpen={sidebarOpen}
+          menuOpen={SearchbarOpen}
           mapOpen={mapOpen}
           onMapToggle={() => {
             if (!mapOpen) {
               setMapOpen(true);
+<<<<<<< Updated upstream
               setSidebarOpen(false); // Close sidebar if map is opening
+=======
+              setSearchbarOpen(false);
+>>>>>>> Stashed changes
             } else {
               setMapOpen(false); // Just close map if it's already open
             }
