@@ -36,8 +36,9 @@ export default function Home() {
     }
   };
 
-  return (
-    <div className="flex flex-col h-screen w-screen bg-theme-bg overflow-hidden">
+return (
+    // Removed h-screen, w-screen, and overflow-hidden to allow natural page scrolling
+    <div className="flex flex-col flex-1 w-full bg-theme-bg">
       <Navbar
         onMenuClick={() => setSearchOpen(!searchOpen)}
         menuOpen={searchOpen}
@@ -58,8 +59,9 @@ export default function Home() {
         />
       </div>
 
-      <main className="flex-1 flex flex-col overflow-hidden min-w-10 relative">
-        <div className="flex-1 overflow-hidden">
+      {/* Removed overflow-hidden from main and its child div */}
+      <main className="flex-1 flex flex-col relative w-full">
+        <div className="flex-1 w-full">
           <LandingPage />
         </div>
       </main>

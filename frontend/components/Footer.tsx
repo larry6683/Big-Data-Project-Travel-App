@@ -12,20 +12,33 @@ export default function Footer() {
           {/* 1. Brand Section */}
           <div className="flex flex-col gap-6">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <svg viewBox="0 0 860 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 sm:h-12 w-auto -ml-2">
+              <svg viewBox="0 0 1050 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 sm:h-12 w-auto -ml-2">
                 <style>{`
                   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
                   .footer-logo-text {
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont;
                     font-size: 100px;
                     letter-spacing: -0.04em;
                   }
                 `}</style>
-                <path d="M 20 160 C 100 40, 90 40, 120 120" stroke="#86efac" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d="M 120 120 C 180 20, 180 20, 200 140" stroke="#fde047" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <text x="240" y="120" className="footer-logo-text">
-                  <tspan className="font-light fill-theme-bg">Minute</tspan>
-                  <tspan className="font-bold fill-theme-primary">Bound</tspan>
+<path 
+  d="M 20 160 C 100 40, 90 40, 120 120" 
+  className=" fill-theme-primary" 
+  strokeWidth="10" 
+  strokeLinecap="round" 
+  strokeLinejoin="round" 
+/>
+<path 
+  d="M 120 120 C 180 20, 180 20, 200 140" 
+  className=" fill-theme-primary" 
+  strokeWidth="10" 
+  strokeLinecap="round" 
+  strokeLinejoin="round" 
+/>            
+<line x1="220" y1="20" x2="220" y2="180" stroke="#04381C" strokeWidth="10" strokeLinecap="round" />
+  <text x="240" y="120" className="footer-logo-text">
+                  <tspan className="font-semibold fill-theme-primary">Minute</tspan>
+                  <tspan className="font-bold fill-theme-primary">bound</tspan>
                 </text>
               </svg>
             </Link>
@@ -61,7 +74,7 @@ export default function Footer() {
           <div className="flex flex-col gap-4">
             <h4 className="font-black text-lg text-theme-bg tracking-wide mb-2 uppercase text-[13px]">Contact Us</h4>
             
-            <div className="flex items-start gap-3 text-sm text-theme-bg/70 hover:text-theme-bg transition-colors group">
+            {/* <div className="flex items-start gap-3 text-sm text-theme-bg/70 hover:text-theme-bg transition-colors group">
               <MapPin size={18} className="shrink-0 text-theme-primary mt-0.5 group-hover:scale-110 transition-transform" />
               <span className="font-medium">123 Explorer Way, Suite 400<br/>Boulder, CO 80302</span>
             </div>
@@ -74,7 +87,7 @@ export default function Footer() {
             <a href="mailto:support@minutebound.com" className="flex items-center gap-3 text-sm text-theme-bg/70 hover:text-theme-bg transition-colors group">
               <Mail size={18} className="shrink-0 text-theme-primary group-hover:scale-110 transition-transform" />
               <span className="font-medium">support@minutebound.com</span>
-            </a>
+            </a> */}
           </div>
 
         </div>
@@ -84,10 +97,6 @@ export default function Footer() {
           <p className="text-xs text-theme-bg/50 font-bold tracking-widest uppercase">
             © {new Date().getFullYear()} MinuteBound Travel LLC. All rights reserved.
           </p>
-          <div className="flex items-center gap-2 text-[10px] font-black text-theme-bg/40 tracking-widest uppercase">
-            <span>Powered by</span>
-            <span className="text-theme-primary">Intelligent Routing</span>
-          </div>
         </div>
 
       </div>

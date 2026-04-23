@@ -36,6 +36,8 @@ export default function AttractionsCard({ attractions }: { attractions: any[] })
     }
 
     localStorage.setItem('trip_state', JSON.stringify(tripState));
+    // Event this to show on the Map
+window.dispatchEvent(new Event("trip_state_changed"));
   };
 
   if (!attractions || attractions.length === 0) {

@@ -142,8 +142,7 @@ export default function Results() {
             } md:flex md:flex-none md:w-[40vw] lg:w-[35vw]`}
           >
             <div className="w-full h-full relative">
-              <DynamicMap mapData={tripData?.rawParams?.destination} />
-            </div>
+          <DynamicMap mapData={tripData?.rawParams?.destination} tripData={tripData} />            </div>
           </div>
         )}
       </main>

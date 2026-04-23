@@ -44,7 +44,7 @@ const MinuteboundLogo = ({ className = "" }: { className?: string }) => (
 //     </text>
 //   </svg>
 
-      <svg viewBox="0 0 1000 180" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <svg viewBox="0 0 1050 180" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <defs>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
@@ -55,17 +55,26 @@ const MinuteboundLogo = ({ className = "" }: { className?: string }) => (
         }
       `}</style>
     </defs>
-<rect width="240" height="240" rx="40" fill="#04381C" />
-  <circle cx="130" cy="70" r="20" className="fill-theme-accent" />
-{/* scale-[1.2] makes it 20% larger. origin-[110px_100px] keeps it centered. */}
-<g className="origin-[110px_100px] scale-[1.2]">
-                <path d="M 20 160 C 100 40, 90 40, 120 120" className="fill-theme-primary" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d="M 120 120 C 180 20, 180 20, 200 140"  className="fill-theme-primary"  strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
+<rect width="270" height="220" fill="fill-theme-text" />
+<g className="origin-[60px_120px] scale-[1.3]">
+<path 
+  d="M 20 160 C 100 40, 90 40, 120 120" 
+  className=" fill-theme-primary"
+  strokeWidth="10" 
+  strokeLinecap="round" 
+  strokeLinejoin="round" 
+/>
+<path 
+  d="M 120 120 C 180 20, 180 20, 200 140" 
+  className=" fill-theme-primary"  
+  strokeWidth="10" 
+  strokeLinecap="round" 
+  strokeLinejoin="round" 
+/>        
 </g>
-    <text x="280" y="120" className="logo-text">
-      <tspan className="font-semibold fill-theme-text text-large">Minute</tspan>
-      <tspan className="font-bold fill-theme-primary">Bound</tspan>
+    <text x="300" y="120" className="logo-text">
+      <tspan className="font-bold fill-theme-text">Minute</tspan>
+      <tspan className="font-bold fill-theme-primary">bound</tspan>
     </text>
   </svg>
 );
@@ -97,9 +106,7 @@ export default function Navbar({
   }, []);
 
   return (
-    <nav className="relative flex items-center justify-between px-4 md:px-6 py-3 bg-theme-bg text-theme-text flex-shrink-0 z-[60] shadow-sm min-h-[64px] border-b border-theme-text/10">
-      
-      {/* LEFT SECTION */}
+<nav className="sticky top-0 w-full flex items-center justify-between px-4 md:px-6 py-3 bg-theme-bg text-theme-text flex-shrink-0 z-[60] shadow-sm min-h-[64px] border-b border-theme-text/10">      {/* LEFT SECTION */}
       <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
         
         <button

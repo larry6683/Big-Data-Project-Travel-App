@@ -43,7 +43,7 @@ export default function SearchBar({
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [travelMode, setTravelMode] = useState<"fly" | "drive">("fly");
-  const [budget, setBudget] = useState<"budget" | "luxury">("budget");
+  const [budget, setBudget] = useState<"budget" | "Premium">("budget");
   const [radius, setRadius] = useState(10);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -326,9 +326,9 @@ export default function SearchBar({
               <div className="w-[190px]">
                 <SbLabel>Budget Category</SbLabel>
                 <div className="flex bg-theme-bg rounded-xl p-[4px] shadow-inner gap-1 border border-theme-surface">
-                  {(["budget", "luxury"] as const).map((opt) => (
+                  {(["budget", "Premium"] as const).map((opt) => (
                     <button key={opt} onClick={() => setBudget(opt)} className={`flex-1 py-2 rounded-lg text-xs transition-all ${budget === opt ? "bg-theme-primary font-black tracking-wider text-theme-bg shadow-sm" : "bg-transparent font-bold text-theme-text/70 hover:text-theme-text hover:bg-theme-secondary/5"}`}>
-                      {opt === "budget" ? "💰 Budget" : "✨ Luxury"}
+                      {opt === "budget" ? "💰 Budget" : "✨ Premium"}
                     </button>
                   ))}
                 </div>

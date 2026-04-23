@@ -38,6 +38,8 @@ export default function FlightCard({ flights, loading }: { flights: any[], loadi
     }
 
     localStorage.setItem('trip_state', JSON.stringify(tripState)); 
+        // Event this to show on the Map
+window.dispatchEvent(new Event("trip_state_changed"));
   };
 
   const formatTime = (timeString: string) => {

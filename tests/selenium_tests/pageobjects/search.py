@@ -14,7 +14,7 @@ class searchPage:
     travel_end_date_selector = (By.XPATH, '//input[@placeholder="End..."]')
     
     budget_selector = (By.XPATH, "//button[contains(text(), 'Budget')]")
-    luxury_selector = (By.XPATH, "//button[contains(text(), 'Luxury')]")
+    Premium_selector = (By.XPATH, "//button[contains(text(), 'Premium')]")
     fly_selector = (By.XPATH, "//button[contains(text(), 'Fly')]")
     drive_selector = (By.XPATH, "//button[contains(text(), 'Drive')]")
     submit_selector = (By.XPATH, '//*[@id="submit-side"]')
@@ -77,8 +77,8 @@ class searchPage:
         self.select_date_from_ui(driver, self.travel_end_date_selector, end_day)
 
     def select_budget_type(self, driver, mode="budget"):
-        """Selects either Budget or Luxury"""
-        selector = self.budget_selector if mode.lower() == "budget" else self.luxury_selector
+        """Selects either Budget or Premium"""
+        selector = self.budget_selector if mode.lower() == "budget" else self.Premium_selector
         WebDriverWait(driver, 10).until(EC.element_to_be_clickable(selector)).click()
 
     def select_travel_mode(self, driver, mode="fly"):

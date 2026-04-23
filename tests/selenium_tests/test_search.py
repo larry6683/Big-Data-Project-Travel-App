@@ -22,20 +22,20 @@ class Test_Frontend_Login():
         self.search_page.click_submit(self.driver)
         assert self.search_page.is_options_label_displayed(self.driver), "Expected options label to be visible after search, but it was not."
     
-    def test_search_luxury_drive_options(self):
+    def test_search_Premium_drive_options(self):
         """Tests that changing the default toggles still yields a successful search"""
         self.search_page.enter_source(self.driver, "Chicago, Illinois")
         self.search_page.enter_destination(self.driver, "Miami, Florida")
         
         self.search_page.set_dates(self.driver, "Choose Saturday, May 2nd, 2026", "Choose Thursday, May 14th, 2026")
         
-        self.search_page.select_budget_type(self.driver, mode="luxury")
+        self.search_page.select_budget_type(self.driver, mode="Premium")
         self.search_page.select_travel_mode(self.driver, mode="drive")
         
         self.search_page.click_submit(self.driver)
         
         assert self.search_page.is_drive_text_displayed(self.driver), \
-            "Expected options label to be visible after Luxury/Drive search."
+            "Expected options label to be visible after Premium/Drive search."
 
     def test_search_same_source_and_destination(self):
         """Negative Test: App should block searching for the exact same city"""

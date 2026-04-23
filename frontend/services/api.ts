@@ -31,7 +31,7 @@ export interface TripSearchParams {
   adults: number;
   children: number;
   travelMode: 'fly' | 'drive';
-  budget: 'budget' | 'luxury';
+  budget: 'budget' | 'Premium';
   radius: number;
   interests: string[];
 }
@@ -157,7 +157,7 @@ resetPassword: async (email: string, code: string, newPassword: string) => {
          destIata = data.iata;
       }
 
-      const travelClasses = params.budget === 'luxury' 
+      const travelClasses = params.budget === 'Premium' 
         ? 'BUSINESS,FIRST' 
         : 'ECONOMY,PREMIUM_ECONOMY';
 

@@ -1,30 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, DM_Sans as DMSans } from "next/font/google";
+import { Inter } from "next/font/google"; // <-- Changed to Inter
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import ClientInit from "../components/ClientInIt";
 import Chatbot from "../components/Chatbot";
 import Footer from "../components/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Configure Inter
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const dmSans = DMSans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-  weight: ["400", "500", "700"],
+  variable: "--font-inter",
+  // Inter is a variable font, so we don't strictly need to define weights, 
+  // but it's good practice for Next.js optimization
+  display: 'swap', 
 });
 
 export const metadata: Metadata = {
   title: "WanderPlan | Travel Planner",
   description: "Big Data Travel Planner Application",
+  icons: {
+    // Replace this string with the path to your new logo inside the 'public' folder
+    icon: '/logo.svg', 
+  },
 };
 
 export default function RootLayout({
@@ -42,9 +39,9 @@ export default function RootLayout({
           crossOrigin=""
         />
       </head>
-      {/* Added min-h-screen and flex classes to keep footer at the bottom */}
       <body
-        className={`${dmSans.variable} antialiased min-h-screen flex flex-col`}
+        // Apply the Inter font variable here
+        className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
         <AuthProvider>
@@ -54,10 +51,9 @@ export default function RootLayout({
             {children}
           </div>
           
+          <Footer />
           <Chatbot />
         </AuthProvider>
-
-          <Footer />
       </body>
     </html>
   );

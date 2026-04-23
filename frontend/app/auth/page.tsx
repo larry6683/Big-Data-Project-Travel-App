@@ -181,7 +181,7 @@ export default function LoginPage() {
             <span className="text-theme-accent">planned in seconds.</span>
           </h1>
           <p className="text-lg text-theme-bg/80 font-medium">
-            Let our AI craft the perfect itinerary tailored to your unique
+            Let us craft a perfect itinerary tailored to your unique
             travel style.
           </p>
         </div>

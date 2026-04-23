@@ -47,6 +47,8 @@ export default function DrivingCard({ drivingData }: { drivingData?: any }) {
       ? { selected: true, data: drivingData }
       : null;
     localStorage.setItem("trip_state", JSON.stringify(tripState));
+    // Event this to show on the Map
+window.dispatchEvent(new Event("trip_state_changed"));
   };
 
   const toggleIntermediates = () => {
