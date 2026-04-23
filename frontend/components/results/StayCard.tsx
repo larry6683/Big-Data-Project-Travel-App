@@ -47,97 +47,88 @@ const StayRow = ({
 
   return (
     <div
-      className={`border rounded-xl p-4 transition-all duration-200 bg-theme-bg ${
+      className={`border rounded-xl p-5 transition-all duration-200 bg-theme-bg ${
         isSelected
-          ? "border-theme-primary ring-1 ring-theme-primary bg-theme-primary/10 shadow-sm"
-          : "border-theme-surface shadow-sm hover:border-theme-muted hover:shadow-md"
+          ? "border-theme-primary ring-2 ring-theme-primary bg-theme-primary/5 shadow-md"
+          : "border-theme-surface shadow-sm hover:border-theme-muted hover:shadow-lg"
       }`}
     >
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
         <div className="flex flex-col flex-1 w-full text-left">
-          <h4 className="font-extrabold text-lg text-theme-text leading-tight mb-1">
+          <h4 className="font-extrabold text-xl text-theme-text leading-tight mb-2">
             {stay.name || stay.hotel?.name || "Hotel"}
           </h4>
-          <p className="text-sm text-theme-text/70 font-medium">
+          <p className="text-xs text-theme-muted font-bold uppercase tracking-wider">
             📍 {formatAddress(stay.address)}
           </p>
         </div>
 
-        <div className="flex flex-col items-end gap-2.5 shrink-0 w-full sm:w-auto">
-          <label
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shadow-sm shrink-0 
-            ${
-              isUnavailable
-                ? "opacity-40 cursor-not-allowed bg-theme-surface border-theme-surface/50"
-                : "cursor-pointer hover:bg-theme-surface border-theme-surface"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={isSelected}
-              disabled={isUnavailable}
-              onChange={() => {
-                if (!isUnavailable) toggleStaySelection(stay, uniqueKey);
-              }}
-              className="w-4 h-4 accent-theme-primary cursor-pointer disabled:cursor-not-allowed"
-            />
-            <span className="text-xs font-bold text-theme-text/80 select-none w-[60px] inline-block text-center">
-              {isSelected ? "Selected" : "Select"}
-            </span>
-          </label>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+        <div className="flex items-center gap-5 shrink-0 w-full md:w-auto justify-between md:justify-end">
             {!isUnavailable && offer ? (
               <div className="text-right leading-none">
-                <p className="text-xl font-black text-theme-primary tracking-tight">
+                <p className="text-2xl font-black text-theme-primary tracking-tight">
                   ${offer.price?.toFixed(2)}
-                  <span className="text-[10px] text-theme-text/70 font-bold tracking-wider ml-1">
+                  <span className="text-xs text-theme-muted font-bold tracking-wider ml-1">
                     {offer.currency || "USD"}
                   </span>
                 </p>
-                <p className="text-[9px] text-theme-muted font-bold uppercase tracking-widest mt-1">
+                <p className="text-[10px] text-theme-text/50 font-bold uppercase tracking-widest mt-1.5">
                   Total Stay
                 </p>
               </div>
             ) : (
-              <span className="text-theme-accent text-[10px] font-bold uppercase tracking-widest">
-                Sold Out
-              </span>
+              <div className="text-right">
+                <span className="text-theme-accent bg-theme-accent/10 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
+                  Sold Out
+                </span>
+              </div>
             )}
-          </div>
+
+            <button
+              disabled={isUnavailable}
+              onClick={() => {
+                if (!isUnavailable) toggleStaySelection(stay, uniqueKey);
+              }}
+              className={`px-6 py-2.5 rounded-xl font-black text-sm transition-all shadow-sm shrink-0 active:scale-95 ${
+                isUnavailable
+                  ? "opacity-40 cursor-not-allowed bg-theme-surface text-theme-text/50"
+                  : isSelected
+                  ? "bg-theme-primary text-theme-bg"
+                  : "bg-theme-secondary text-theme-bg hover:bg-theme-secondary/90"
+              }`}
+            >
+              {isUnavailable ? "Sold Out" : isSelected ? "Selected" : "Select"}
+            </button>
         </div>
       </div>
 
       {hasRooms && !isUnavailable && (
-        <div className="mt-4 pt-4 border-t border-theme-surface/50 flex flex-col gap-3">
+        <div className="mt-5 pt-4 border-t border-theme-surface flex flex-col gap-3">
           {offer.rooms.map((room: any, i: number) => (
             <div
               key={i}
-              className="flex flex-col bg-theme-surface/50 p-3 rounded-xl border border-theme-surface gap-1.5 shadow-sm"
+              className="flex flex-col sm:flex-row justify-between bg-theme-surface/30 p-4 rounded-xl border border-theme-surface gap-3 shadow-sm"
             >
-              <div className="flex justify-between items-center w-full">
-                <div className="flex justify-between items-center">
-                  <p className="text-[11px] text-theme-muted font-bold uppercase tracking-widest">
-                    {totalGuests} Guests • {numNights} Night
-                    {numNights > 1 ? "s" : ""}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-theme-muted font-bold uppercase tracking-widest">
-                    ${(room.price / numNights).toFixed(2)} / night
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <p className="text-[11px] text-theme-text/70 font-medium leading-relaxed italic">
-                  {room.description || "Standard room amenities included."}
+              <div className="flex flex-col gap-1.5 flex-1">
+                <p className="text-sm font-bold text-theme-text leading-relaxed">
+                  {room.category || "Standard Room"} • {room.bed_type || "Standard Bed"}
                 </p>
                 <p className="text-[11px] text-theme-muted font-bold uppercase tracking-wider">
-                  {room.category || "Room"} • {room.bed_type || "Standard"} •{" "}
-                  {room.beds_count || 1}{" "}
-                  {room.beds_count === 1 ? "Bed" : "Beds"}
+                  {totalGuests} Guests • {room.beds_count || 1} {room.beds_count === 1 ? "Bed" : "Beds"}
                 </p>
+                {room.description && (
+                  <p className="text-[11px] text-theme-text/70 italic mt-1 max-w-xl line-clamp-2">
+                    {room.description}
+                  </p>
+                )}
+              </div>
+              <div className="text-left sm:text-right shrink-0 flex flex-col justify-center">
+                  <p className="text-lg font-black text-theme-secondary tracking-tight">
+                    ${(room.price / numNights).toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-theme-muted font-bold uppercase tracking-widest mt-0.5">
+                     / night
+                  </p>
               </div>
             </div>
           ))}
@@ -188,7 +179,7 @@ export default function StaysCard({
 
   return (
     <div className="bg-theme-bg rounded-xl p-2">
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {stays.slice(0, 12).map((stay, idx) => {
           const hId = stay.hotel_id || stay.hotelId || stay.id;
           const uniqueKey = hId || `stay-${idx}`;

@@ -21,7 +21,7 @@ This project is structured as a monorepo and heavily leverages **Google Cloud Pl
 - **Interactive Mapping**: Dynamic maps with custom markers for visualizing trips using Mapbox and Protomaps.
 - **Comprehensive Itineraries**: View hotels, attractions, tours, and weather forecasts tailored to specific travel dates and budgets.
 - **Automated Email Delivery**: Asynchronous PDF itinerary generation and email delivery powered by GCP Pub/Sub.
-- **Responsive UI**: A universal layout with a collapsible sidebar for mobile/tablet and a side-by-side persistent map for desktop views.
+- **Responsive UI**: A universal layout with a collapsible Searchbar for mobile/tablet and a side-by-side persistent map for desktop views.
 
 ---
 

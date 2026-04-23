@@ -56,20 +56,20 @@ export default function ToursCard({ tours }) {
           return (
             <div 
               key={uniqueKey} 
-              className={`group border rounded-xl p-4 transition-all duration-200 flex flex-col gap-4 ${isSelected ? 'border-theme-primary ring-1 ring-theme-primary bg-theme-bg/20 shadow-sm' : 'border-theme-surface bg-theme-bg/10 hover:border-theme-muted hover:shadow-md shadow-sm'}`}
+              className={`group border rounded-xl p-5 transition-all duration-200 flex flex-col gap-4 ${isSelected ? 'border-theme-primary ring-2 ring-theme-primary bg-theme-primary/5 shadow-sm' : 'border-theme-surface bg-theme-bg hover:border-theme-muted hover:shadow-lg shadow-sm'}`}
             >
               
               {tour.picture_url ? (
-                <div className="w-full h-40 md:h-48 rounded-lg shrink-0 shadow-sm border border-theme-surface overflow-hidden">
+                <div className="w-full h-44 md:h-52 rounded-xl shrink-0 shadow-sm border border-theme-surface overflow-hidden">
                   <img 
                     src={tour.picture_url} 
                     alt={tour.name} 
-                    className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-500 ease-out" 
+                    className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-500 ease-out" 
                   />
                 </div>
               ) : (
-                <div className="w-full h-40 md:h-48 bg-theme-muted/20 text-theme-secondary flex items-center justify-center rounded-lg shrink-0 shadow-sm text-4xl border border-theme-muted overflow-hidden">
-                  <div className="scale-110 group-hover:scale-100 transition-transform duration-500 ease-out">
+                <div className="w-full h-44 md:h-52 bg-theme-surface/50 text-theme-secondary flex items-center justify-center rounded-xl shrink-0 shadow-sm text-5xl border border-theme-surface overflow-hidden">
+                  <div className="scale-105 group-hover:scale-100 transition-transform duration-500 ease-out">
                     🎟️
                   </div>
                 </div>
@@ -78,45 +78,44 @@ export default function ToursCard({ tours }) {
               <div className="flex flex-col flex-1 justify-between overflow-hidden">
                 <div>
                   
-                  <div className="flex flex-wrap justify-between items-start gap-3">
-                    <h4 className="font-bold text-theme-text text-base leading-tight mb-1 flex-1 min-w-[150px]" title={tour.name}>
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <h4 className="font-extrabold text-theme-text text-lg leading-tight mb-1 flex-1" title={tour.name}>
                       {tour.name}
                     </h4>
 
-                    <label className="flex items-center gap-2 cursor-pointer bg-theme-bg text-theme-text px-4 py-2 rounded-lg hover:bg-theme-surface border border-theme-surface transition-colors shadow-sm shrink-0">
-                      <input 
-                        type="checkbox" 
-                        checked={isSelected} 
-                        onChange={() => toggleTourSelection(tour, uniqueKey)} 
-                        className="w-4 h-4 accent-theme-primary cursor-pointer" 
-                      />
-                      <span className="text-xs font-bold text-theme-text/80 select-none w-[56px] inline-block text-center">
-                        {isSelected ? 'Selected' : 'Select'}
-                      </span>
-                    </label>
+                    <button 
+                      onClick={() => toggleTourSelection(tour, uniqueKey)} 
+                      className={`px-5 py-2.5 rounded-xl font-black text-sm transition-all shadow-sm shrink-0 active:scale-95 w-full sm:w-auto ${
+                        isSelected 
+                          ? "bg-theme-primary text-theme-bg" 
+                          : "bg-theme-secondary text-theme-bg hover:bg-theme-secondary/90"
+                      }`}
+                    >
+                      {isSelected ? 'Selected' : 'Select'}
+                    </button>
                   </div>
                   
-                  <p className="text-sm text-theme-text/70 line-clamp-3 leading-relaxed mt-2" title={tour.short_description}>
+                  <p className="text-sm text-theme-text/70 line-clamp-3 leading-relaxed mt-3" title={tour.short_description}>
                     {tour.short_description || "Experience the best of the local culture and sights with this guided activity."}
                   </p>
                 </div>
                 
-                <div className="flex w-full items-center justify-center pt-3 mt-4 border-t border-theme-surface">
+                <div className="flex w-full items-center justify-between pt-4 mt-5 border-t border-theme-surface">
                   
-                  <div className="flex-1 text-center border-r border-theme-surface">
-                    <span className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-0.5">
+                  <div className="flex flex-col">
+                    <span className="block text-[10px] font-black text-theme-muted uppercase tracking-widest mb-0.5">
                       Duration
                     </span>
-                    <span className="text-sm font-semibold text-theme-text/80">
+                    <span className="text-sm font-bold text-theme-text">
                       {tour.minimum_duration ? `⏱️ ${tour.minimum_duration}` : 'Flexible'}
                     </span>
                   </div>
 
-                  <div className="flex-1 text-center">
-                    <span className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-0.5">
+                  <div className="flex flex-col text-right">
+                    <span className="block text-[10px] font-black text-theme-muted uppercase tracking-widest mb-0.5">
                       Price
                     </span>
-                    <span className="text-sm font-black text-theme-secondary">
+                    <span className="text-lg font-black text-theme-primary">
                       {tour.price ? `${tour.currency === 'USD' ? '$' : tour.currency === 'EUR' ? '€' : tour.currency}${tour.price}` : 'Free'}
                     </span>
                   </div>

@@ -20,7 +20,7 @@ export default function LandingPage() {
             </span>
           </h1>
           <p className="text-lg md:text-xl text-theme-text/70 font-medium max-w-2xl mx-auto leading-relaxed">
-            Enter your origin, destination, and travel dates in the sidebar to generate a completely custom, data-driven itinerary in seconds.
+            Enter your origin, destination, and travel dates in the Searchbar to generate a completely custom, data-driven itinerary in seconds.
           </p>
         </div>
 

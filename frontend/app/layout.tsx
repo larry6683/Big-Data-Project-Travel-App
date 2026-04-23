@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import ClientInit from "../components/ClientInIt";
 import Chatbot from "../components/Chatbot";
+import Footer from "../components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +21,7 @@ const dmSans = DMSans({
   variable: "--font-dm-sans",
   weight: ["400", "500", "700"],
 });
+
 export const metadata: Metadata = {
   title: "WanderPlan | Travel Planner",
   description: "Big Data Travel Planner Application",
@@ -40,17 +42,22 @@ export default function RootLayout({
           crossOrigin=""
         />
       </head>
+      {/* Added min-h-screen and flex classes to keep footer at the bottom */}
       <body
-        className={`${dmSans.variable} antialiased`}
+        className={`${dmSans.variable} antialiased min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
         <AuthProvider>
           <ClientInit />
-
-          {children}
-
+          
+          <div className="flex-1 flex flex-col min-h-screen">
+            {children}
+          </div>
+          
           <Chatbot />
         </AuthProvider>
+
+          <Footer />
       </body>
     </html>
   );

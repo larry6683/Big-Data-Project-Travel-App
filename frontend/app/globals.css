@@ -11,13 +11,13 @@
 
 @theme inline {
   /* Generalized Semantic Color Palette */
-  --color-theme-text: #0C1208;      /* Main text / Darkest color (Formerly deep-forest) */
-  --color-theme-primary: #00820f;   /* Main brand color (Formerly forest-green) */
-  --color-theme-secondary: #4A7C40; /* Supporting brand color (Formerly canopy) */
+  --color-theme-text: #012C23;      /* Main text / Darkest color (Formerly deep-forest) */
+  --color-theme-primary: #0E9C4C;   /* Main brand color (Formerly forest-green) */
+  --color-theme-secondary: #012C23; /* Supporting brand color (Formerly canopy) */
   --color-theme-muted: #8FB87A;     /* Borders, inactive states, soft accents (Formerly sage) */
-  --color-theme-accent: #C8A84A;    /* Highlights, warnings, callouts (Formerly antique-gold) */
-  --color-theme-bg: #F5F2EC;        /* Main application background (Formerly parchment) */
-  --color-theme-surface: #E8DFC8;   /* Cards, modals, secondary backgrounds (Formerly linen) */
+  --color-theme-accent: #f9d625;    /* Highlights, warnings, callouts (Formerly antique-gold) */
+  --color-theme-bg: #FFFFFF;        /* Main application background (Formerly parchment) */
+  --color-theme-surface: #fef5df;   /* Cards, modals, secondary backgrounds (Formerly linen) */
 
   /* Map base variables */
   --color-background: var(--background);

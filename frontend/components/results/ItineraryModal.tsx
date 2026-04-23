@@ -36,13 +36,10 @@ export default function ItineraryModal({
   weatherData,
 }: ItineraryModalProps) {
   const [selections, setSelections] = useState<any>({});
-
   const [isExporting, setIsExporting] = useState(false);
-
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [email, setEmail] = useState("");
   const [isSharing, setIsSharing] = useState(false);
-
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isAlreadySaved, setIsAlreadySaved] = useState(false);
@@ -377,37 +374,45 @@ export default function ItineraryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-theme-text/60 backdrop-blur-xl animate-in fade-in duration-300"
+        className="absolute inset-0 bg-theme-text/80 backdrop-blur-md animate-in fade-in duration-300"
         onClick={onClose}
       />
 
-      <div className="relative bg-theme-bg w-full max-w-5xl max-h-[95vh] rounded-[32px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="relative bg-theme-bg w-full max-w-6xl max-h-[92vh] rounded-[32px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-theme-surface">
+        
         {/* Header */}
-        <div className="px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center bg-gradient-to-r from-theme-surface to-transparent border-b border-theme-surface shrink-0">
+        <div className="px-8 py-6 flex justify-between items-center bg-theme-bg border-b border-theme-surface shrink-0">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-theme-text tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-theme-text tracking-tight">
               Your Custom Itinerary
             </h2>
-            <p className="text-xs sm:text-sm text-theme-text/60 font-bold uppercase tracking-widest mt-1 truncate max-w-xs sm:max-w-md">
-              {rawParams?.source?.name?.split(",")[0] || "Origin"} →{" "}
-              {rawParams?.destination?.name?.split(",")[0] || "Destination"}
-            </p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="px-2.5 py-1 rounded-md bg-theme-surface text-theme-secondary text-[10px] font-black uppercase tracking-widest">
+                {rawParams?.source?.name?.split(",")[0] || "Origin"}
+              </span>
+              <span className="text-theme-muted font-bold text-xs">➔</span>
+              <span className="px-2.5 py-1 rounded-md bg-theme-primary/10 text-theme-primary text-[10px] font-black uppercase tracking-widest">
+                {rawParams?.destination?.name?.split(",")[0] || "Destination"}
+              </span>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 bg-theme-bg hover:bg-theme-surface rounded-full transition-colors border border-theme-surface shadow-sm shrink-0"
+            className="p-2.5 bg-theme-surface hover:bg-theme-muted/20 rounded-full transition-colors border border-theme-surface shadow-sm shrink-0 active:scale-95"
           >
-            <X size={20} className="text-theme-muted" />
+            <X size={20} className="text-theme-text" />
           </button>
         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column (Summary) */}
-            <div className="lg:col-span-1 flex flex-col gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+            
+            {/* LEFT COLUMN: Summary & Cost */}
+            <div className="lg:col-span-1 flex flex-col gap-5">
               <SummaryCard
                 icon={<Calendar size={18} />}
                 label="Trip Dates"
@@ -422,41 +427,46 @@ export default function ItineraryModal({
                   rawParams?.children || 0
                 } Children`}
               />
-              <SummaryCard
-                icon={<DollarSign size={18} className="text-theme-secondary" />}
-                label="Est. Total Cost"
-                value={`$${totalCost.toFixed(2)}`}
-                highlight
-              />
+              
+              {/* Highlighted Cost Card */}
+              <div className="p-6 rounded-3xl bg-theme-secondary border border-theme-secondary text-theme-bg shadow-xl">
+                <div className="flex items-center gap-2 text-theme-bg/70 mb-2">
+                  <DollarSign size={18} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    Est. Total Cost
+                  </span>
+                </div>
+                <p className="font-black text-4xl tracking-tight text-theme-bg">
+                  ${totalCost.toFixed(2)}
+                </p>
+              </div>
 
+              {/* Weather Forecast */}
               {isWeatherSelected && firstDayWeather && (
-                <div className="mt-2 p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-400/5 border border-blue-500/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600/70">
-                      Expected Weather
+                <div className="mt-2 p-5 rounded-3xl bg-theme-surface border border-theme-surface shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-theme-text/70">
+                      Arrival Weather
                     </span>
-                    <Sun size={16} className="text-amber-500" />
+                    <Sun size={20} className="text-theme-accent" />
                   </div>
                   <div className="flex items-end gap-2">
-                    <span className="text-2xl font-black text-theme-text">
+                    <span className="text-4xl font-black text-theme-text leading-none">
                       {Math.round(
                         firstDayWeather.max_temp ??
                           firstDayWeather.temperature_max ??
                           0
-                      )}
-                      °
+                      )}°
                     </span>
                     <span className="text-sm font-bold text-theme-muted mb-1">
-                      /{" "}
-                      {Math.round(
+                      / {Math.round(
                         firstDayWeather.min_temp ??
                           firstDayWeather.temperature_min ??
                           0
-                      )}
-                      ° F
+                      )}° F
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-theme-text/70 mt-1 capitalize">
+                  <p className="text-xs font-black text-theme-text/80 mt-2 uppercase tracking-widest">
                     {firstDayWeather.weather ??
                       firstDayWeather.weather_description ??
                       "Clear skies"}
@@ -465,144 +475,122 @@ export default function ItineraryModal({
               )}
             </div>
 
-            {/* Right Column (Details) */}
-            <div className="lg:col-span-2 flex flex-col gap-8">
+            {/* RIGHT COLUMN: Itinerary Details */}
+            <div className="lg:col-span-2 flex flex-col gap-10">
+              
               {/* Transport Section */}
               <section>
-                <SectionTitle
-                  icon={flight ? <Plane size={18} /> : <Car size={18} />}
-                  title="Transportation"
-                />
+                <SectionTitle icon={flight ? <Plane size={18} /> : <Car size={18} />} title="Transportation" />
                 {flight ? (
-                  <div className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
-                    <div className="flex justify-between items-center mb-5">
-                      <span className="font-black text-theme-text flex items-center gap-2">
+                  <div className="bg-theme-bg rounded-3xl p-6 border border-theme-surface shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-theme-primary"></div>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2">
+                      <span className="font-black text-2xl text-theme-text">
                         {flight.airline_name}
                       </span>
-                      <span className="text-theme-primary font-black">
-                        $
-                        {Number(
-                          flight.price?.total || flight.price || 0
-                        ).toFixed(2)}
+                      <span className="text-theme-primary font-black text-xl bg-theme-primary/10 px-4 py-1.5 rounded-xl inline-block w-fit">
+                        ${Number(flight.price?.total || flight.price || 0).toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex flex-col gap-4">
-                      {(flight.itineraries || []).map(
-                        (itin: any, idx: number) => {
-                          const stops = itin.segments?.length
-                            ? itin.segments.length - 1
-                            : 0;
-                          const boundDate = itin.segments?.[0]?.departure_time
-                            ? formatShortDate(itin.segments[0].departure_time)
-                            : "";
+                    
+                    <div className="flex flex-col gap-5">
+                      {(flight.itineraries || []).map((itin: any, idx: number) => {
+                        const stops = itin.segments?.length ? itin.segments.length - 1 : 0;
+                        const boundDate = itin.segments?.[0]?.departure_time
+                          ? formatShortDate(itin.segments[0].departure_time)
+                          : "";
 
-                          return (
-                            <div
-                              key={idx}
-                              className="bg-theme-bg p-3.5 rounded-xl border border-theme-surface/60"
-                            >
-                              <div className="flex justify-between items-center mb-3 pb-2 border-b border-theme-surface/40">
-                                <span className="text-[10px] uppercase font-bold text-theme-muted tracking-wider">
-                                  {idx === 0 ? "Outbound" : "Return"}{" "}
-                                  {boundDate && `• ${boundDate}`}
-                                </span>
-                                <span
-                                  className={`text-[10px] uppercase font-bold tracking-wider ${
-                                    stops === 0
-                                      ? "text-green-500"
-                                      : "text-amber-500"
-                                  }`}
-                                >
-                                  {stops === 0 ? "Direct" : `${stops} Stop(s)`}
-                                </span>
-                              </div>
-                              <div className="flex flex-col gap-2">
-                                {(itin.segments || []).map(
-                                  (seg: any, sIdx: number) => {
-                                    let layoverStr = null;
-                                    if (sIdx > 0) {
-                                      const prevSeg = itin.segments[sIdx - 1];
-                                      layoverStr = getLayoverTime(
-                                        prevSeg.arrival_time,
-                                        seg.departure_time
-                                      );
-                                    }
-
-                                    return (
-                                      <React.Fragment key={sIdx}>
-                                        {layoverStr && (
-                                          <div className="flex items-center justify-center my-1">
-                                            <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                                              Layover: {layoverStr}
-                                            </span>
-                                          </div>
-                                        )}
-
-                                        <div className="flex items-center gap-4 text-sm text-theme-text/80 my-1">
-                                          <div className="flex-1">
-                                            <p className="font-black text-lg text-theme-text">
-                                              {seg.departure_airport}
-                                            </p>
-                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
-                                              {formatTime(seg.departure_time)}
-                                            </p>
-                                          </div>
-                                          <div className="h-px flex-1 bg-theme-surface relative">
-                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-theme-bg px-1 text-[10px]">
-                                              ✈️
-                                            </div>
-                                          </div>
-                                          <div className="flex-1 text-right">
-                                            <p className="font-black text-lg text-theme-text">
-                                              {seg.arrival_airport}
-                                            </p>
-                                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">
-                                              {formatTime(seg.arrival_time)}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </React.Fragment>
-                                    );
-                                  }
-                                )}
-                              </div>
+                        return (
+                          <div key={idx} className="bg-theme-surface/40 p-5 rounded-2xl border border-theme-surface">
+                            <div className="flex justify-between items-center mb-4 pb-3 border-b border-theme-surface">
+                              <span className="text-[11px] uppercase font-black text-theme-text/70 tracking-widest">
+                                {idx === 0 ? "🛫 Outbound" : "🛬 Return"} {boundDate && `• ${boundDate}`}
+                              </span>
+                              <span className={`text-[10px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md ${
+                                stops === 0 ? "bg-theme-primary/10 text-theme-primary" : "bg-theme-accent/20 text-theme-accent"
+                              }`}>
+                                {stops === 0 ? "Direct" : `${stops} Stop(s)`}
+                              </span>
                             </div>
-                          );
-                        }
-                      )}
+                            
+                            <div className="flex flex-col gap-3">
+                              {(itin.segments || []).map((seg: any, sIdx: number) => {
+                                let layoverStr = null;
+                                if (sIdx > 0) {
+                                  const prevSeg = itin.segments[sIdx - 1];
+                                  layoverStr = getLayoverTime(prevSeg.arrival_time, seg.departure_time);
+                                }
+
+                                return (
+                                  <React.Fragment key={sIdx}>
+                                    {layoverStr && (
+                                      <div className="flex items-center justify-center my-2">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-theme-secondary bg-theme-surface px-4 py-1.5 rounded-full border border-theme-surface drop-shadow-sm">
+                                          ⏱ Layover: {layoverStr}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    <div className="flex items-center gap-4 text-theme-text/80 my-1 bg-theme-bg p-4 rounded-xl border border-theme-surface/50 shadow-sm">
+                                      <div className="flex-1">
+                                        <p className="font-black text-2xl text-theme-text">
+                                          {formatTime(seg.departure_time)}
+                                        </p>
+                                        <p className="text-[11px] font-black text-theme-muted uppercase tracking-widest mt-1">
+                                          {seg.departure_airport}
+                                        </p>
+                                      </div>
+                                      <div className="h-[2px] flex-1 bg-theme-surface relative">
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-theme-bg px-2 text-[10px]">
+                                          ✈️
+                                        </div>
+                                      </div>
+                                      <div className="flex-1 text-right">
+                                        <p className="font-black text-2xl text-theme-text">
+                                          {formatTime(seg.arrival_time)}
+                                        </p>
+                                        <p className="text-[11px] font-black text-theme-muted uppercase tracking-widest mt-1">
+                                          {seg.arrival_airport}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </React.Fragment>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : drive ? (
-                  <div className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="font-black text-theme-text flex items-center gap-2">
-                        Road Trip Journey
+                  <div className="bg-theme-bg rounded-3xl p-6 border border-theme-surface shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-theme-primary"></div>
+                    <div className="flex justify-between items-center mb-5">
+                      <span className="font-black text-2xl text-theme-text">
+                        Road Trip
                       </span>
-                      <span className="text-theme-primary font-black text-sm">
+                      <span className="text-theme-primary font-black text-lg bg-theme-primary/10 px-4 py-1.5 rounded-xl">
                         {displayDriveDuration}
                       </span>
                     </div>
-                    <div className="text-sm text-theme-text/80 flex justify-between items-end">
+                    <div className="flex justify-between items-end bg-theme-surface/40 p-5 rounded-2xl border border-theme-surface">
                       <div>
-                        <p className="font-bold text-base text-theme-text">
-                          {drive?.sourceName ||
-                            rawParams?.source?.name?.split(",")[0] ||
-                            "Origin"}{" "}
-                          →{" "}
-                          {drive?.destinationName ||
-                            rawParams?.destination?.name?.split(",")[0] ||
-                            "Destination"}
+                        <p className="font-black text-lg text-theme-text flex items-center gap-2">
+                          <span>{drive?.sourceName || rawParams?.source?.name?.split(",")[0] || "Origin"}</span>
+                          <span className="text-theme-muted text-sm">➔</span>
+                          <span>{drive?.destinationName || rawParams?.destination?.name?.split(",")[0] || "Destination"}</span>
                         </p>
-                        <p className="text-xs text-theme-muted font-bold mt-1 uppercase tracking-wider">
-                          Distance: {displayDriveDistance}
+                        <p className="text-[11px] text-theme-muted font-black mt-2 uppercase tracking-widest">
+                          Total Distance: {displayDriveDistance}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-theme-primary font-black text-lg">
+                        <p className="text-theme-primary font-black text-2xl">
                           ${getFuelCost().toFixed(2)}
                         </p>
-                        <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider mt-0.5">
-                          Fuel Est.
+                        <p className="text-[10px] text-theme-muted font-black uppercase tracking-widest mt-1">
+                          Fuel Estimate
                         </p>
                       </div>
                     </div>
@@ -614,33 +602,26 @@ export default function ItineraryModal({
 
               {/* Stay Section */}
               <section>
-                <SectionTitle
-                  icon={<Hotel size={18} />}
-                  title="Accommodation"
-                />
+                <SectionTitle icon={<Hotel size={18} />} title="Accommodation" />
                 {stay ? (
-                  <div className="bg-theme-surface/40 rounded-2xl p-4 sm:p-5 border border-theme-surface">
-                    <div className="flex justify-between items-start gap-4">
+                  <div className="bg-theme-bg rounded-3xl p-6 border border-theme-surface shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-theme-secondary"></div>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                       <div>
-                        <h4 className="font-black text-theme-text leading-tight">
+                        <h4 className="font-black text-xl text-theme-text leading-tight mb-2">
                           {stay.name}
                         </h4>
-                        <p className="text-xs text-theme-text/60 mt-1.5 flex items-center gap-1 font-medium">
-                          <MapPin size={12} className="shrink-0" />{" "}
-                          <span className="line-clamp-1">
-                            {stay.address?.lines?.join(", ")}
-                          </span>
+                        <p className="text-[11px] text-theme-text/60 font-black uppercase tracking-widest flex items-center gap-1.5">
+                          <MapPin size={14} className="text-theme-muted" />{" "}
+                          <span className="line-clamp-1">{stay.address?.lines?.join(", ")}</span>
                         </p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-theme-primary font-black text-lg">
-                          $
-                          {Number(
-                            stay.offerDetails?.price || stay.price || 0
-                          ).toFixed(2)}
+                      <div className="text-left sm:text-right shrink-0 bg-theme-surface/40 px-4 py-3 rounded-2xl border border-theme-surface">
+                        <p className="text-theme-secondary font-black text-2xl">
+                          ${Number(stay.offerDetails?.price || stay.price || 0).toFixed(2)}
                         </p>
-                        <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider mt-0.5">
-                          Total
+                        <p className="text-[10px] text-theme-muted font-black uppercase tracking-widest mt-1">
+                          Total Stay
                         </p>
                       </div>
                     </div>
@@ -652,28 +633,20 @@ export default function ItineraryModal({
 
               {/* Attractions Section */}
               <section>
-                <SectionTitle
-                  icon={<Camera size={18} />}
-                  title="Planned Attractions"
-                />
+                <SectionTitle icon={<Camera size={18} />} title="Planned Attractions" />
                 {attractions.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {attractions.map((attr: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="bg-theme-bg rounded-xl p-3 border border-theme-surface shadow-sm flex items-center gap-3"
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-theme-surface flex items-center justify-center shrink-0">
-                          <MapPin size={16} className="text-theme-primary/60" />
+                      <div key={idx} className="bg-theme-bg rounded-2xl p-4 border border-theme-surface shadow-sm flex items-center gap-4 hover:border-theme-muted transition-colors group">
+                        <div className="w-12 h-12 rounded-xl bg-theme-surface flex items-center justify-center shrink-0 group-hover:bg-theme-primary/10 transition-colors">
+                          <MapPin size={18} className="text-theme-secondary group-hover:text-theme-primary transition-colors" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h5 className="font-bold text-sm text-theme-text truncate">
+                          <h5 className="font-bold text-base text-theme-text truncate">
                             {attr.name}
                           </h5>
-                          <p className="text-[10px] text-theme-muted font-bold uppercase tracking-wider truncate mt-0.5">
-                            {attr.category ||
-                              attr.kinds?.split(",")[0]?.replace(/_/g, " ") ||
-                              "Point of Interest"}
+                          <p className="text-[10px] text-theme-muted font-black uppercase tracking-widest truncate mt-1">
+                            {attr.category || attr.kinds?.split(",")[0]?.replace(/_/g, " ") || "Point of Interest"}
                           </p>
                         </div>
                       </div>
@@ -686,31 +659,31 @@ export default function ItineraryModal({
 
               {/* Tours & Activities Section */}
               <section>
-                <SectionTitle
-                  icon={<Ticket size={18} />}
-                  title="Tours & Activities"
-                />
+                <SectionTitle icon={<Ticket size={18} />} title="Tours & Activities" />
                 {tours.length > 0 ? (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-4">
                     {tours.map((tour: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="bg-theme-bg rounded-xl p-3 sm:p-4 border border-theme-surface shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                      >
+                      <div key={idx} className="bg-theme-bg rounded-2xl p-5 border border-theme-surface shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <h5 className="font-bold text-sm text-theme-text line-clamp-2 leading-snug">
+                          <h5 className="font-bold text-lg text-theme-text line-clamp-2 leading-snug">
                             {tour.name || tour.title}
                           </h5>
                           {tour.rating && (
-                            <p className="text-[10px] text-theme-secondary font-black uppercase tracking-wider mt-1">
-                              ★ {tour.rating} Rating
-                            </p>
+                            <div className="mt-2 inline-flex items-center gap-1.5 bg-theme-accent/10 px-2.5 py-1 rounded-md">
+                              <span className="text-theme-accent text-xs">★</span>
+                              <p className="text-[10px] text-theme-text/80 font-black uppercase tracking-widest">
+                                {tour.rating} Rating
+                              </p>
+                            </div>
                           )}
                         </div>
                         {tour.price && tour.price.amount && (
                           <div className="text-left sm:text-right shrink-0">
-                            <p className="text-theme-primary font-black">
+                            <p className="text-theme-primary font-black text-2xl">
                               ${parseFloat(tour.price.amount).toFixed(2)}
+                            </p>
+                            <p className="text-[10px] text-theme-muted font-black uppercase tracking-widest mt-1">
+                              Per Person
                             </p>
                           </div>
                         )}
@@ -726,96 +699,76 @@ export default function ItineraryModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-6 border-t border-theme-surface bg-theme-bg shrink-0 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <div className="p-6 sm:p-8 border-t border-theme-surface bg-theme-surface/30 shrink-0 flex flex-col gap-5">
+          <div className="flex flex-col sm:flex-row gap-4">
+            
+            {/* Primary Action: Save */}
             {isLoggedIn && (
               <button
                 onClick={handleSaveTrip}
-                disabled={
-                  isSaving ||
-                  isSaved ||
-                  isAlreadySaved ||
-                  isExporting ||
-                  isSharing
-                }
-                className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${
-                  isSaving ||
-                  isSaved ||
-                  isAlreadySaved ||
-                  isExporting ||
-                  isSharing
-                    ? "bg-theme-surface text-theme-muted cursor-not-allowed shadow-none"
-                    : "bg-theme-secondary text-theme-bg shadow-lg shadow-theme-secondary/20 hover:opacity-90"
+                disabled={isSaving || isSaved || isAlreadySaved || isExporting || isSharing}
+                className={`flex-1 flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[15px] transition-all active:scale-[0.98] ${
+                  isSaving || isSaved || isAlreadySaved || isExporting || isSharing
+                    ? "bg-theme-surface text-theme-muted cursor-not-allowed shadow-none border border-theme-surface"
+                    : "bg-theme-secondary text-theme-bg shadow-xl hover:opacity-95"
                 }`}
               >
                 {isSaving ? (
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={20} className="animate-spin" />
                 ) : isAlreadySaved ? (
-                  <Save size={18} className="text-yellow-500" />
+                  <Save size={20} className="text-theme-accent" />
                 ) : isSaved ? (
-                  <Save size={18} className="text-green-500" />
+                  <Save size={20} className="text-theme-primary" />
                 ) : (
-                  <Save size={18} />
+                  <Save size={20} />
                 )}
-                {isSaving
-                  ? "Saving..."
-                  : isAlreadySaved
-                  ? "Already Saved!"
-                  : isSaved
-                  ? "Saved!"
-                  : "Save Trip"}
+                {isSaving ? "Saving..." : isAlreadySaved ? "Already Saved" : isSaved ? "Saved!" : "Save Trip"}
               </button>
             )}
 
+            {/* Primary Action: Download */}
             <button
               onClick={handleExportPdf}
               disabled={isExporting || isSharing || isSaving}
-              className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 ${
+              className={`flex-1 flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[15px] transition-all active:scale-[0.98] ${
                 isExporting || isSharing || isSaving
-                  ? "bg-theme-surface text-theme-muted cursor-not-allowed shadow-none"
-                  : "bg-theme-primary hover:bg-theme-secondary text-theme-bg shadow-lg shadow-theme-primary/20"
+                  ? "bg-theme-surface text-theme-muted cursor-not-allowed shadow-none border border-theme-surface"
+                  : "bg-theme-primary text-theme-bg shadow-xl hover:opacity-95"
               }`}
             >
-              {isExporting ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Download size={18} />
-              )}
-              {isExporting ? "Generating PDF..." : "Download PDF"}
+              {isExporting ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+              {isExporting ? "Generating..." : "Download PDF"}
             </button>
 
+            {/* Secondary Action: Share */}
             <button
               onClick={() => setShowEmailInput(!showEmailInput)}
               disabled={isExporting || isSharing || isSaving}
-              className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl font-black text-sm transition-all active:scale-95 bg-theme-bg border-2 border-theme-surface text-theme-text hover:bg-theme-surface ${
-                (isExporting || isSharing || isSaving) &&
-                "opacity-50 cursor-not-allowed"
+              className={`flex-1 flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[15px] transition-all active:scale-[0.98] bg-theme-bg border border-theme-surface text-theme-text shadow-sm hover:border-theme-muted hover:shadow-md ${
+                (isExporting || isSharing || isSaving) && "opacity-50 cursor-not-allowed hover:border-theme-surface hover:shadow-sm"
               }`}
             >
-              <Share2 size={18} />
-              Share via Email
+              <Share2 size={20} />
+              Share
             </button>
           </div>
 
+          {/* Email Input Expansion */}
           {showEmailInput && (
-            <div className="flex flex-col sm:flex-row gap-2 animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 animate-in slide-in-from-top-2 fade-in duration-200">
               <input
                 type="email"
                 placeholder="Enter email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-theme-surface bg-theme-bg text-theme-text placeholder:text-theme-muted focus:outline-none focus:border-theme-primary transition-colors font-medium text-sm"
+                className="flex-1 px-5 py-4 rounded-2xl border border-theme-surface bg-theme-bg text-theme-text placeholder:text-theme-muted focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary transition-all font-bold text-sm shadow-inner"
               />
               <button
                 onClick={handleSharePdf}
                 disabled={isSharing || !email}
-                className="px-6 py-3 bg-theme-text text-theme-bg font-black text-sm rounded-xl hover:bg-theme-text/80 disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md"
+                className="px-8 py-4 bg-theme-text text-theme-bg font-black text-sm rounded-2xl hover:bg-theme-text/80 disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
               >
-                {isSharing ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Send size={18} />
-                )}
+                {isSharing ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
                 Send
               </button>
             </div>
@@ -826,45 +779,33 @@ export default function ItineraryModal({
   );
 }
 
-function SectionTitle({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode;
-  title: string;
-}) {
+// ---------------------------
+// SLEEK UI SUB-COMPONENTS
+// ---------------------------
+
+function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
-    <div className="flex items-center gap-2.5 mb-3.5">
-      <div className="p-1.5 bg-theme-surface text-theme-text rounded-lg border border-theme-surface/50 shadow-sm">
+    <div className="flex items-center gap-3 mb-5">
+      <div className="p-2 bg-theme-secondary text-theme-bg rounded-xl shadow-md">
         {icon}
       </div>
-      <h3 className="font-black text-theme-text uppercase tracking-widest text-[11px] sm:text-xs">
+      <h3 className="font-black text-theme-text uppercase tracking-widest text-[13px]">
         {title}
       </h3>
     </div>
   );
 }
 
-function SummaryCard({ icon, label, value, highlight }: any) {
+function SummaryCard({ icon, label, value }: any) {
   return (
-    <div
-      className={`p-4 rounded-2xl border transition-colors ${
-        highlight
-          ? "bg-theme-secondary/10 border-theme-secondary/30"
-          : "bg-theme-bg border-theme-surface hover:bg-theme-surface/30"
-      }`}
-    >
-      <div className="flex items-center gap-2 text-theme-muted mb-1.5">
-        {icon}{" "}
+    <div className="p-5 rounded-3xl bg-theme-surface border border-theme-surface shadow-sm">
+      <div className="flex items-center gap-2 text-theme-text/60 mb-2">
+        {icon}
         <span className="text-[10px] font-black uppercase tracking-widest">
           {label}
         </span>
       </div>
-      <p
-        className={`font-black text-sm sm:text-base leading-snug ${
-          highlight ? "text-theme-secondary" : "text-theme-text"
-        }`}
-      >
+      <p className="font-black text-lg leading-snug text-theme-text">
         {value}
       </p>
     </div>
@@ -873,8 +814,10 @@ function SummaryCard({ icon, label, value, highlight }: any) {
 
 function EmptySelection({ text }: { text: string }) {
   return (
-    <div className="p-5 border-2 border-dashed border-theme-surface bg-theme-surface/10 rounded-2xl text-center text-xs text-theme-muted font-bold tracking-wide">
-      {text}
+    <div className="p-6 border-2 border-dashed border-theme-surface bg-theme-bg rounded-3xl text-center flex items-center justify-center min-h-[100px]">
+      <span className="text-[11px] text-theme-muted font-black tracking-widest uppercase">
+        {text}
+      </span>
     </div>
   );
 }
