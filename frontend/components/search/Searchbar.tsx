@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Loader2, Calendar, TrendingUp } from "lucide-react";
+import { Search, Loader2, Calendar, TrendingUp, PenBox, PenBoxIcon } from "lucide-react";
 import LocationAutocomplete from "./LocationAutoComplete";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -396,22 +396,44 @@ export default function SearchBar({
         <div className="w-full bg-theme-bg py-3 px-4 md:px-6 flex justify-center border-b border-theme-surface z-20 relative">
           <button
             onClick={() => setIsOverlayOpen(true)}
-            className="w-full max-w-4xl bg-theme-surface/20 hover:bg-theme-surface/40 border border-theme-surface rounded-full flex items-center justify-between px-4 md:px-6 py-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer group"
+            className="w-full max-w-5xl bg-theme-surface/20 hover:bg-theme-surface/40 border border-theme-surface rounded-full flex items-center justify-between px-4 md:px-6 py-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer group"
           >
-            <div className="flex items-center gap-3 md:gap-4 text-theme-text text-sm md:text-base font-bold truncate">
-              <Search size={18} className="text-theme-primary shrink-0" />
-              <span className="truncate">{source || "Origin"}</span>
-              <span className="text-theme-muted shrink-0">➔</span>
-              <span className="truncate">{destination || "Destination"}</span>
+            <div className="flex items-center gap-3 md:gap-4 text-theme-text text-xs sm:text-sm font-bold truncate">
+
+              {/* Origin to Destination */}
+              <div className="flex items-center gap-2 truncate">
+                <span className="truncate">{source || "Origin"}</span>
+                <span className="text-theme-muted shrink-0 text-[10px]">➔</span>
+                <span className="truncate">{destination || "Destination"}</span>
+              </div>
+
+              {/* Dates */}
               <span className="text-theme-surface hidden sm:inline shrink-0">|</span>
               <span className="truncate hidden sm:inline">
                 {dates.start ? `${dates.start} to ${dates.end || '?'}` : "Any Dates"}
               </span>
+
+              {/* Adults & Children */}
               <span className="text-theme-surface hidden md:inline shrink-0">|</span>
-              <span className="truncate hidden md:inline">{adults + children} Guests</span>
+              <span className="truncate hidden md:inline">
+                {adults} Adult{adults > 1 ? 's' : ''}, {children} Child{children !== 1 ? 'ren' : ''}
+              </span>
+
+              {/* Travel Mode */}
+              <span className="text-theme-surface hidden lg:inline shrink-0">|</span>
+              <span className="truncate hidden lg:inline uppercase tracking-widest text-[10px]">
+                {travelMode === 'fly' ? '✈️ Fly' : '🚗 Drive'}
+              </span>
+
+              {/* Budget Category */}
+              <span className="text-theme-surface hidden xl:inline shrink-0">|</span>
+              <span className="truncate hidden xl:inline uppercase tracking-widest text-[10px]">
+                {budget === 'budget' ? '💰 Budget' : '✨ Premium'}
+              </span>
             </div>
-            <div className="bg-theme-primary text-theme-bg rounded-full p-2 shrink-0 shadow-sm transition-transform group-hover:scale-110">
-              <Search size={14} strokeWidth={3} />
+
+            <div className="bg-theme-primary text-theme-bg rounded-full p-2 shrink-0 shadow-sm transition-transform group-hover:scale-110 ml-4">
+              <PenBoxIcon size={14} strokeWidth={3} />
             </div>
           </button>
         </div>

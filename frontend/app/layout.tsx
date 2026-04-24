@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "WanderPlan | Travel Planner",
+  title: "Minutebound | Travel Planner",
   description: "Big Data Travel Planner Application",
   icons: {
     // Replace this string with the path to your new logo inside the 'public' folder

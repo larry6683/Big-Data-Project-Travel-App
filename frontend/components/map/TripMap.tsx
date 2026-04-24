@@ -10,20 +10,7 @@ interface TripMapProps {
   tripData?: any; 
 }
 
-// Math helper to calculate bearing/rotation for the airplane
-const calculateBearing = (start: [number, number], end: [number, number]) => {
-  const startLat = (start[1] * Math.PI) / 180;
-  const startLng = (start[0] * Math.PI) / 180;
-  const endLat = (end[1] * Math.PI) / 180;
-  const endLng = (end[0] * Math.PI) / 180;
-
-  const y = Math.sin(endLng - startLng) * Math.cos(endLat);
-  const x = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(endLng - startLng);
-  const bearing = (Math.atan2(y, x) * 180) / Math.PI;
-  return (bearing + 360) % 360;
-};
-
-// Generates a high-resolution curve for smooth animation
+// Generates a high-resolution curve for smooth static lines
 const getCurvedLine = (start: [number, number], end: [number, number], steps = 500) => {
   const line = [];
   const [x1, y1] = start;
@@ -48,10 +35,8 @@ export default function TripMap({ mapData }: TripMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   
-  // Marker and Animation references for cleanup
+  // Marker reference for cleanup
   const staticMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const animatedMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const animationFramesRef = useRef<number[]>([]);
 
   const [radiusValue, setRadiusValue] = useState<number>(10);
   const [currentTripState, setCurrentTripState] = useState<any>({});
@@ -138,7 +123,7 @@ export default function TripMap({ mapData }: TripMapProps) {
     };
   }, []);
 
-  // 3. Dynamic Interactive Markers & Animations
+  // 3. Dynamic Interactive Markers & Paths
   const renderInteractiveData = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -146,18 +131,24 @@ export default function TripMap({ mapData }: TripMapProps) {
     // Cleanup previous renders
     staticMarkersRef.current.forEach((m) => m.remove());
     staticMarkersRef.current = [];
-    animatedMarkersRef.current.forEach((m) => m.remove());
-    animatedMarkersRef.current = [];
-    animationFramesRef.current.forEach((frame) => cancelAnimationFrame(frame));
-    animationFramesRef.current = [];
 
     if (map.getLayer("driving-route-layer")) map.removeLayer("driving-route-layer");
     if (map.getSource("driving-route-source")) map.removeSource("driving-route-source");
     if (map.getLayer("flight-route-layer")) map.removeLayer("flight-route-layer");
     if (map.getSource("flight-route-source")) map.removeSource("flight-route-source");
 
-    const { stays: allStays, rawParams, drivingData } = sessionResults;
-    const { stays: selectedStays, drive: selectedDrive, flights: selectedFlights } = currentTripState;
+    // Find the first symbol layer (text labels) to insert routes UNDERneath them
+    const layers = map.getStyle().layers;
+    let firstSymbolId: string | undefined;
+    for (const layer of layers) {
+      if (layer.type === "symbol") {
+        firstSymbolId = layer.id;
+        break;
+      }
+    }
+
+    const { stays: allStays, attractions: allAttractions, rawParams, drivingData } = sessionResults;
+    const { stays: selectedStays, attractions: selectedAttractions, drive: selectedDrive, flights: selectedFlights } = currentTripState;
 
     // RULE 1: Stays (From Session Storage)
     const selectedStayKeys = selectedStays?.map((s: any) => s._selectionKey) || [];
@@ -172,13 +163,11 @@ export default function TripMap({ mapData }: TripMapProps) {
         if (lat && lng) {
           const el = document.createElement("div");
 
-          // Clean Line Art SVG for Hotel (Bed Icon)
           const bedSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`;
           const bedSvgSmall = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`;
 
           if (isSelected) {
-            // Highlighted Selected Hotel
-            el.className = "w-10 h-10 bg-theme-bg text-theme-primary rounded-xl border-2 border-theme-primary flex items-center justify-center shadow-xl z-30 group relative cursor-pointer";
+            el.className = "w-9 h-9 bg-theme-primary text-theme-bg rounded-xl border-2 border-theme-primary flex items-center justify-center shadow-xl z-30 hover:z-[100] group relative cursor-pointer transition-all";
             el.innerHTML = `
               ${bedSvg}
               <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
@@ -187,8 +176,7 @@ export default function TripMap({ mapData }: TripMapProps) {
               </div>
             `;
           } else {
-            // Unselected Hotel: Opacity drops to 70% naturally, restores to 100 on hover.
-            el.className = "w-8 h-8 bg-theme-bg text-theme-primary rounded-xl border border-theme-primary/10 flex items-center justify-center shadow-sm z-20 group relative cursor-pointer opacity-70 hover:opacity-100 transition-opacity duration-300";
+            el.className = "w-8 h-8 bg-theme-bg text-theme-primary rounded-xl border border-theme-primary/10 flex items-center justify-center shadow-sm z-20 hover:z-[100] group relative cursor-pointer opacity-70 hover:opacity-100 transition-all duration-300";
             el.innerHTML = `
               ${bedSvgSmall}
               <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
@@ -207,7 +195,53 @@ export default function TripMap({ mapData }: TripMapProps) {
       });
     }
 
-    // RULE 2: Flight Path & Animation
+    // RULE 1.5: Attractions (From Session Storage)
+    const selectedAttractionKeys = selectedAttractions?.map((a: any) => a._selectionKey) || [];
+    
+    if (allAttractions?.length > 0) {
+      allAttractions.slice(0, 12).forEach((attr: any, idx: number) => {
+        const lat = attr.latitude || attr.geoCode?.latitude || attr.geo_code?.latitude;
+        const lng = attr.longitude || attr.geoCode?.longitude || attr.geo_code?.longitude;
+        const uniqueKey = attr.id || `attraction-${idx}`;
+        const isSelected = selectedAttractionKeys.includes(uniqueKey);
+
+        if (lat && lng) {
+          const el = document.createElement("div");
+
+          const cameraSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`;
+          const cameraSvgSmall = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`;
+          const name = attr.name || attr.tags?.name || "Attraction";
+
+          if (isSelected) {
+            el.className = "w-9 h-9 bg-theme-accent text-theme-secondary rounded-full border-2 border-theme-accent flex items-center justify-center shadow-xl z-30 hover:z-[100] group relative cursor-pointer transition-all";
+            el.innerHTML = `
+              ${cameraSvg}
+              <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
+                <span class="font-black text-[11px] uppercase tracking-widest">${name}</span>
+                <div class="w-2 h-2 bg-theme-text absolute -bottom-1 left-1/2 -translate-x-1/2 rotate-45"></div>
+              </div>
+            `;
+          } else {
+            el.className = "w-8 h-8 bg-theme-bg text-theme-accent rounded-full border border-theme-accent/20 flex items-center justify-center shadow-sm z-20 hover:z-[100] group relative cursor-pointer opacity-70 hover:opacity-100 transition-all duration-300";
+            el.innerHTML = `
+              ${cameraSvgSmall}
+              <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
+                <span class="font-black text-[11px] uppercase tracking-widest">${name}</span>
+                <div class="w-2 h-2 bg-theme-text absolute -bottom-1 left-1/2 -translate-x-1/2 rotate-45"></div>
+              </div>
+            `;
+          }
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([lng, lat])
+            .addTo(map);
+
+          staticMarkersRef.current.push(marker);
+        }
+      });
+    }
+
+    // RULE 2: Flight Path
     if (selectedFlights && selectedFlights.length > 0 && rawParams?.source && rawParams?.destination) {
       const srcLon = rawParams.source.lon || rawParams.source.longitude;
       const srcLat = rawParams.source.lat || rawParams.source.latitude;
@@ -228,40 +262,12 @@ export default function TripMap({ mapData }: TripMapProps) {
           source: "flight-route-source",
           layout: { "line-join": "round", "line-cap": "round" },
           paint: { "line-color": "#0E9C4C", "line-width": 3, "line-dasharray": [2, 4] },
-        });
-
-        const planeEl = document.createElement("div");
-        planeEl.className = "text-theme-primary drop-shadow-md z-40";
-        planeEl.style.fontSize = "24px";
-        planeEl.innerHTML = "✈️";
-
-        const planeMarker = new maplibregl.Marker({ element: planeEl })
-          .setLngLat(curvedRoute[0] as [number, number])
-          .addTo(map);
-        animatedMarkersRef.current.push(planeMarker);
-
-        let counter = 0;
-        const animateFlight = () => {
-          if (!mapRef.current) return;
-          counter = (counter + 1) % curvedRoute.length;
-          const currentPos = curvedRoute[counter] as [number, number];
-          const nextPos = curvedRoute[(counter + 1) % curvedRoute.length] as [number, number];
-          
-          planeMarker.setLngLat(currentPos);
-          
-          const bearing = calculateBearing(currentPos, nextPos);
-          planeEl.style.transform = `rotate(${bearing - 45}deg)`; 
-
-          animationFramesRef.current.push(requestAnimationFrame(animateFlight));
-        };
-        animateFlight();
+        }, firstSymbolId);
       }
     }
 
-    // RULE 3: Drive Path & Animation
+    // RULE 3: Drive Path
     if (selectedDrive?.selected && drivingData?.geometry) {
-      const driveCoordinates = drivingData.geometry.coordinates || [];
-
       map.addSource("driving-route-source", {
         type: "geojson",
         data: drivingData.geometry,
@@ -273,26 +279,7 @@ export default function TripMap({ mapData }: TripMapProps) {
         source: "driving-route-source",
         layout: { "line-join": "round", "line-cap": "round" },
         paint: { "line-color": "#0E9C4C", "line-width": 5, "line-opacity": 0.8 },
-      });
-
-      if (driveCoordinates.length > 1) {
-        const carEl = document.createElement("div");
-        carEl.className = "w-4 h-4 bg-theme-bg border-4 border-theme-primary rounded-full shadow-lg z-40";
-        
-        const carMarker = new maplibregl.Marker({ element: carEl })
-          .setLngLat(driveCoordinates[0])
-          .addTo(map);
-        animatedMarkersRef.current.push(carMarker);
-
-        let driveCounter = 0;
-        const animateDrive = () => {
-          if (!mapRef.current) return;
-          driveCounter = (driveCounter + 2) % driveCoordinates.length; 
-          carMarker.setLngLat(driveCoordinates[driveCounter]);
-          animationFramesRef.current.push(requestAnimationFrame(animateDrive));
-        };
-        animateDrive();
-      }
+      }, firstSymbolId);
     }
 
   }, [sessionResults, currentTripState]); 
@@ -305,6 +292,7 @@ export default function TripMap({ mapData }: TripMapProps) {
       mapRef.current?.once("styledata", renderInteractiveData);
     }
   }, [renderInteractiveData]);
+
 
   // Center Map on Destination
   useEffect(() => {

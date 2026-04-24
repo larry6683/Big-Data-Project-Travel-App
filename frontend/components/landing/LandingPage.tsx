@@ -66,7 +66,7 @@ export default function LandingPage() {
               <div className="p-2.5 bg-theme-accent/10 rounded-xl">
                 <Calendar className="text-theme-accent w-6 h-6" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-black text-theme-text tracking-tight">Trending Events</h2>
+              <h2 className="text-2xl md:text-3xl font-black text-theme-text tracking-tight">Upcoming Events</h2>
             </div>
           </div>
           

@@ -79,7 +79,7 @@ export default function Results() {
       />
 
       {/* Permanently visible Compact Summary Bar wrapper */}
-      <div className="w-full z-20 flex-shrink-0 relative">
+      <div className="w-full z-[60] flex-shrink-0 relative">
         <SearchBar
           onSearch={handleSearch}
           onSearchStart={() => {
