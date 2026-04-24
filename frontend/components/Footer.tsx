@@ -4,13 +4,12 @@ import { Facebook, Twitter, Instagram, Mail, MapPin, Phone } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="bg-theme-text text-theme-bg pt-16 pb-8 border-t-4 border-theme-primary shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 relative mt-auto">
-      <div className="max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8">
+<footer className="bg-theme-text text-theme-bg pt-8 pb-8 border-t-4 border-theme-primary shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 relative mt-auto">      <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6 mb-12">
           
           {/* 1. Brand Section */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
               <svg viewBox="0 0 1050 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 sm:h-12 w-auto -ml-2">
                 <style>{`
@@ -35,17 +34,17 @@ export default function Footer() {
   strokeLinecap="round" 
   strokeLinejoin="round" 
 />            
-<line x1="220" y1="20" x2="220" y2="180" stroke="#04381C" strokeWidth="10" strokeLinecap="round" />
   <text x="240" y="120" className="footer-logo-text">
                   <tspan className="font-semibold fill-theme-primary">Minute</tspan>
                   <tspan className="font-bold fill-theme-primary">bound</tspan>
                 </text>
               </svg>
             </Link>
+
             <p className="text-sm text-theme-bg/70 leading-relaxed max-w-sm font-medium">
               Your intelligent travel companion. Plan flights, accommodations, road trips, and seamless adventures in minutes.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <SocialLink href="#" icon={<Facebook size={18} />} />
               <SocialLink href="#" icon={<Twitter size={18} />} />
               <SocialLink href="#" icon={<Instagram size={18} />} />

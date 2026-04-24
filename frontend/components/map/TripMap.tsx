@@ -6,7 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import * as pmtiles from "pmtiles";
 
 interface TripMapProps {
-  mapData?: any; // Kept for backward compatibility with centering logic
+  mapData?: any; 
   tripData?: any; 
 }
 
@@ -81,7 +81,6 @@ export default function TripMap({ mapData }: TripMapProps) {
     
     loadData();
     window.addEventListener("trip_state_changed", loadData);
-    // Custom event listener in case session storage updates
     window.addEventListener("current_trip_results_changed", loadData); 
 
     return () => {
@@ -164,32 +163,36 @@ export default function TripMap({ mapData }: TripMapProps) {
     const selectedStayKeys = selectedStays?.map((s: any) => s._selectionKey) || [];
     
     if (allStays?.length > 0) {
-      allStays.forEach((stay: any, idx: number) => {
-        const lat = stay.latitude || stay.geoCode?.latitude;
-        const lng = stay.longitude || stay.geoCode?.longitude;
-        const uniqueKey = stay.hotel_id || stay.hotelId || stay.id || `stay-${idx}`;
+      allStays.slice(0, 12).forEach((stay: any, idx: number) => {
+        const lat = stay.latitude || stay.geoCode?.latitude || stay.geo_code?.latitude || stay.hotel?.latitude;
+        const lng = stay.longitude || stay.geoCode?.longitude || stay.geo_code?.longitude || stay.hotel?.longitude;
+        const uniqueKey = stay.hotel_id || stay.hotelId || stay.hotel?.hotelId || stay.id || `stay-${idx}`;
         const isSelected = selectedStayKeys.includes(uniqueKey);
 
         if (lat && lng) {
           const el = document.createElement("div");
-          
+
+          // Clean Line Art SVG for Hotel (Bed Icon)
+          const bedSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`;
+          const bedSvgSmall = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`;
+
           if (isSelected) {
             // Highlighted Selected Hotel
-            el.className = "w-10 h-10 bg-theme-primary text-theme-bg rounded-xl border-2 border-theme-bg flex items-center justify-center shadow-2xl text-lg z-30 scale-110 group relative cursor-pointer";
+            el.className = "w-10 h-10 bg-theme-bg text-theme-primary rounded-xl border-2 border-theme-primary flex items-center justify-center shadow-xl z-30 group relative cursor-pointer";
             el.innerHTML = `
-              🏨
+              ${bedSvg}
               <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
-                <span class="font-black text-[11px] uppercase tracking-widest">${stay.name || "Selected Hotel"}</span>
+                <span class="font-black text-[11px] uppercase tracking-widest">${stay.name || stay.hotel?.name || "Selected Hotel"}</span>
                 <div class="w-2 h-2 bg-theme-text absolute -bottom-1 left-1/2 -translate-x-1/2 rotate-45"></div>
               </div>
             `;
           } else {
-            // Small Default Hotel
-            el.className = "w-6 h-6 bg-theme-bg text-theme-primary rounded-full border border-theme-primary flex items-center justify-center shadow-sm text-xs z-20 hover:scale-110 transition-transform group relative cursor-pointer";
+            // Unselected Hotel: Opacity drops to 70% naturally, restores to 100 on hover.
+            el.className = "w-8 h-8 bg-theme-bg text-theme-primary rounded-xl border border-theme-primary/10 flex items-center justify-center shadow-sm z-20 group relative cursor-pointer opacity-70 hover:opacity-100 transition-opacity duration-300";
             el.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M19 7h-8v6h8V7zM19 15h-8v-2h8v2zM5 21v-2h2V7c0-1.1.9-2 2-2h12v14h2v2H5zM7 19h2V9H7v10z"/></svg>
+              ${bedSvgSmall}
               <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
-                <span class="font-black text-[11px] uppercase tracking-widest">${stay.name || "Hotel"}</span>
+                <span class="font-black text-[11px] uppercase tracking-widest">${stay.name || stay.hotel?.name || "Hotel"}</span>
                 <div class="w-2 h-2 bg-theme-text absolute -bottom-1 left-1/2 -translate-x-1/2 rotate-45"></div>
               </div>
             `;
@@ -212,7 +215,7 @@ export default function TripMap({ mapData }: TripMapProps) {
       const destLat = rawParams.destination.lat || rawParams.destination.latitude;
 
       if (srcLon && srcLat && destLon && destLat) {
-        const curvedRoute = getCurvedLine([srcLon, srcLat], [destLon, destLat], 500); // 500 steps for smooth animation
+        const curvedRoute = getCurvedLine([srcLon, srcLat], [destLon, destLat], 500); 
         
         map.addSource("flight-route-source", {
           type: "geojson",
@@ -227,7 +230,6 @@ export default function TripMap({ mapData }: TripMapProps) {
           paint: { "line-color": "#0E9C4C", "line-width": 3, "line-dasharray": [2, 4] },
         });
 
-        // Create Animated Airplane Marker
         const planeEl = document.createElement("div");
         planeEl.className = "text-theme-primary drop-shadow-md z-40";
         planeEl.style.fontSize = "24px";
@@ -238,7 +240,6 @@ export default function TripMap({ mapData }: TripMapProps) {
           .addTo(map);
         animatedMarkersRef.current.push(planeMarker);
 
-        // Animation Loop
         let counter = 0;
         const animateFlight = () => {
           if (!mapRef.current) return;
@@ -248,9 +249,8 @@ export default function TripMap({ mapData }: TripMapProps) {
           
           planeMarker.setLngLat(currentPos);
           
-          // Rotate plane to face trajectory
           const bearing = calculateBearing(currentPos, nextPos);
-          planeEl.style.transform = `rotate(${bearing - 45}deg)`; // Adjust -45 based on the emoji's default angle
+          planeEl.style.transform = `rotate(${bearing - 45}deg)`; 
 
           animationFramesRef.current.push(requestAnimationFrame(animateFlight));
         };
@@ -260,7 +260,6 @@ export default function TripMap({ mapData }: TripMapProps) {
 
     // RULE 3: Drive Path & Animation
     if (selectedDrive?.selected && drivingData?.geometry) {
-      // Assuming drivingData.geometry is a GeoJSON LineString
       const driveCoordinates = drivingData.geometry.coordinates || [];
 
       map.addSource("driving-route-source", {
@@ -277,7 +276,6 @@ export default function TripMap({ mapData }: TripMapProps) {
       });
 
       if (driveCoordinates.length > 1) {
-        // Create Animated Car/Dot Marker
         const carEl = document.createElement("div");
         carEl.className = "w-4 h-4 bg-theme-bg border-4 border-theme-primary rounded-full shadow-lg z-40";
         
@@ -286,11 +284,10 @@ export default function TripMap({ mapData }: TripMapProps) {
           .addTo(map);
         animatedMarkersRef.current.push(carMarker);
 
-        // Animation Loop (speed adjusted by skipping frames if array is massive)
         let driveCounter = 0;
         const animateDrive = () => {
           if (!mapRef.current) return;
-          driveCounter = (driveCounter + 2) % driveCoordinates.length; // +2 for faster speed
+          driveCounter = (driveCounter + 2) % driveCoordinates.length; 
           carMarker.setLngLat(driveCoordinates[driveCounter]);
           animationFramesRef.current.push(requestAnimationFrame(animateDrive));
         };

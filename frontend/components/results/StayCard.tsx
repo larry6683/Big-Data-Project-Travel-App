@@ -106,8 +106,8 @@ export default function StaysCard({ stays, searchParams }: { stays: any[]; searc
       setSelectedStayKeys([uniqueKey]); 
     } 
     localStorage.setItem("trip_state", JSON.stringify(tripState)); 
-        // Event this to show on the Map
-window.dispatchEvent(new Event("trip_state_changed"));
+    // Event this to show on the Map
+    window.dispatchEvent(new Event("trip_state_changed"));
   };
 
   if (!stays || stays.length === 0) {
@@ -123,7 +123,8 @@ window.dispatchEvent(new Event("trip_state_changed"));
   return (
     <div className="flex flex-col gap-5">
       {stays.slice(0, 12).map((stay, idx) => {
-        const uniqueKey = stay.hotel_id || stay.hotelId || stay.id || `stay-${idx}`;
+        // Updated to include stay.hotel?.hotelId for accurate mapping
+        const uniqueKey = stay.hotel_id || stay.hotelId || stay.hotel?.hotelId || stay.id || `stay-${idx}`;
         return <StayRow key={uniqueKey} stay={stay} uniqueKey={uniqueKey} isSelected={selectedStayKeys.includes(uniqueKey)} toggleStaySelection={toggleStaySelection} searchParams={searchParams} />;
       })}
     </div>

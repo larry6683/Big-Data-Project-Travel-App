@@ -23,13 +23,13 @@ export default function LandingPage() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col gap-20 pb-32">
         
         {/* ROW 1: EXPLORE */}
-        <section className="bg-theme-surface/20 backdrop-blur-xl rounded-[2rem] shadow-sm border border-theme-surface p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+        <section className="bg-theme-bg/20 backdrop-blur-xl rounded-[2rem] shadow-sm border border-theme-surface p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-theme-primary/10 rounded-xl">
                 <Compass className="text-theme-primary w-6 h-6" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-black text-theme-text tracking-tight">Explore Destinations</h2>
+              <h2 className="text-2xl md:text-3xl font-black text-theme-text tracking-tight">Popular Destinations</h2>
             </div>
             <button className="text-sm font-bold text-theme-primary hover:text-theme-secondary flex items-center gap-1 transition-colors">
               See all <ArrowRight size={16} />
@@ -60,7 +60,7 @@ export default function LandingPage() {
         </section>
 
         {/* ROW 2: EVENTS */}
-        <section className="bg-theme-surface/20 backdrop-blur-xl rounded-[2rem] shadow-sm border border-theme-surface p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 ease-out fill-mode-both">
+        <section className="bg-theme-bg/20 backdrop-blur-xl rounded-[2rem] shadow-sm border border-theme-surface p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 ease-out fill-mode-both">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-theme-accent/10 rounded-xl">
@@ -95,7 +95,7 @@ export default function LandingPage() {
         </section>
 
         {/* ROW 3: BASED ON YOUR SEARCH */}
-        <section className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
+        <section className="bg-theme-bg/20 backdrop-blur-xl rounded-[2rem] shadow-sm border border-theme-surface p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-theme-text/5 rounded-xl">

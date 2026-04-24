@@ -78,12 +78,8 @@ export default function Results() {
         onMapToggle={() => setMapOpen(!mapOpen)}
       />
 
-      {/* Compact Mode: flex-shrink-0 locks it to the top row */}
-      <div 
-        className={`w-full z-20 flex-shrink-0 relative transition-all duration-300 ease-in-out lg:max-h-[800px] lg:opacity-100 lg:overflow-visible lg:border-b lg:border-theme-surface ${
-          searchOpen ? 'max-h-[800px] opacity-100 border-b border-theme-surface' : 'max-h-0 opacity-0 overflow-hidden'
-        }`}
-      >
+      {/* Permanently visible Compact Summary Bar wrapper */}
+      <div className="w-full z-20 flex-shrink-0 relative">
         <SearchBar
           onSearch={handleSearch}
           onSearchStart={() => {
@@ -142,7 +138,8 @@ export default function Results() {
             } md:flex md:flex-none md:w-[40vw] lg:w-[35vw]`}
           >
             <div className="w-full h-full relative">
-          <DynamicMap mapData={tripData?.rawParams?.destination} tripData={tripData} />            </div>
+              <DynamicMap mapData={tripData?.rawParams?.destination} tripData={tripData} />            
+            </div>
           </div>
         )}
       </main>

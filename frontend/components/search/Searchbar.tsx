@@ -35,6 +35,7 @@ export default function SearchBar({
   loading,
   isCompact = false,
 }: SearchBarProps) {
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [sourceValid, setSourceValid] = useState(false);
@@ -189,6 +190,9 @@ export default function SearchBar({
     };
 
     localStorage.setItem("search_state", JSON.stringify(params));
+    
+    // Close the overlay if in compact mode before triggering the search visually
+    setIsOverlayOpen(false); 
     onSearch(params);
   };
 
@@ -205,11 +209,12 @@ export default function SearchBar({
 
   const minEndDate = dates.start ? new Date(new Date(dates.start + "T12:00:00").getTime() + 86400000) : new Date();
 
-  return (
-    <div className="w-full bg-theme-text border-b border-theme-secondary/20 font-sans text-theme-bg shadow-xl z-30">
-      <div className={`px-4 md:px-6 lg:px-8 max-w-[1600px] mx-auto flex flex-col ${isCompact ? 'py-4 gap-3' : 'py-6 md:py-8 gap-5 md:gap-6'}`}>
+  // Reusable component that renders the full search capabilities
+  const renderFullSearchContent = () => (
+    <div className={`w-full bg-theme-text font-sans text-theme-bg shadow-xl z-30 ${isCompact ? 'rounded-3xl overflow-hidden' : 'border-b border-theme-secondary/20'}`}>
+      <div className={`px-4 md:px-6 lg:px-8 max-w-[1600px] mx-auto flex flex-col py-6 md:py-8 gap-5 md:gap-6`}>
         
-        {/* ROW 1: Core Inputs (Always Visible) */}
+        {/* ROW 1: Core Inputs */}
         <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:items-end relative z-10">
           <div className="w-full lg:flex-[1.2] relative">
             <SbLabel>Source</SbLabel>
@@ -305,85 +310,134 @@ export default function SearchBar({
           </div>
         </div>
 
-        {/* ROW 2: Secondary Options (Hidden if isCompact === true) */}
-        {!isCompact && (
-          <div className="flex flex-col xl:flex-row justify-between gap-5 pt-4 border-t border-theme-secondary/20 relative z-0">
-            <div className="flex flex-wrap gap-5 lg:gap-8 items-center">
-              
-              {/* Passengers */}
-              <div className="flex gap-4">
-                <div>
-                  <SbLabel>Adults</SbLabel>
-                  <SbCounter value={adults} min={1} max={9} onChange={setAdults} />
-                </div>
-                <div>
-                  <SbLabel>Children</SbLabel>
-                  <SbCounter value={children} min={0} max={9} onChange={setChildren} />
-                </div>
+        {/* ROW 2: Secondary Options (Always visible in full view / overlay) */}
+        <div className="flex flex-col xl:flex-row justify-between gap-5 pt-4 border-t border-theme-secondary/20 relative z-0">
+          <div className="flex flex-wrap gap-5 lg:gap-8 items-center">
+            
+            {/* Passengers */}
+            <div className="flex gap-4">
+              <div>
+                <SbLabel>Adults</SbLabel>
+                <SbCounter value={adults} min={1} max={9} onChange={setAdults} />
               </div>
-
-              {/* Budget Toggle */}
-              <div className="w-[190px]">
-                <SbLabel>Budget Category</SbLabel>
-                <div className="flex bg-theme-bg rounded-xl p-[4px] shadow-inner gap-1 border border-theme-surface">
-                  {(["budget", "Premium"] as const).map((opt) => (
-                    <button key={opt} onClick={() => setBudget(opt)} className={`flex-1 py-2 rounded-lg text-xs transition-all ${budget === opt ? "bg-theme-primary font-black tracking-wider text-theme-bg shadow-sm" : "bg-transparent font-bold text-theme-text/70 hover:text-theme-text hover:bg-theme-secondary/5"}`}>
-                      {opt === "budget" ? "💰 Budget" : "✨ Premium"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mode Toggle */}
-              <div className="w-[170px]">
-                <SbLabel>Travel Mode</SbLabel>
-                <div className="flex bg-theme-bg rounded-xl p-[4px] shadow-inner gap-1 border border-theme-surface">
-                  {(["fly", "drive"] as const).map((opt) => (
-                    <button key={opt} onClick={() => setTravelMode(opt)} className={`flex-1 py-2 rounded-lg text-xs transition-all ${travelMode === opt ? "bg-theme-primary font-black tracking-wider text-theme-bg shadow-sm" : "bg-transparent font-bold text-theme-text/70 hover:text-theme-text hover:bg-theme-secondary/5"}`}>
-                      {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Radius Slider */}
-              <div className="w-full sm:w-[220px]">
-                <SbLabel>Search Radius <span className="font-bold text-theme-bg/60 ml-1">({radius} mi)</span></SbLabel>
-                <input
-                  type="range" min={1} max={25} step={1} value={radius}
-                  onChange={(e) => setRadius(parseInt(e.target.value))}
-                  className="w-full cursor-pointer mt-3 accent-theme-primary h-2 bg-theme-bg rounded-lg appearance-none shadow-inner"
-                />
+              <div>
+                <SbLabel>Children</SbLabel>
+                <SbCounter value={children} min={0} max={9} onChange={setChildren} />
               </div>
             </div>
 
-            {/* Trending Searches */}
-            {topDestinations.length > 0 && (
-              <div className="hidden xl:flex items-center gap-3 max-w-[450px]">
-                <div className="text-[11px] font-black tracking-[0.1em] uppercase text-theme-bg/60 whitespace-nowrap flex items-center gap-1.5">
-                  <TrendingUp size={16} className="text-theme-primary" /> Trending:
-                </div>
-                <div className="flex flex-wrap gap-2.5 overflow-hidden max-h-[36px]">
-                  {topDestinations.slice(0, 3).map((dest, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setDestination(dest.full_name); setDestValid(true);
-                        if (errors.destination) setErrors((prev) => ({ ...prev, destination: "" }));
-                      }}
-                      className="px-3 py-2 rounded-lg border border-theme-secondary/30 bg-theme-secondary/10 text-theme-bg text-[11px] font-black hover:bg-theme-primary hover:text-theme-bg transition-all whitespace-nowrap shadow-sm hover:shadow active:scale-95 uppercase tracking-wider"
-                    >
-                      {dest.city}{dest.state ? `, ${stateAbbreviations[dest.state] || dest.state}` : ""}
-                    </button>
-                  ))}
-                </div>
+            {/* Budget Toggle */}
+            <div className="w-[190px]">
+              <SbLabel>Budget Category</SbLabel>
+              <div className="flex bg-theme-bg rounded-xl p-[4px] shadow-inner gap-1 border border-theme-surface">
+                {(["budget", "Premium"] as const).map((opt) => (
+                  <button key={opt} onClick={() => setBudget(opt)} className={`flex-1 py-2 rounded-lg text-xs transition-all ${budget === opt ? "bg-theme-primary font-black tracking-wider text-theme-bg shadow-sm" : "bg-transparent font-bold text-theme-text/70 hover:text-theme-text hover:bg-theme-secondary/5"}`}>
+                    {opt === "budget" ? "💰 Budget" : "✨ Premium"}
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+
+            {/* Mode Toggle */}
+            <div className="w-[170px]">
+              <SbLabel>Travel Mode</SbLabel>
+              <div className="flex bg-theme-bg rounded-xl p-[4px] shadow-inner gap-1 border border-theme-surface">
+                {(["fly", "drive"] as const).map((opt) => (
+                  <button key={opt} onClick={() => setTravelMode(opt)} className={`flex-1 py-2 rounded-lg text-xs transition-all ${travelMode === opt ? "bg-theme-primary font-black tracking-wider text-theme-bg shadow-sm" : "bg-transparent font-bold text-theme-text/70 hover:text-theme-text hover:bg-theme-secondary/5"}`}>
+                    {opt === "fly" ? "✈️ Fly" : "🚗 Drive"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Radius Slider */}
+            <div className="w-full sm:w-[220px]">
+              <SbLabel>Search Radius <span className="font-bold text-theme-bg/60 ml-1">({radius} mi)</span></SbLabel>
+              <input
+                type="range" min={1} max={25} step={1} value={radius}
+                onChange={(e) => setRadius(parseInt(e.target.value))}
+                className="w-full cursor-pointer mt-3 accent-theme-primary h-2 bg-theme-bg rounded-lg appearance-none shadow-inner"
+              />
+            </div>
           </div>
-        )}
+
+          {/* Trending Searches */}
+          {topDestinations.length > 0 && (
+            <div className="hidden xl:flex items-center gap-3 max-w-[450px]">
+              <div className="text-[11px] font-black tracking-[0.1em] uppercase text-theme-bg/60 whitespace-nowrap flex items-center gap-1.5">
+                <TrendingUp size={16} className="text-theme-primary" /> Trending:
+              </div>
+              <div className="flex flex-wrap gap-2.5 overflow-hidden max-h-[36px]">
+                {topDestinations.slice(0, 3).map((dest, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setDestination(dest.full_name); setDestValid(true);
+                      if (errors.destination) setErrors((prev) => ({ ...prev, destination: "" }));
+                    }}
+                    className="px-3 py-2 rounded-lg border border-theme-secondary/30 bg-theme-secondary/10 text-theme-bg text-[11px] font-black hover:bg-theme-primary hover:text-theme-bg transition-all whitespace-nowrap shadow-sm hover:shadow active:scale-95 uppercase tracking-wider"
+                  >
+                    {dest.city}{dest.state ? `, ${stateAbbreviations[dest.state] || dest.state}` : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* 1. Summary Bar (Only displays when isCompact is true) */}
+      {isCompact && (
+        <div className="w-full bg-theme-bg py-3 px-4 md:px-6 flex justify-center border-b border-theme-surface z-20 relative">
+          <button
+            onClick={() => setIsOverlayOpen(true)}
+            className="w-full max-w-4xl bg-theme-surface/20 hover:bg-theme-surface/40 border border-theme-surface rounded-full flex items-center justify-between px-4 md:px-6 py-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer group"
+          >
+            <div className="flex items-center gap-3 md:gap-4 text-theme-text text-sm md:text-base font-bold truncate">
+              <Search size={18} className="text-theme-primary shrink-0" />
+              <span className="truncate">{source || "Origin"}</span>
+              <span className="text-theme-muted shrink-0">➔</span>
+              <span className="truncate">{destination || "Destination"}</span>
+              <span className="text-theme-surface hidden sm:inline shrink-0">|</span>
+              <span className="truncate hidden sm:inline">
+                {dates.start ? `${dates.start} to ${dates.end || '?'}` : "Any Dates"}
+              </span>
+              <span className="text-theme-surface hidden md:inline shrink-0">|</span>
+              <span className="truncate hidden md:inline">{adults + children} Guests</span>
+            </div>
+            <div className="bg-theme-primary text-theme-bg rounded-full p-2 shrink-0 shadow-sm transition-transform group-hover:scale-110">
+              <Search size={14} strokeWidth={3} />
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* 2. Blurred Overlay (Opens when clicking the Summary Bar) */}
+      {isCompact && isOverlayOpen && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-16 md:pt-24 px-4 bg-theme-bg/60 backdrop-blur-md">
+          {/* Click background to close */}
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setIsOverlayOpen(false)}></div>
+          
+          <div className="relative w-full max-w-6xl animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setIsOverlayOpen(false)}
+              className="absolute -top-14 right-0 md:-right-4 w-10 h-10 bg-theme-text text-theme-bg rounded-full flex items-center justify-center font-bold text-xl hover:bg-theme-secondary transition-colors shadow-lg z-[101]"
+            >
+              ✕
+            </button>
+            {renderFullSearchContent()}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Standard Inline View (For the home page when isCompact is false) */}
+      {!isCompact && renderFullSearchContent()}
+    </>
   );
 }
 
@@ -394,9 +448,9 @@ function SbLabel({ children }: { children: React.ReactNode }) {
 function SbCounter({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (v: number) => void; }) {
   return (
     <div className="flex items-center justify-between px-1 bg-theme-bg rounded-xl border border-theme-surface h-[44px] min-w-[100px] shadow-inner">
-      <button className="w-8 h-8 rounded-lg bg-theme-surface text-theme-text hover:bg-theme-secondary/20 flex items-center justify-center font-bold text-lg active:scale-95 transition-all" onClick={() => onChange(Math.max(min, value - 1))}>−</button>
+      <button type="button" className="w-8 h-8 rounded-lg bg-theme-surface text-theme-text hover:bg-theme-secondary/20 flex items-center justify-center font-bold text-lg active:scale-95 transition-all" onClick={() => onChange(Math.max(min, value - 1))}>−</button>
       <span className="font-black text-[15px] text-theme-text text-center w-8">{value}</span>
-      <button className="w-8 h-8 rounded-lg bg-theme-surface text-theme-text hover:bg-theme-secondary/20 flex items-center justify-center font-bold text-lg active:scale-95 transition-all" onClick={() => onChange(Math.min(max, value + 1))}>+</button>
+      <button type="button" className="w-8 h-8 rounded-lg bg-theme-surface text-theme-text hover:bg-theme-secondary/20 flex items-center justify-center font-bold text-lg active:scale-95 transition-all" onClick={() => onChange(Math.min(max, value + 1))}>+</button>
     </div>
   );
 }
