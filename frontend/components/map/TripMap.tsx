@@ -7,6 +7,7 @@ import * as pmtiles from "pmtiles";
 
 interface TripMapProps {
   mapData?: any; // Kept for backward compatibility with centering logic
+  tripData?: any; 
 }
 
 // Math helper to calculate bearing/rotation for the airplane
