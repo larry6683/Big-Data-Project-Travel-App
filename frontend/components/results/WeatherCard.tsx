@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 export default function WeatherCard({ weather }: { weather: any }) {
-  const [isSelected, setIsSelected] = useState<boolean>(false);
-  useEffect(() => { const tripStateStr = localStorage.getItem('trip_state'); if (tripStateStr) { try { const tripState = JSON.parse(tripStateStr); setIsSelected(tripState.weather?.selected === true); } catch (e) {} } }, [weather]);
-  const toggleWeatherSelection = () => { const tripStateStr = localStorage.getItem('trip_state'); let tripState = tripStateStr ? JSON.parse(tripStateStr) : {}; const newSelected = !isSelected; setIsSelected(newSelected); tripState.weather = newSelected ? { selected: true, data: weather } : null; localStorage.setItem('trip_state', JSON.stringify(tripState)); };
-  const getWeatherIcon = (d: string) => { const desc = d.toLowerCase(); if (desc.includes('clear') || desc.includes('sun')) return '☀️'; if (desc.includes('cloud')) return '☁️'; if (desc.includes('rain') || desc.includes('drizzle')) return '🌧️'; if (desc.includes('thunder') || desc.includes('storm')) return '⛈️'; if (desc.includes('snow')) return '❄️'; return '⛅'; };
+  const getWeatherIcon = (d: string) => { 
+    const desc = d.toLowerCase(); 
+    if (desc.includes('clear') || desc.includes('sun')) return '☀️'; 
+    if (desc.includes('cloud')) return '☁️'; 
+    if (desc.includes('rain') || desc.includes('drizzle')) return '🌧️'; 
+    if (desc.includes('thunder') || desc.includes('storm')) return '⛈️'; 
+    if (desc.includes('snow')) return '❄️'; 
+    return '⛅'; 
+  };
+  
   const formatDate = (ds: string) => new Date(ds).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-  // THE FIX: Return the sleek empty state instead of null
   if (!weather || !weather.days || weather.days.length === 0) {
     return (
       <div className="p-10 border-2 border-dashed border-theme-surface bg-theme-surface/10 rounded-3xl text-center flex items-center justify-center min-h-[120px]">
@@ -19,14 +24,14 @@ export default function WeatherCard({ weather }: { weather: any }) {
   }
 
   return (
-    <div className={`rounded-3xl border transition-all duration-200 relative overflow-hidden ${isSelected ? 'border-theme-primary ring-2 ring-theme-primary bg-theme-bg shadow-xl' : 'border-theme-surface bg-theme-bg hover:shadow-xl hover:border-theme-muted'}`}>
-      {isSelected && <div className="absolute top-0 left-0 w-2 h-full bg-theme-primary z-10"></div>}
+    <div className="rounded-3xl border border-theme-surface bg-theme-bg hover:shadow-xl hover:border-theme-muted transition-all duration-200 overflow-hidden">
       
-      <div className={`p-6 md:p-8 flex justify-between items-center border-b border-theme-surface ${isSelected ? 'bg-theme-primary/5' : 'bg-theme-surface/20'}`}>
+      <div className="p-6 md:p-8 flex justify-between items-center border-b border-theme-surface bg-theme-surface/20">
         <h3 className="text-3xl font-black text-theme-text tracking-tight">Trip Forecast</h3>
-        <button onClick={toggleWeatherSelection} className={`px-8 py-4 rounded-2xl font-black text-[15px] transition-all shadow-md shrink-0 active:scale-[0.98] ${isSelected ? "bg-theme-primary text-theme-bg" : "bg-theme-secondary text-theme-bg hover:opacity-90"}`}>
-          {isSelected ? 'Selected' : 'Select'}
-        </button>
+        {/* Replaced the Select button with an auto-included badge */}
+        <div className="px-4 py-2 bg-theme-primary/10 text-theme-primary rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest border border-theme-primary/20">
+          ✨ Auto-Included in Itinerary
+        </div>
       </div>
       
       <div className="p-6 md:p-8 flex flex-col gap-4">

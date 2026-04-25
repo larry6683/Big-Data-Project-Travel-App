@@ -90,7 +90,8 @@ export default function ItineraryModal({
   const attractions = selections?.attractions || [];
   const tours = selections?.tours || selections?.activities || [];
 
-  const isWeatherSelected = selections?.weather?.selected === true;
+  // ✅ AUTO-SELECT WEATHER: If weatherData was passed in as a prop, use it directly.
+  const isWeatherSelected = weatherData && weatherData.days && weatherData.days.length > 0;
 
   const getFuelCost = () => {
     if (!drive) return 0;
@@ -135,17 +136,10 @@ export default function ItineraryModal({
     }
   });
 
+  // ✅ Extract the first day of weather directly from the passed prop
   let firstDayWeather = null;
   if (isWeatherSelected) {
-    const activeWeatherData = selections?.weather?.data || weatherData;
-    if (activeWeatherData?.days && activeWeatherData.days.length > 0) {
-      firstDayWeather = activeWeatherData.days[0];
-    } else if (
-      activeWeatherData?.data?.days &&
-      activeWeatherData.data.days.length > 0
-    ) {
-      firstDayWeather = activeWeatherData.data.days[0];
-    }
+      firstDayWeather = weatherData.days[0];
   }
 
   const formatDate = (dateStr: string) => {
@@ -210,17 +204,12 @@ export default function ItineraryModal({
   const handleExportPdf = async () => {
     setIsExporting(true);
     try {
-      const cachedTripStr = sessionStorage.getItem("current_trip_results");
-      const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : {};
-
       const pdfBlob = await travelApi.exportPdf({
         destination: getFullTripTitle(),
         username: user || "Traveler",
         check_in_date: rawParams?.startDate,
         check_out_date: rawParams?.endDate,
-        weather: isWeatherSelected
-          ? selections?.weather?.data || weatherData || cachedTrip.weather
-          : null,
+        weather: isWeatherSelected ? weatherData : null, // ✅ Send weatherData directly
         flight: flight,
         drive: drive
           ? {
@@ -260,17 +249,12 @@ export default function ItineraryModal({
     }
     setIsSharing(true);
     try {
-      const cachedTripStr = sessionStorage.getItem("current_trip_results");
-      const cachedTrip = cachedTripStr ? JSON.parse(cachedTripStr) : {};
-
       const payload = {
         destination: getFullTripTitle(),
         username: user || "Traveler",
         check_in_date: rawParams?.startDate,
         check_out_date: rawParams?.endDate,
-        weather: isWeatherSelected
-          ? selections?.weather?.data || weatherData || cachedTrip.weather
-          : null,
+        weather: isWeatherSelected ? weatherData : null, // ✅ Send weatherData directly
         flight: flight,
         drive: drive
           ? {

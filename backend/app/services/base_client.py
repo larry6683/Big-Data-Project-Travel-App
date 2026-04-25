@@ -5,7 +5,7 @@ from app.core.config import settings
 
 class BaseAmadeusClient:
     def __init__(self):
-        self.base_url = "https://test.api.amadeus.com"
+        self.base_url = "https://api.amadeus.com"
         self.client_id = settings.AMADEUS_CLIENT_ID
         self.client_secret = settings.AMADEUS_CLIENT_SECRET
         self.token = None

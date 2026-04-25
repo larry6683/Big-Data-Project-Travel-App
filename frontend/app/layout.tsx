@@ -1,25 +1,29 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // <-- Changed to Inter
+import { Inter, DM_Sans } from "next/font/google"; // <-- Import all fonts here
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import ClientInit from "../components/ClientInIt";
 import Chatbot from "../components/Chatbot";
 import Footer from "../components/Footer";
 
-// Configure Inter
+// Configure Inter (Your Default)
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  // Inter is a variable font, so we don't strictly need to define weights, 
-  // but it's good practice for Next.js optimization
   display: 'swap', 
+});
+
+// Configure any alternative fonts (e.g., DM Sans)
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: "Minutebound | Travel Planner",
   description: "Big Data Travel Planner Application",
   icons: {
-    // Replace this string with the path to your new logo inside the 'public' folder
     icon: '/logo.svg', 
   },
 };
@@ -40,8 +44,8 @@ export default function RootLayout({
         />
       </head>
       <body
-        // Apply the Inter font variable here
-        className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}
+        // Inject ALL font variables here, and apply 'font-sans' to set the default
+        className={`${inter.variable} ${dmSans.variable} font-sans antialiased min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
         <AuthProvider>

@@ -11,9 +11,10 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     SECRET_KEY: str
-    
-    BACKEND_CORS_ORIGINS: List[str] 
-
+    #Internal
+    FRONTEND_URL: str = "http://travel-frontend:3000"
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+#External API's
     AMADEUS_CLIENT_ID: str 
     AMADEUS_CLIENT_SECRET: str 
     WEATHER_API_KEY: str 
@@ -39,7 +40,7 @@ class Settings(BaseSettings):
     GCS_BUCKET_NAME: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=".env.backend", 
         env_file_encoding="utf-8", 
         case_sensitive=True,
         extra="ignore" 
