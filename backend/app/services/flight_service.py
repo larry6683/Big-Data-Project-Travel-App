@@ -165,13 +165,21 @@ class FlightService:
         unique_iata = {seg.departure_airport for f in final_flights for i in f.itineraries for seg in i.segments if seg.departure_airport and seg.departure_airport != "TBA"}
         unique_iata.update({seg.arrival_airport for f in final_flights for i in f.itineraries for seg in i.segments if seg.arrival_airport and seg.arrival_airport != "TBA"})
         
-        names_map = {code: self.get_airport_name(code) for code in unique_iata}
+        airport_info_map = {code: self.airports_dict.get(code.upper(), {}) for code in unique_iata}
 
         for flight in final_flights:
             for itin in flight.itineraries:
                 for seg in itin.segments:
-                    seg.departure_airport_name = names_map.get(seg.departure_airport, seg.departure_airport)
-                    seg.arrival_airport_name = names_map.get(seg.arrival_airport, seg.arrival_airport)
+                    dep_info = airport_info_map.get(seg.departure_airport, {})
+                    arr_info = airport_info_map.get(seg.arrival_airport, {})
+                    
+                    seg.departure_airport_name = dep_info.get("name", seg.departure_airport)
+                    seg.departure_lat = dep_info.get("lat")
+                    seg.departure_lon = dep_info.get("lon")
+                    
+                    seg.arrival_airport_name = arr_info.get("name", seg.arrival_airport)
+                    seg.arrival_lat = arr_info.get("lat")
+                    seg.arrival_lon = arr_info.get("lon")
 
         return final_flights
 

@@ -25,28 +25,8 @@ interface NavbarProps {
 const MinuteboundLogo = ({ className = "" }: { className?: string }) => (
   <>
     {/* Mobile & Tablet Logo (Icon Only) */}
-    <svg viewBox="0 0 270 220" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} lg:hidden`}>
-      <g className="origin-[60px_120px] scale-[1.3]">
-        <path 
-          d="M 20 160 C 100 40, 90 40, 120 120" 
-          className="fill-theme-primary"
-          strokeWidth="10" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-        />
-        <path 
-          d="M 120 120 C 180 20, 180 20, 200 140" 
-          className="fill-theme-primary"  
-          strokeWidth="10" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-        />        
-      </g>
-    </svg>
-
-    {/* Desktop Logo (Icon + Text) */}
-    <svg viewBox="0 0 1050 220" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} hidden lg:block`}>
-      <defs>
+    <svg viewBox="0 0 1100 220" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} lg:hidden`}>
+            <defs>
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
           .logo-text {
@@ -56,7 +36,7 @@ const MinuteboundLogo = ({ className = "" }: { className?: string }) => (
           }
         `}</style>
       </defs>
-      <g className="origin-[60px_120px] scale-[1.3]">
+      <g className="origin-[60px_120px] scale-[1.4]">
         <path 
           d="M 20 160 C 100 40, 90 40, 120 120" 
           className="fill-theme-primary"
@@ -72,9 +52,43 @@ const MinuteboundLogo = ({ className = "" }: { className?: string }) => (
           strokeLinejoin="round" 
         />        
       </g>
-      <text x="300" y="120" className="logo-text">
+      <text x="320" y="140" className="logo-text">
         <tspan className="font-bold fill-theme-text">Minute</tspan>
-        <tspan className="font-bold fill-theme-primary">bound</tspan>
+        <tspan className="font-bold fill-theme-text">bound</tspan>
+      </text>
+    </svg>
+
+    {/* Desktop Logo (Icon + Text) */}
+    <svg viewBox="0 0 1100 220" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} hidden lg:block`}>
+      <defs>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
+          .logo-text {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 120px;
+            letter-spacing: -0.01em;
+          }
+        `}</style>
+      </defs>
+      <g className="origin-[60px_120px] scale-[1.4]">
+        <path 
+          d="M 20 160 C 100 40, 90 40, 120 120" 
+          className="fill-theme-primary"
+          strokeWidth="10" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+        />
+        <path 
+          d="M 120 120 C 180 20, 180 20, 200 140" 
+          className="fill-theme-primary"  
+          strokeWidth="10" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+        />        
+      </g>
+      <text x="320" y="140" className="logo-text">
+        <tspan className="font-bold fill-theme-text">Minute</tspan>
+        <tspan className="font-bold fill-theme-text">bound</tspan>
       </text>
     </svg>
   </>
@@ -86,7 +100,7 @@ export default function Navbar({
   onMapToggle = () => {},
   menuOpen = false,
 }: NavbarProps) {
-  const { user, logout, isLoggedIn } = useAuth();
+  const { user, email, logout, isLoggedIn } = useAuth();
   const pathname = usePathname();
   const isHomePage = pathname === "/";
 
@@ -112,13 +126,20 @@ export default function Navbar({
 
   return (
     <nav className="relative sticky top-0 w-full flex-shrink-0 z-[999]">
-      <div className="w-full flex items-center justify-between px-4 md:px-6 py-3 bg-theme-bg text-theme-text shadow-sm min-h-[64px] border-b border-theme-text/10 relative z-[999]">
+      {/* Dynamic container classes based on route */}
+      <div 
+        className={`w-full flex items-center justify-between px-4 md:px-6 bg-theme-bg text-theme-text shadow-sm border-b border-theme-text/10 relative z-[999] transition-all duration-300 ${
+          isHomePage ? "py-3 min-h-[64px]" : "py-1.5 min-h-[52px]"
+        }`}
+      >
         {/* LEFT SECTION */}
         <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
           
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 rounded-xl bg-theme-surface text-theme-text lg:hidden hover:bg-theme-surface/80 transition-colors shadow-sm active:scale-95 border border-theme-surface"
+            className={`rounded-xl bg-theme-surface text-theme-text lg:hidden hover:bg-theme-surface/80 transition-all duration-300 shadow-sm active:scale-95 border border-theme-surface ${
+              isHomePage ? "p-2" : "p-1.5"
+            }`}
             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -129,7 +150,12 @@ export default function Navbar({
             className="flex items-center hover:opacity-90 transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <MinuteboundLogo className="h-8 sm:h-10 md:h-12 w-auto" />
+            {/* Dynamic logo size based on route */}
+            <MinuteboundLogo 
+              className={`w-auto transition-all duration-300 ${
+                isHomePage ? "h-8 sm:h-10 md:h-12" : "h-6 sm:h-8 md:h-9"
+              }`} 
+            />
           </Link>
         </div>
 
@@ -142,7 +168,9 @@ export default function Navbar({
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-theme-surface text-theme-text rounded-xl hover:bg-theme-muted/20 border border-theme-surface transition-colors shadow-sm font-black active:scale-95"
+                  className={`flex items-center gap-2 px-4 ${
+                    isHomePage ? "py-2.5" : "py-1.5"
+                  } bg-theme-surface text-theme-text rounded-xl hover:bg-theme-muted/20 border border-theme-surface transition-all shadow-sm font-black active:scale-95`}
                 >
                   <UserIcon size={16} className="text-theme-primary" />
                   <span className="text-sm hidden sm:block max-w-[120px] truncate">
@@ -160,7 +188,9 @@ export default function Navbar({
                   <div className="absolute right-0 mt-3 w-56 bg-theme-bg rounded-2xl shadow-2xl border border-theme-surface py-2 z-[1000] animate-in slide-in-from-top-2 fade-in duration-200">
                     <div className="px-4 py-2 mb-1 border-b border-theme-surface">
                       <p className="text-[10px] font-black text-theme-muted uppercase tracking-widest">Signed in as</p>
-                      <p className="text-sm font-bold text-theme-text truncate">{user}</p>
+                      <p className="text-sm font-bold text-theme-text truncate" title={email || user || ""}>
+                        {email || user}
+                      </p>
                     </div>
 
                     {!isHomePage && (
@@ -209,7 +239,9 @@ export default function Navbar({
             ) : (
               <Link
                 href="/auth"
-                className="flex items-center gap-2 px-5 py-2.5 bg-theme-primary text-theme-bg rounded-xl hover:bg-theme-secondary transition-all shadow-md text-sm font-black active:scale-95"
+                className={`flex items-center gap-2 px-5 ${
+                  isHomePage ? "py-2.5" : "py-1.5"
+                } bg-theme-primary text-theme-bg rounded-xl hover:bg-theme-secondary transition-all shadow-md text-sm font-black active:scale-95`}
               >
                 <UserIcon size={18} />
                 <span className="hidden sm:inline">Login / Sign Up</span>
@@ -222,7 +254,7 @@ export default function Navbar({
           {isHomePage && (
             <button
               onClick={onMapToggle}
-              className="p-2.5 rounded-xl bg-theme-surface text-theme-text hover:bg-theme-muted/20 border border-theme-surface transition-colors shadow-sm lg:hidden active:scale-95"
+              className="p-2.5 rounded-xl bg-theme-text text-theme-bg hover:bg-theme-muted/20 border border-theme-surface transition-colors shadow-sm lg:hidden active:scale-95"
               aria-label={mapOpen ? "Close map" : "Toggle map"}
             >
               {mapOpen ? <X size={20} /> : <Map size={20} className="text-theme-primary" />}

@@ -34,6 +34,7 @@ const getCurvedLine = (start: [number, number], end: [number, number], steps = 5
 export default function TripMap({ mapData }: TripMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const isInitialMount = useRef(true); // Track initial load to prevent jump
   
   // Marker reference for cleanup
   const staticMarkersRef = useRef<maplibregl.Marker[]>([]);
@@ -78,16 +79,59 @@ export default function TripMap({ mapData }: TripMapProps) {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
+    let initialCenter: [number, number] = [-105.2705, 40.015];
+    let initialZoom = 15;
+
+    // Check if there is a saved map location from a previous session/reload
+    const savedViewState = localStorage.getItem("map_view_state");
+    if (savedViewState) {
+      try {
+        const { lng, lat, zoom } = JSON.parse(savedViewState);
+        if (lng !== undefined && lat !== undefined && zoom !== undefined) {
+          initialCenter = [lng, lat];
+          initialZoom = zoom;
+        }
+      } catch (e) {}
+    } else {
+      // Fallback to the search destination if no view state exists
+      const searchStateStr = localStorage.getItem("search_state");
+      if (searchStateStr) {
+        try {
+          const { destination, radius } = JSON.parse(searchStateStr);
+          if (destination?.lat && destination?.lon) {
+            initialCenter = [destination.lon, destination.lat];
+            const r = radius ? Math.max(1, Math.min(25, radius)) : 10;
+            initialZoom = calculateZoomFromRadius(r);
+          }
+        } catch (e) {}
+      }
+    }
+
     const protocol = new pmtiles.Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
 
     mapRef.current = new maplibregl.Map({
       container: mapContainer.current,
       style: `https://api.protomaps.com/styles/v5/light/en.json?key=${process.env.NEXT_PUBLIC_PROTOMAPS_KEY}`,
-      center: [-105.2705, 40.015],
-      zoom: 15,
+      center: initialCenter,
+      zoom: initialZoom,
       attributionControl: false,
     });
+
+    // Save map coordinates whenever the user moves or zooms
+    const saveMapState = () => {
+      if (!mapRef.current) return;
+      const center = mapRef.current.getCenter();
+      const zoom = mapRef.current.getZoom();
+      localStorage.setItem("map_view_state", JSON.stringify({
+        lng: center.lng,
+        lat: center.lat,
+        zoom: zoom
+      }));
+    };
+
+    mapRef.current.on('moveend', saveMapState);
+    mapRef.current.on('zoomend', saveMapState);
 
     mapRef.current.addControl(new maplibregl.AttributionControl({ compact: false }), "bottom-right");
     mapRef.current.addControl(new maplibregl.NavigationControl(), "top-right");
@@ -167,7 +211,7 @@ export default function TripMap({ mapData }: TripMapProps) {
           const bedSvgSmall = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`;
 
           if (isSelected) {
-            el.className = "w-9 h-9 bg-theme-primary text-theme-bg rounded-xl border-2 border-theme-primary flex items-center justify-center shadow-xl z-30 hover:z-[100] group relative cursor-pointer transition-all";
+            el.className = "w-8 h-8 bg-theme-primary text-theme-bg rounded-xl border-2 border-theme-primary flex items-center justify-center shadow-xl z-30 hover:z-[100] group relative cursor-pointer transition-all";
             el.innerHTML = `
               ${bedSvg}
               <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
@@ -213,7 +257,7 @@ export default function TripMap({ mapData }: TripMapProps) {
           const name = attr.name || attr.tags?.name || "Attraction";
 
           if (isSelected) {
-            el.className = "w-9 h-9 bg-theme-accent text-theme-secondary rounded-full border-2 border-theme-accent flex items-center justify-center shadow-xl z-30 hover:z-[100] group relative cursor-pointer transition-all";
+            el.className = "w-8 h-8 bg-theme-accent text-theme-bg rounded-full border-2 border-theme-accent flex items-center justify-center shadow-xl z-30 hover:z-[100] group relative cursor-pointer transition-all";
             el.innerHTML = `
               ${cameraSvg}
               <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap bg-theme-text text-theme-bg px-3 py-1.5 rounded-xl shadow-xl z-50 flex flex-col items-center">
@@ -294,9 +338,25 @@ export default function TripMap({ mapData }: TripMapProps) {
   }, [renderInteractiveData]);
 
 
-  // Center Map on Destination
+  // Center Map on Destination (or skip if reloading)
   useEffect(() => {
     if (!mapRef.current) return;
+
+    // Skip the flyTo jump on the initial component mount because the map constructor 
+    // already handled setting the initial view (from saved location or search state)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      const savedData = localStorage.getItem("search_state");
+      if (savedData) {
+        try {
+          const { radius } = JSON.parse(savedData);
+          if (radius) setRadiusValue(Math.max(1, Math.min(25, radius)));
+        } catch (e) {}
+      }
+      return; 
+    }
+
+    // Only run this on subsequent data updates (e.g., user made a brand new search)
     const savedData = localStorage.getItem("search_state");
     if (!savedData) return;
 
