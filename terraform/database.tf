@@ -17,7 +17,6 @@ resource "google_sql_database_instance" "postgres" {
     backup_configuration {
       enabled            = true
       start_time         = "03:00"
-      binary_log_enabled = false
     }
 
     ip_configuration {
