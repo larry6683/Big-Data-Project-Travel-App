@@ -30,5 +30,9 @@ class SystemHealthStatus(Base):
     __tablename__ = "system_health_status"
 
     id = Column(Integer, primary_key=True, index=True)
+    api_name = Column(String, unique=True, index=True, nullable=False)
+    endpoint = Column(String, nullable=True)
+    status_code = Column(Integer, nullable=True)
+    status = Column(String, nullable=False) # UP or DOWN
+    status_description = Column(String, nullable=True)
     last_checked = Column(DateTime(timezone=True), nullable=True)
-    health_data = Column(JSON, default={})

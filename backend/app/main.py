@@ -1,10 +1,12 @@
 import os
+import asyncio
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles 
 from app.core.config import settings
-from app.db.database import engine, Base 
+from app.db.database import engine, Base, SessionLocal 
 from app.api.v1.endpoints import flights, locations, hotels, driving, activities, attractions, weather, auth, trips, users, chatbot, destinations, health
+from app.services.health_service import health_service
 
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
@@ -79,6 +81,32 @@ def get_application():
 
 app = get_application()
 
+
+# --- AUTOMATED BACKGROUND SCHEDULER ---
+async def automated_health_check_task():
+    """
+    Runs continuously in the background independent of user traffic. 
+    Wakes up every 48 hours to automatically ping all health endpoints.
+    """
+    # Wait 60 seconds before the first check to let the server fully boot
+    # and prevent rate-limit spam during rapid dev restarts.
+    await asyncio.sleep(60) 
+    
+    while True:
+        print("⏳ [SCHEDULER] Triggering automatic background health check...")
+        db = SessionLocal()
+        try:
+            await health_service.ping_endpoints(db)
+        except Exception as e:
+            print(f"❌ [SCHEDULER] Error during automatic health check: {e}")
+        finally:
+            db.close()
+        
+        # Sleep for exactly 48 hours (48 hours * 60 minutes * 60 seconds)
+        await asyncio.sleep(48 * 60 * 60)
+# --------------------------------------
+
+
 @app.on_event("startup")
 async def startup():
     redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
@@ -89,6 +117,9 @@ async def startup():
         key_builder=custom_key_builder 
     )
     app.state.redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
+    
+    # Fire and forget the background scheduler when the server starts
+    asyncio.create_task(automated_health_check_task())
 
 @app.get("/")
 def root():
